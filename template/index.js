@@ -111,7 +111,7 @@ export const template = (stats) => {
                           key: null,
                           ref: null,
                           props: {
-                            children: "Total Commits (2023): ",
+                            children: "Total Commits: ",
                           },
                           _owner: null,
                           _store: {},

@@ -45,7 +45,7 @@ function coords2Index(x, y, width) {
   return (y * width + x) * 4;
 }
 
-function convertAvatar(textureBuffer, blockSize, width, height) {
+function convertAvatar(textureBuffer, width, height, blockSize) {
   const resultBuffer = Buffer.alloc(width * height * 4);
 
   for (let y = 0; y < height; y++) {
@@ -54,16 +54,11 @@ function convertAvatar(textureBuffer, blockSize, width, height) {
       const posX = Math.floor(x / blockSize);
       const posY = Math.floor(y / blockSize);
 
-      // console.log(':::posX', posX, posX * blockSize)
-      // console.log(':::posY', posY, posY * blockSize)
-
-      // const textureIndex = coords2Index(Math.floor(posX * blockSize), Math.floor(posY * blockSize), width)
       const textureIndex = coords2Index(
         Math.min(Math.floor(posX * blockSize + blockSize / 2), width - 1),
         Math.min(Math.floor(posY * blockSize + blockSize / 2), height - 1),
         width,
       );
-
       resultBuffer[index] = textureBuffer[textureIndex];
       resultBuffer[index + 1] = textureBuffer[textureIndex + 1];
       resultBuffer[index + 2] = textureBuffer[textureIndex + 2];
@@ -103,7 +98,8 @@ async function genAvatarData(avatarUrl) {
   //   height: 280,
   //   data: pixels,
   // });
-  const pixels2 = convertAvatar(pixels, 6.8, 280, 280);
+  const pixels2 = convertAvatar(pixels, 280, 280, 6.8);
+  // const base64 = `data:image/png;base64,${pixels2.toString("base64")}`;
   const base64 = await getBase64FromBitmap(pixels2, 280, 280);
 
   const end = hrtime.bigint();

@@ -1,7 +1,7 @@
 import webgl from "gl";
 import Jimp from "jimp";
 
-function getBase64FromBitmap(bitmapData, width, height) {
+export function getBase64FromBitmap(bitmapData, width, height) {
   return new Promise((resolve) => {
     new Jimp(width, height, function (err, image) {
       // assign the bitmap as data for the image

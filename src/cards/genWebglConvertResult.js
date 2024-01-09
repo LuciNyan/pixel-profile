@@ -1,19 +1,7 @@
 import webgl from "gl";
 import Jimp from "jimp";
+import { getPngBufferFromPixels } from "./utils.js";
 
-function getPngBufferFromBitmap(bitmapData, width, height) {
-  return new Promise((resolve) => {
-    new Jimp(width, height, function (err, image) {
-      // assign the bitmap as data for the image
-      image.bitmap.data = bitmapData;
-      // generate base64
-      image.getBuffer("image/png", function (error, buffer) {
-        // result
-        resolve(buffer);
-      });
-    });
-  });
-}
 export function genResultConvert(width, height) {
   function initShader(gl, vertexShaderSource, fragmentShaderSource) {
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
@@ -156,7 +144,7 @@ export function genResultConvert(width, height) {
     const bitmapData = new Uint8Array(width * height * 4);
     gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, bitmapData);
 
-    return await getPngBufferFromBitmap(bitmapData, width, height);
+    return await getPngBufferFromPixels(bitmapData, width, height);
   }
 
   async function convert(src) {

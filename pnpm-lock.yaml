@@ -26,6 +26,9 @@ dependencies:
   gl:
     specifier: ^6.0.2
     version: 6.0.2
+  gl-matrix:
+    specifier: ^3.4.3
+    version: 3.4.3
   jimp:
     specifier: ^0.22.10
     version: 0.22.10
@@ -1682,6 +1685,10 @@ packages:
 
   /github-username-regex@1.0.0:
     resolution: {integrity: sha512-EqDVkN0/5MQyDPOSDLInVRRXdeISRfcN1UW/1FUqD2knV1HHw8DndMB3UPNn5lO51DvRnjzbLXwWqNNV86PLOw==}
+    dev: false
+
+  /gl-matrix@3.4.3:
+    resolution: {integrity: sha512-wcCp8vu8FT22BnvKVPjXa/ICBWRq/zjFfdofZy1WSpQZpphblv12/bOQLBC1rMM7SGOFS9ltVmKOHil5+Ml7gA==}
     dev: false
 
   /gl@6.0.2:

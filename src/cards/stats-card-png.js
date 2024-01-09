@@ -6,12 +6,6 @@ import { join } from "node:path";
 import { template } from "../../template/index.js";
 import { Resvg } from "@resvg/resvg-js";
 import axios from "axios";
-// import Jimp from "jimp";
-import { genResultConvert } from "./genWebglConvertResult.js";
-// import {
-//   genAvatarConvert,
-//   getBase64FromBitmap,
-// } from "./genWebglConvertAvatar.js";
 import { hrtime } from "process";
 import {
   curveImage,
@@ -45,17 +39,11 @@ async function genAvatarData(avatarUrl) {
 
   const pixels = await getPixelsFromPngBuffer(dataBuffer);
 
-  // const imgUrl = `data:image/png;base64,${dataBuffer.toString("base64")}`;
-  // console.log('avatar img', imgUrl)
-  //
-  // return imgUrl
-
   const pixels2 = pixelate(pixels, 280, 280, 6.8);
   const base64 = await getBase64FromPixels(pixels2, 280, 280);
 
   const end = hrtime.bigint();
 
-  // console.log('base64', base64)
   console.log(`convert ${(end - startConvert) / BigInt(Math.pow(10, 6))} ms`);
 
   return base64;
@@ -125,8 +113,6 @@ const renderStatsCard = async (stats, options = {}) => {
   const pngData = resvg.render();
   const pngBuffer = pngData.asPng();
 
-  // const convert = genResultConvert(width, height);
-
   const { width: _width, height: _height, pixels } = pngData;
 
   console.log("pixels", pixels.length, _width * _height * 4);
@@ -135,20 +121,10 @@ const renderStatsCard = async (stats, options = {}) => {
   const pixels4 = await getPixelsFromPngBuffer(pngBuffer);
 
   const resultPixels = curveImage(pixels4, _width, _height);
-  console.log(
-    ":::resultPixels",
-    resultPixels[0],
-    resultPixels[1],
-    resultPixels[2],
-    resultPixels[3],
-  );
-  console.log(":::pixels4", pixels4[0], pixels4[1], pixels4[2], pixels4[3]);
 
   const result = await getPngBufferFromPixels(resultPixels, _width, _height);
 
   return result;
-  // return await convert({ width: _width, height: _height, data: pixels });
 };
 
 export { renderStatsCard };
-export default renderStatsCard;

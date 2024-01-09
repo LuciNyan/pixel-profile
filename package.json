@@ -34,12 +34,10 @@
     "emoji-name-map": "^1.2.8",
     "express": "^4.18.2",
     "github-username-regex": "^1.0.0",
-    "gl": "^6.0.2",
     "gl-matrix": "^3.4.3",
     "jimp": "^0.22.10",
     "satori": "^0.10.11",
-    "upgrade": "^1.1.0",
-    "word-wrap": "^1.2.5"
+    "upgrade": "^1.1.0"
   },
   "lint-staged": {
     "*.{js,css,md}": "prettier --write"

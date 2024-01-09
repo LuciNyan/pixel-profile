@@ -6,7 +6,6 @@ import { join } from "node:path";
 import { template } from "../../template/index.js";
 import { Resvg } from "@resvg/resvg-js";
 import axios from "axios";
-import { hrtime } from "process";
 import {
   curveImage,
   getBase64FromPixels,
@@ -27,24 +26,15 @@ import {
  * @returns {Promise<string>} base64 data
  */
 async function genAvatarData(avatarUrl) {
-  const startFetch = hrtime.bigint();
   const response = await axios.get(avatarUrl, {
     responseType: "arraybuffer",
   });
-  const startConvert = hrtime.bigint();
-  console.log(
-    `fetch ${(startConvert - startFetch) / BigInt(Math.pow(10, 6))} ms`,
-  );
   const dataBuffer = Buffer.from(response.data, "binary");
 
   const pixels = await getPixelsFromPngBuffer(dataBuffer);
 
   const pixels2 = pixelate(pixels, 280, 280, 6.8);
   const base64 = await getBase64FromPixels(pixels2, 280, 280);
-
-  const end = hrtime.bigint();
-
-  console.log(`convert ${(end - startConvert) / BigInt(Math.pow(10, 6))} ms`);
 
   return base64;
 }
@@ -114,9 +104,6 @@ const renderStatsCard = async (stats, options = {}) => {
   const pngBuffer = pngData.asPng();
 
   const { width: _width, height: _height, pixels } = pngData;
-
-  console.log("pixels", pixels.length, _width * _height * 4);
-  console.log("pixels detail", pixels[0], pixels[1], pixels[2], pixels[3]);
 
   const pixels4 = await getPixelsFromPngBuffer(pngBuffer);
 

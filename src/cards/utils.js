@@ -74,60 +74,68 @@ function clamp(x, min, max) {
 function runFragShader(sourcePixels, width, height, fragShader) {
   const targetBuffer = Buffer.alloc(width * height * 4);
 
-  function texture2D(coords) {
+  function biLinearInterpolate(v1, v2, v3, v4, sx, sy) {
+    const tmp1 = v1 * (1 - sx) + v2 * sx;
+    const tmp2 = v3 * (1 - sx) + v4 * sx;
+    return tmp1 * (1 - sy) + tmp2 * sy;
+  }
+
+  function biLinearFilter(coords) {
     const x = coords[0] * width;
     const y = coords[1] * height;
-    const minX = clamp(Math.floor(x), 0, width - 1);
-    const minY = clamp(Math.floor(y), 0, height - 1);
-    const maxX = clamp(minX + 1, 0, width - 1);
-    const maxY = clamp(minY + 1, 0, height - 1);
+    const x0 = clamp(Math.floor(x), 0, width - 1);
+    const x1 = clamp(x0 + 1, 0, width - 1);
+    const y0 = clamp(Math.floor(y), 0, height - 1);
+    const y1 = clamp(y0 + 1, 0, height - 1);
 
-    const i1 = coords2Index(minX, minY, width);
-    const i2 = coords2Index(minX, maxY, width);
-    const i3 = coords2Index(maxX, maxY, width);
-    const i4 = coords2Index(maxX, minY, width);
+    const sx = x - x0;
+    const sy = y - y0;
 
-    const r =
-      (sourcePixels[i1] +
-        sourcePixels[i2] +
-        sourcePixels[i3] +
-        sourcePixels[i4]) /
-      4;
-    const g =
-      (sourcePixels[i1 + 1] +
-        sourcePixels[i2 + 1] +
-        sourcePixels[i3 + 1] +
-        sourcePixels[i4 + 1]) /
-      4;
-    const b =
-      (sourcePixels[i1 + 2] +
-        sourcePixels[i2 + 2] +
-        sourcePixels[i3 + 2] +
-        sourcePixels[i4 + 2]) /
-      4;
-    const a =
-      (sourcePixels[i1 + 3] +
-        sourcePixels[i2 + 3] +
-        sourcePixels[i3 + 3] +
-        sourcePixels[i4 + 3]) /
-      4;
+    const p00 = (y0 * width + x0) * 4;
+    const p01 = (y1 * width + x0) * 4;
+    const p10 = (y0 * width + x1) * 4;
+    const p11 = (y1 * width + x1) * 4;
 
-    // if (sourcePixels[i1] !== r) {
-    //   console.log('---')
-    //   console.log('r', sourcePixels[i1], r)
-    //   console.log('g', sourcePixels[i1 + 1], g)
-    //   console.log('b', sourcePixels[i1 + 2], b)
-    //   console.log('a', sourcePixels[i1 + 3], a)
-    //   console.log('---')
-    // }
+    const r = biLinearInterpolate(
+      sourcePixels[p00],
+      sourcePixels[p10],
+      sourcePixels[p01],
+      sourcePixels[p11],
+      sx,
+      sy,
+    );
+    const g = biLinearInterpolate(
+      sourcePixels[p00 + 1],
+      sourcePixels[p10 + 1],
+      sourcePixels[p01 + 1],
+      sourcePixels[p11 + 1],
+      sx,
+      sy,
+    );
+    const b = biLinearInterpolate(
+      sourcePixels[p00 + 2],
+      sourcePixels[p10 + 2],
+      sourcePixels[p01 + 2],
+      sourcePixels[p11 + 2],
+      sx,
+      sy,
+    );
+    const a = biLinearInterpolate(
+      sourcePixels[p00 + 3],
+      sourcePixels[p10 + 3],
+      sourcePixels[p01 + 3],
+      sourcePixels[p11 + 3],
+      sx,
+      sy,
+    );
 
-    return vec4.fromValues(r, g, b, a);
+    return [r, g, b, a];
   }
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const vUv = vec2.fromValues(x / width, y / height);
-      const rgba = fragShader(vUv, texture2D);
+      const rgba = fragShader(vUv, biLinearFilter);
       const index = coords2Index(x, y, width);
       targetBuffer[index] = rgba[0];
       targetBuffer[index + 1] = rgba[1];

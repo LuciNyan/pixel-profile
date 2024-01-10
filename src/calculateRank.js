@@ -19,6 +19,14 @@ function log_normal_cdf(x) {
   return x / (1 + x);
 }
 
+function formatScore(score) {
+  if (score % 1 === 0) {
+    return Math.floor(score);
+  }
+
+  return score;
+}
+
 /**
  * Calculates the users rank.
  *
@@ -81,7 +89,11 @@ function calculateRank({
 
   const level = LEVELS[THRESHOLDS.findIndex((t) => rank * 100 <= t)];
 
-  return { level, percentile: rank * 100, score: (score * 100).toFixed(1) };
+  return {
+    level,
+    percentile: rank * 100,
+    score: formatScore((score * 100).toFixed(1)),
+  };
 }
 
 export { calculateRank };

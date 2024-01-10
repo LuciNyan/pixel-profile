@@ -46,7 +46,7 @@ async function genAvatarData(avatarUrl) {
  * @param {Partial<StatCardOptions>} options The card options.
  * @returns {Promise<string>} The stats card SVG object.
  */
-const renderStatsCard = async (stats, options = {}) => {
+const renderStats = async (stats) => {
   const {
     name,
     totalStars,
@@ -114,4 +114,4 @@ const renderStatsCard = async (stats, options = {}) => {
   return result;
 };
 
-export { renderStatsCard };
+export { renderStats };

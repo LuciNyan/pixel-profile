@@ -75,14 +75,51 @@ function runFragShader(sourcePixels, width, height, fragShader) {
   const targetBuffer = Buffer.alloc(width * height * 4);
 
   function texture2D(coords) {
-    const x = Math.floor(clamp(coords[0], 0, 1) * width);
-    const y = Math.floor(clamp(coords[1], 0, 1) * height);
+    const x = coords[0] * width;
+    const y = coords[1] * height;
+    const minX = clamp(Math.floor(x), 0, width - 1);
+    const minY = clamp(Math.floor(y), 0, height - 1);
+    const maxX = clamp(minX + 1, 0, width - 1);
+    const maxY = clamp(minY + 1, 0, height - 1);
 
-    const index = coords2Index(x, y, width);
-    const r = sourcePixels[index];
-    const g = sourcePixels[index + 1];
-    const b = sourcePixels[index + 2];
-    const a = sourcePixels[index + 3];
+    const i1 = coords2Index(minX, minY, width);
+    const i2 = coords2Index(minX, maxY, width);
+    const i3 = coords2Index(maxX, maxY, width);
+    const i4 = coords2Index(maxX, minY, width);
+
+    const r =
+      (sourcePixels[i1] +
+        sourcePixels[i2] +
+        sourcePixels[i3] +
+        sourcePixels[i4]) /
+      4;
+    const g =
+      (sourcePixels[i1 + 1] +
+        sourcePixels[i2 + 1] +
+        sourcePixels[i3 + 1] +
+        sourcePixels[i4 + 1]) /
+      4;
+    const b =
+      (sourcePixels[i1 + 2] +
+        sourcePixels[i2 + 2] +
+        sourcePixels[i3 + 2] +
+        sourcePixels[i4 + 2]) /
+      4;
+    const a =
+      (sourcePixels[i1 + 3] +
+        sourcePixels[i2 + 3] +
+        sourcePixels[i3 + 3] +
+        sourcePixels[i4 + 3]) /
+      4;
+
+    // if (sourcePixels[i1] !== r) {
+    //   console.log('---')
+    //   console.log('r', sourcePixels[i1], r)
+    //   console.log('g', sourcePixels[i1 + 1], g)
+    //   console.log('b', sourcePixels[i1 + 2], b)
+    //   console.log('a', sourcePixels[i1 + 3], a)
+    //   console.log('---')
+    // }
 
     return vec4.fromValues(r, g, b, a);
   }

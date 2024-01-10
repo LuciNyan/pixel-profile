@@ -1,5 +1,4 @@
 import Jimp from "jimp";
-import { vec2, vec3, vec4 } from "gl-matrix";
 export async function getPixelsFromPngBuffer(dataBuffer) {
   const image = await Jimp.read(dataBuffer);
 
@@ -110,7 +109,7 @@ function runFragShader(sourcePixels, width, height, fragShader) {
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const vUv = vec2.fromValues(x / width, y / height);
+      const vUv = [x / width, y / height];
       const rgba = fragShader(vUv, biLinearFilter);
       const index = coords2Index(x, y, width);
       targetBuffer[index] = rgba[0];
@@ -134,47 +133,48 @@ export function pixelate(sourceBuffer, width, height, blockSize) {
   });
 }
 
-const margin = vec2.fromValues(0, 0);
+const margin = [0, 0];
 const screenCurvature = 0.1;
 
 export function curveImage(sourcePixels, width, height) {
   return runFragShader(sourcePixels, width, height, (vUv, texture2D) => {
-    function distortCoordinates(coords) {
-      const cc = vec2.subtract(
-        vec2.create(),
-        coords,
-        vec2.fromValues(0.5, 0.5),
-      );
-      const dist = vec2.dot(cc, cc) * screenCurvature;
-      const temp = (1 + dist) * dist;
-      cc[0] = cc[0] * temp;
-      cc[1] = cc[1] * temp;
-
-      return vec2.fromValues(coords[0] + cc[0], coords[1] + cc[1]);
+    function dot(a, b) {
+      return a[0] * b[0] + a[1] * b[1];
     }
 
     function prod2(v) {
       return v[0] * v[1];
     }
 
+    function subtract(vec1, vec2) {
+      return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
+    }
+
+    function distortCoordinates(coords) {
+      const cc = subtract(coords, [0.5, 0.5]);
+      const dist = dot(cc, cc) * screenCurvature;
+      const temp = (1 + dist) * dist;
+      cc[0] = cc[0] * temp;
+      cc[1] = cc[1] * temp;
+
+      return [coords[0] + cc[0], coords[1] + cc[1]];
+    }
+
     const coords = distortCoordinates(vUv);
     coords[0] = coords[0] * (margin[0] * 2 + 1) - margin[0];
     coords[1] = coords[1] * (margin[1] * 2 + 1) - margin[1];
 
-    const vignetteCoords = vec2.fromValues(
-      vUv[0] * (1 - vUv[1]),
-      vUv[1] * (1 - vUv[0]),
-    );
+    const vignetteCoords = [vUv[0] * (1 - vUv[1]), vUv[1] * (1 - vUv[0])];
     const vignette = Math.pow(prod2(vignetteCoords) * 15, 0.25);
 
     const samplerColor = texture2D(coords);
 
-    const color = vec3.fromValues(
+    const rgb = [
       samplerColor[0] * vignette,
       samplerColor[1] * vignette,
       samplerColor[2] * vignette,
-    );
+    ];
 
-    return vec4.fromValues(color[0], color[1], color[2], 255);
+    return [...rgb, 255];
   });
 }

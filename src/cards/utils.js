@@ -20,11 +20,8 @@ export async function getPixelsFromPngBuffer(dataBuffer) {
 export function getBase64FromPixels(bitmapData, width, height) {
   return new Promise((resolve) => {
     new Jimp(width, height, function (err, image) {
-      // assign the bitmap as data for the image
       image.bitmap.data = bitmapData;
-      // generate base64
       image.getBase64("image/png", function (error, str) {
-        // result
         resolve(str);
       });
     });
@@ -34,11 +31,8 @@ export function getBase64FromPixels(bitmapData, width, height) {
 export function getPngBufferFromPixels(bitmapData, width, height) {
   return new Promise((resolve) => {
     new Jimp(width, height, function (err, image) {
-      // assign the bitmap as data for the image
       image.bitmap.data = bitmapData;
-      // generate base64
       image.getBuffer("image/png", function (error, buffer) {
-        // result
         resolve(buffer);
       });
     });
@@ -77,9 +71,6 @@ function clamp(x, min, max) {
   return Math.min(max, Math.max(min, x));
 }
 
-let flag = 0;
-let flag1 = 0;
-
 function runFragShader(sourcePixels, width, height, fragShader) {
   const targetBuffer = Buffer.alloc(width * height * 4);
 
@@ -93,14 +84,6 @@ function runFragShader(sourcePixels, width, height, fragShader) {
     const b = sourcePixels[index + 2];
     const a = sourcePixels[index + 3];
 
-    if (flag === 0) {
-      console.log("x", x);
-      console.log("y", y);
-      console.log("index", index);
-      console.log("r,g,b,a", r, g, b, a);
-      flag = 1;
-    }
-
     return vec4.fromValues(r, g, b, a);
   }
 
@@ -113,20 +96,6 @@ function runFragShader(sourcePixels, width, height, fragShader) {
       targetBuffer[index + 1] = rgba[1];
       targetBuffer[index + 2] = rgba[2];
       targetBuffer[index + 3] = rgba[3];
-
-      if (flag1 === 0) {
-        console.log("x", x);
-        console.log("y", y);
-        console.log("index", index);
-        console.log(
-          "targetBuffer",
-          targetBuffer[0],
-          targetBuffer[1],
-          targetBuffer[2],
-          targetBuffer[3],
-        );
-        flag1 = 1;
-      }
     }
   }
 

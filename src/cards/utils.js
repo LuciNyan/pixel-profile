@@ -43,30 +43,6 @@ function coords2Index(x, y, width) {
   return (y * width + x) * 4;
 }
 
-export function pixelate(sourceBuffer, width, height, blockSize) {
-  const targetBuffer = Buffer.alloc(width * height * 4);
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const index = coords2Index(x, y, width);
-      const posX = Math.floor(x / blockSize);
-      const posY = Math.floor(y / blockSize);
-
-      const textureIndex = coords2Index(
-        Math.min(Math.floor(posX * blockSize + blockSize / 2), width - 1),
-        Math.min(Math.floor(posY * blockSize + blockSize / 2), height - 1),
-        width,
-      );
-      targetBuffer[index] = sourceBuffer[textureIndex];
-      targetBuffer[index + 1] = sourceBuffer[textureIndex + 1];
-      targetBuffer[index + 2] = sourceBuffer[textureIndex + 2];
-      targetBuffer[index + 3] = sourceBuffer[textureIndex + 3];
-    }
-  }
-
-  return targetBuffer;
-}
-
 function clamp(x, min, max) {
   return Math.min(max, Math.max(min, x));
 }
@@ -145,6 +121,17 @@ function runFragShader(sourcePixels, width, height, fragShader) {
   }
 
   return targetBuffer;
+}
+
+export function pixelate(sourceBuffer, width, height, blockSize) {
+  return runFragShader(sourceBuffer, width, height, (vUv, texture2D) => {
+    const blockW = blockSize / width;
+    const blockH = blockSize / height;
+    const x = Math.floor(vUv[0] / blockW);
+    const y = Math.floor(vUv[1] / blockH);
+
+    return texture2D([x * blockW + blockW / 2, y * blockH + blockH / 2]);
+  });
 }
 
 const margin = vec2.fromValues(0, 0);

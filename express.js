@@ -1,5 +1,5 @@
 import "dotenv/config";
-import stats from "./api/index.js";
+import stats from "./api/index.ts";
 import express from "express";
 
 const app = express();

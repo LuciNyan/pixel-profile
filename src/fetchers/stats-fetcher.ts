@@ -1,13 +1,12 @@
-// @ts-check
-import axios from "axios";
-import * as dotenv from "dotenv";
-import githubUsernameRegex from "github-username-regex";
-import { calculateRank } from "../calculateRank.js";
-import { retryer } from "../common/retryer.js";
+import { calculateRank } from '../calculateRank.js';
 import {
   logger,
   request,
-} from "../common/utils.js";
+} from '../common/index.js';
+import { retryer } from '../common/retryer.js';
+import axios from 'axios';
+import * as dotenv from 'dotenv';
+import githubUsernameRegex from 'github-username-regex';
 
 dotenv.config();
 
@@ -130,7 +129,7 @@ const statsFetcher = async ({
       includeDiscussions,
       includeDiscussionsAnswers,
     };
-    let res = await retryer(fetcher, variables);
+    const res = await retryer(fetcher, variables);
     if (res.data.errors) {
       return res;
     }
@@ -148,7 +147,7 @@ const statsFetcher = async ({
       (node) => node.stargazers.totalCount !== 0,
     );
     hasNextPage =
-      process.env.FETCH_MULTI_PAGE_STARS === "true" &&
+      process.env.FETCH_MULTI_PAGE_STARS === 'true' &&
       repoNodes.length === repoNodesWithStars.length &&
       res.data.data.user.repositories.pageInfo.hasNextPage;
     endCursor = res.data.data.user.repositories.pageInfo.endCursor;
@@ -168,18 +167,18 @@ const statsFetcher = async ({
  */
 const totalCommitsFetcher = async (username) => {
   if (!githubUsernameRegex.test(username)) {
-    logger.log("Invalid username provided.");
-    throw new Error("Invalid username provided.");
+    logger.log('Invalid username provided.');
+    throw new Error('Invalid username provided.');
   }
 
   // https://developer.github.com/v3/search/#search-commits
   const fetchTotalCommits = (variables, token) => {
     return axios({
-      method: "get",
+      method: 'get',
       url: `https://api.github.com/search/commits?q=author:${variables.login}`,
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/vnd.github.cloak-preview",
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github.cloak-preview',
         Authorization: `token ${token}`,
       },
     });
@@ -188,14 +187,14 @@ const totalCommitsFetcher = async (username) => {
   let res;
   try {
     res = await retryer(fetchTotalCommits, { login: username });
-  } catch (err) {
+  } catch (err: any) {
     logger.log(err);
     throw new Error(err);
   }
 
   const totalCount = res.data.total_count;
   if (!totalCount || isNaN(totalCount)) {
-    throw new Error("Could not fetch total commits.");
+    throw new Error('Could not fetch total commits.');
   }
   return totalCount;
 };
@@ -218,7 +217,7 @@ const totalCommitsFetcher = async (username) => {
 const fetchStats = async (
   username,
   include_all_commits = false,
-  exclude_repo = [],
+  exclude_repo: string[] = [],
   include_merged_pull_requests = false,
   include_discussions = false,
   include_discussions_answers = false,
@@ -228,7 +227,9 @@ const fetchStats = async (
   }
 
   const stats = {
-    name: "",
+    name: '',
+    avatarUrl: '',
+    bio: '',
     totalPRs: 0,
     totalPRsMerged: 0,
     mergedPRsPercentage: 0,
@@ -239,10 +240,10 @@ const fetchStats = async (
     totalDiscussionsStarted: 0,
     totalDiscussionsAnswered: 0,
     contributedTo: 0,
-    rank: { level: "C", percentile: 100 },
+    rank: { level: 'C', percentile: 100 },
   };
 
-  let res = await statsFetcher({
+  const res = await statsFetcher({
     username,
     includeMergedPullRequests: include_merged_pull_requests,
     includeDiscussions: include_discussions,
@@ -252,14 +253,14 @@ const fetchStats = async (
   // Catch GraphQL errors.
   if (res.data.errors) {
     logger.error(res.data.errors);
-    if (res.data.errors[0].type === "NOT_FOUND") {
-      throw new Error(res.data.errors[0].message || "Could not fetch user.")
+    if (res.data.errors[0].type === 'NOT_FOUND') {
+      throw new Error(res.data.errors[0].message || 'Could not fetch user.')
     }
     if (res.data.errors[0].message) {
       throw new Error(res.data.errors[0].message)
     }
 
-    throw new Error("Something went wrong while trying to retrieve the stats data using the GraphQL API.")
+    throw new Error('Something went wrong while trying to retrieve the stats data using the GraphQL API.')
   }
 
   const user = res.data.data.user;
@@ -294,7 +295,7 @@ const fetchStats = async (
   stats.contributedTo = user.repositoriesContributedTo.totalCount;
 
   // Retrieve stars while filtering out repositories to be hidden.
-  let repoToHide = new Set(exclude_repo);
+  const repoToHide = new Set(exclude_repo);
 
   stats.totalStars = user.repositories.nodes
     .filter((data) => {

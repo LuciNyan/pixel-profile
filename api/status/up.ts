@@ -5,8 +5,8 @@
  * @description This function is currently rate limited to 1 request per 5 minutes.
  */
 
-import retryer from "../../src/common/retryer.js";
-import { logger, request } from "../../src/common/utils.js";
+import retryer from '../../src/common/retryer.js';
+import { logger, request } from '../../src/index.js';
 
 export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
 
@@ -61,9 +61,9 @@ const uptimeFetcher = (variables, token) => {
 const shieldsUptimeBadge = (up) => {
   const schemaVersion = 1;
   const isError = true;
-  const label = "Public Instance";
-  const message = up ? "up" : "down";
-  const color = up ? "brightgreen" : "red";
+  const label = 'Public Instance';
+  const message = up ? 'up' : 'down';
+  const color = up ? 'brightgreen' : 'red';
   return {
     schemaVersion,
     label,
@@ -82,9 +82,9 @@ const shieldsUptimeBadge = (up) => {
  */
 export default async (req, res) => {
   let { type } = req.query;
-  type = type ? type.toLowerCase() : "boolean";
+  type = type ? type.toLowerCase() : 'boolean';
 
-  res.setHeader("Content-Type", "application/json");
+  res.setHeader('Content-Type', 'application/json');
 
   try {
     let PATsValid = true;
@@ -96,18 +96,18 @@ export default async (req, res) => {
 
     if (PATsValid) {
       res.setHeader(
-        "Cache-Control",
+        'Cache-Control',
         `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`,
       );
     } else {
-      res.setHeader("Cache-Control", "no-store");
+      res.setHeader('Cache-Control', 'no-store');
     }
 
     switch (type) {
-      case "shields":
+      case 'shields':
         res.send(shieldsUptimeBadge(PATsValid));
         break;
-      case "json":
+      case 'json':
         res.send({ up: PATsValid });
         break;
       default:
@@ -117,7 +117,7 @@ export default async (req, res) => {
   } catch (err) {
     // Return fail boolean if something went wrong.
     logger.error(err);
-    res.setHeader("Cache-Control", "no-store");
-    res.send("Something went wrong: " + err.message);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send('Something went wrong: ' + err.message);
   }
 };

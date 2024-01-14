@@ -5,7 +5,7 @@
  * @description This function is currently rate limited to 1 request per 5 minutes.
  */
 
-import { logger, request, dateDiff } from "../../src/common/utils.js";
+import { dateDiff, logger, request } from '../../src/index.js';
 export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
 
 /**
@@ -65,13 +65,13 @@ const getPATInfo = async (fetcher, variables) => {
       const hasErrors = Boolean(errors);
       const errorType = errors?.[0]?.type;
       const isRateLimited =
-        (hasErrors && errorType === "RATE_LIMITED") ||
+        (hasErrors && errorType === 'RATE_LIMITED') ||
         response.data.data?.rateLimit?.remaining === 0;
 
       // Store PATs with errors.
-      if (hasErrors && errorType !== "RATE_LIMITED") {
+      if (hasErrors && errorType !== 'RATE_LIMITED') {
         details[pat] = {
-          status: "error",
+          status: 'error',
           error: {
             type: errors[0].type,
             message: errors[0].message,
@@ -82,26 +82,26 @@ const getPATInfo = async (fetcher, variables) => {
         const date1 = new Date();
         const date2 = new Date(response.data?.data?.rateLimit?.resetAt);
         details[pat] = {
-          status: "exhausted",
+          status: 'exhausted',
           remaining: 0,
-          resetIn: dateDiff(date2, date1) + " minutes",
+          resetIn: dateDiff(date2, date1) + ' minutes',
         };
       } else {
         details[pat] = {
-          status: "valid",
+          status: 'valid',
           remaining: response.data.data.rateLimit.remaining,
         };
       }
     } catch (err) {
       // Store the PAT if it is expired.
       const errorMessage = err.response?.data?.message?.toLowerCase();
-      if (errorMessage === "bad credentials") {
+      if (errorMessage === 'bad credentials') {
         details[pat] = {
-          status: "expired",
+          status: 'expired',
         };
-      } else if (errorMessage === "sorry. your account was suspended.") {
+      } else if (errorMessage === 'sorry. your account was suspended.') {
         details[pat] = {
-          status: "suspended",
+          status: 'suspended',
         };
       } else {
         throw err;
@@ -121,11 +121,11 @@ const getPATInfo = async (fetcher, variables) => {
     }, {});
 
   return {
-    validPATs: filterPATsByStatus("valid"),
-    expiredPATs: filterPATsByStatus("expired"),
-    exhaustedPATs: filterPATsByStatus("exhausted"),
-    suspendedPATs: filterPATsByStatus("suspended"),
-    errorPATs: filterPATsByStatus("error"),
+    validPATs: filterPATsByStatus('valid'),
+    expiredPATs: filterPATsByStatus('expired'),
+    exhaustedPATs: filterPATsByStatus('exhausted'),
+    suspendedPATs: filterPATsByStatus('suspended'),
+    errorPATs: filterPATsByStatus('error'),
     details: sortedDetails,
   };
 };
@@ -138,13 +138,13 @@ const getPATInfo = async (fetcher, variables) => {
  * @returns {Promise<void>} The response.
  */
 export default async (_, res) => {
-  res.setHeader("Content-Type", "application/json");
+  res.setHeader('Content-Type', 'application/json');
   try {
     // Add header to prevent abuse.
     const PATsInfo = await getPATInfo(uptimeFetcher, {});
     if (PATsInfo) {
       res.setHeader(
-        "Cache-Control",
+        'Cache-Control',
         `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`,
       );
     }
@@ -152,7 +152,7 @@ export default async (_, res) => {
   } catch (err) {
     // Throw error if something went wrong.
     logger.error(err);
-    res.setHeader("Cache-Control", "no-store");
-    res.send("Something went wrong: " + err.message);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send('Something went wrong: ' + err.message);
   }
 };

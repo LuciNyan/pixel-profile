@@ -1,16 +1,16 @@
-import { renderStats } from "../src/cards/stats.js";
+import { renderStats } from '../src/cards/stats.js';
 import {
   clampValue,
   CONSTANTS,
   parseArray,
   parseBoolean,
-} from "../src/common/utils.js";
-import { fetchStats } from "../src/fetchers/stats-fetcher.js";
+} from '../src/common/utils.js';
+import { fetchStats } from '../src/fetchers/stats-fetcher.js';
 
 export default async (req, res) => {
   const { username, include_all_commits, cache_seconds, exclude_repo, show } =
     req.query;
-  res.setHeader("Content-Type", "image/png");
+  res.setHeader('Content-Type', 'image/png');
 
   try {
     const showStats = parseArray(show);
@@ -18,10 +18,10 @@ export default async (req, res) => {
       username,
       parseBoolean(include_all_commits),
       parseArray(exclude_repo),
-      showStats.includes("prs_merged") ||
-        showStats.includes("prs_merged_percentage"),
-      showStats.includes("discussions_started"),
-      showStats.includes("discussions_answered"),
+      showStats.includes('prs_merged') ||
+        showStats.includes('prs_merged_percentage'),
+      showStats.includes('discussions_started'),
+      showStats.includes('discussions_answered'),
     );
 
     let cacheSeconds = clampValue(
@@ -34,7 +34,7 @@ export default async (req, res) => {
       : cacheSeconds;
 
     res.setHeader(
-      "Cache-Control",
+      'Cache-Control',
       `max-age=${
         cacheSeconds / 2
       }, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
@@ -46,7 +46,7 @@ export default async (req, res) => {
   } catch (err) {
     console.log(err);
     res.setHeader(
-      "Cache-Control",
+      'Cache-Control',
       `max-age=${CONSTANTS.ERROR_CACHE_SECONDS / 2}, s-maxage=${
         CONSTANTS.ERROR_CACHE_SECONDS
       }, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,

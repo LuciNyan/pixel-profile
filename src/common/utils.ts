@@ -1,5 +1,4 @@
-// @ts-check
-import axios from "axios";
+import axios from 'axios';
 /**
  * Retrieves num with suffix k(thousands) precise to 1 decimal if greater than 999.
  *
@@ -8,7 +7,7 @@ import axios from "axios";
  */
 const kFormatter = (num) => {
   return Math.abs(num) > 999
-    ? Math.sign(num) * parseFloat((Math.abs(num) / 1000).toFixed(1)) + "K"
+    ? Math.sign(num) * parseFloat((Math.abs(num) / 1000).toFixed(1)) + 'K'
     : Math.sign(num) * Math.abs(num);
 };
 
@@ -26,8 +25,8 @@ const kFormatter = (num) => {
  */
 const request = (data, headers) => {
   return axios({
-    url: "https://api.github.com/graphql",
-    method: "post",
+    url: 'https://api.github.com/graphql',
+    method: 'post',
     headers,
     data,
   });
@@ -36,10 +35,9 @@ const request = (data, headers) => {
 const noop = () => {};
 // return console instance based on the environment
 const logger =
-  process.env.NODE_ENV === "test" ? { log: noop, error: noop } : console;
+  process.env.NODE_ENV === 'test' ? { log: noop, error: noop } : console;
 
 const clampValue = (number, min, max) => {
-  // @ts-ignore
   if (Number.isNaN(parseInt(number, 10))) {
     return min;
   }
@@ -76,22 +74,29 @@ const parseArray = (str) => {
   if (!str) {
     return [];
   }
-  return str.split(",");
+  return str.split(',');
 };
 
 const parseBoolean = (value) => {
-  if (typeof value === "boolean") {
+  if (typeof value === 'boolean') {
     return value;
   }
 
-  if (typeof value === "string") {
-    if (value.toLowerCase() === "true") {
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') {
       return true;
-    } else if (value.toLowerCase() === "false") {
+    } else if (value.toLowerCase() === 'false') {
       return false;
     }
   }
   return undefined;
+};
+
+const dateDiff = (d1, d2) => {
+  const date1 = new Date(d1);
+  const date2 = new Date(d2);
+  const diff = date1.getTime() - date2.getTime();
+  return Math.round(diff / (1000 * 60));
 };
 
 export {
@@ -101,5 +106,6 @@ export {
   request,
   logger,
   parseArray,
-  parseBoolean
+  parseBoolean,
+  dateDiff
 };

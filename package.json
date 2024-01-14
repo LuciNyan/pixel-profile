@@ -13,7 +13,8 @@
     "dev": "node ./express.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "eslint:fix": "eslint --fix -c .eslintrc.json --ext .ts,.tsx ./src"
   },
   "type": "module",
   "author": "LuciNyan",
@@ -21,8 +22,12 @@
   "devDependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
     "husky": "^8.0.3",
     "lint-staged": "^15.2.0",
     "prettier": "^3.1.1"

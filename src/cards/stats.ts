@@ -1,18 +1,17 @@
-// @ts-check
-import { kFormatter } from "../common/utils.js";
-import satori from "satori";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { template } from "../../template/index.js";
-import { Resvg } from "@resvg/resvg-js";
-import axios from "axios";
+import { kFormatter } from '../common/index.js';
+import { template } from '../template/index.js';
 import {
   curveImage,
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
   pixelate,
-} from "./utils.js";
+} from './utils.js';
+import { Resvg } from '@resvg/resvg-js';
+import axios from 'axios';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import satori from 'satori';
 
 /**
  * @typedef {import('../fetchers/types').StatsData} StatsData
@@ -25,18 +24,17 @@ import {
  * @param {string} avatarUrl s
  * @returns {Promise<string>} base64 data
  */
-async function genAvatarData(avatarUrl) {
+async function genAvatarData(avatarUrl: string) {
   const response = await axios.get(avatarUrl, {
-    responseType: "arraybuffer",
+    responseType: 'arraybuffer',
   });
-  const dataBuffer = Buffer.from(response.data, "binary");
+  const dataBuffer = Buffer.from(response.data, 'binary');
 
   const pixels = await getPixelsFromPngBuffer(dataBuffer);
 
   const pixels2 = pixelate(pixels, 280, 280, 6.8);
-  const base64 = await getBase64FromPixels(pixels2, 280, 280);
 
-  return base64;
+  return await getBase64FromPixels(pixels2, 280, 280);
 }
 
 /**
@@ -61,7 +59,7 @@ const renderStats = async (stats) => {
   const width = 1220;
   const height = 460;
 
-  const fontPath = join(process.cwd(), "fonts", "PressStart2P-Regular.ttf");
+  const fontPath = join(process.cwd(), 'fonts', 'PressStart2P-Regular.ttf');
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
@@ -84,34 +82,33 @@ const renderStats = async (stats) => {
     height,
     fonts: [
       {
-        name: "Roboto",
+        name: 'Roboto',
         data: fontData,
         weight: 400,
-        style: "normal",
+        style: 'normal',
       },
     ],
   });
 
   const opts = {
     fitTo: {
-      mode: "width",
+      mode: 'width',
       value: width,
     },
-  };
+  } as const;
 
   const resvg = new Resvg(svg, opts);
+
   const pngData = resvg.render();
   const pngBuffer = pngData.asPng();
 
-  const { width: _width, height: _height, pixels } = pngData;
+  const { width: _width, height: _height } = pngData;
 
   const pixels4 = await getPixelsFromPngBuffer(pngBuffer);
 
   const resultPixels = curveImage(pixels4, _width, _height);
 
-  const result = await getPngBufferFromPixels(resultPixels, _width, _height);
-
-  return result;
+  return await getPngBufferFromPixels(resultPixels, _width, _height);
 };
 
 export { renderStats };

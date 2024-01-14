@@ -1,4 +1,5 @@
-import Jimp from "jimp";
+import Jimp from 'jimp';
+
 export async function getPixelsFromPngBuffer(dataBuffer) {
   const image = await Jimp.read(dataBuffer);
 
@@ -20,7 +21,7 @@ export function getBase64FromPixels(bitmapData, width, height) {
   return new Promise((resolve) => {
     new Jimp(width, height, function (err, image) {
       image.bitmap.data = bitmapData;
-      image.getBase64("image/png", function (error, str) {
+      image.getBase64('image/png', function (error, str) {
         resolve(str);
       });
     });
@@ -31,7 +32,7 @@ export function getPngBufferFromPixels(bitmapData, width, height) {
   return new Promise((resolve) => {
     new Jimp(width, height, function (err, image) {
       image.bitmap.data = bitmapData;
-      image.getBuffer("image/png", function (error, buffer) {
+      image.getBuffer('image/png', function (error, buffer) {
         resolve(buffer);
       });
     });

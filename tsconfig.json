@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "incremental": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noImplicitAny": false
+  },
+  "include": [
+    "api",
+    "src"
+  ],
+  "exclude": ["node_modules"]
+}

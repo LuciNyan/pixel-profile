@@ -1,9 +1,9 @@
-import { calculateRank } from '../calculateRank.js';
 import {
   logger,
   request,
 } from '../common/index.js';
 import { retryer } from '../common/retryer.js';
+import { rank } from '../utils/rank.js';
 import axios from 'axios';
 import * as dotenv from 'dotenv';
 import githubUsernameRegex from 'github-username-regex';
@@ -305,7 +305,7 @@ const fetchStats = async (
       return prev + curr.stargazers.totalCount;
     }, 0);
 
-  stats.rank = calculateRank({
+  stats.rank = rank({
     all_commits: include_all_commits,
     commits: stats.totalCommits,
     prs: stats.totalPRs,

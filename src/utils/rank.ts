@@ -27,7 +27,7 @@ function formatScore(score) {
   return score;
 }
 
-function calculateRank({
+function rank({
   all_commits,
   commits,
   prs,
@@ -82,5 +82,5 @@ function calculateRank({
   };
 }
 
-export { calculateRank };
-export default calculateRank;
+export { rank };
+export default rank;

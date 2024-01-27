@@ -1,40 +1,30 @@
 import { kFormatter } from '../common/index.js';
 import { template } from '../template/index.js';
 import {
-  curveImage,
+  curve,
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
   pixelate,
-} from './utils.js';
+} from '../utils/index.js';
 import { Resvg } from '@resvg/resvg-js';
 import axios from 'axios';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import satori from 'satori';
 
-/**
- * @typedef {import('../fetchers/types').StatsData} StatsData
- * @typedef {import('./types').StatCardOptions} StatCardOptions
- */
-
-/**
- * gen base64 img data
- *
- * @param {string} avatarUrl s
- * @returns {Promise<string>} base64 data
- */
-async function genAvatarData(avatarUrl: string) {
-  const response = await axios.get(avatarUrl, {
+async function genAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {
+  const response = await axios.get(url, {
     responseType: 'arraybuffer',
   });
-  const dataBuffer = Buffer.from(response.data, 'binary');
 
-  const pixels = await getPixelsFromPngBuffer(dataBuffer);
+  const png = Buffer.from(response.data, 'binary');
 
-  const pixels2 = pixelate(pixels, 280, 280, 6.8);
+  const _pixels = await getPixelsFromPngBuffer(png);
 
-  return await getBase64FromPixels(pixels2, 280, 280);
+  const pixels = pixelate(_pixels, width, height, blockSize);
+
+  return await getBase64FromPixels(pixels, width, height);
 }
 
 /**
@@ -63,7 +53,7 @@ const renderStats = async (stats) => {
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    genAvatarData(avatarUrl),
+    genAvatar(avatarUrl, 280, 280),
   ]);
 
   const _stats = {
@@ -106,7 +96,7 @@ const renderStats = async (stats) => {
 
   const pixels4 = await getPixelsFromPngBuffer(pngBuffer);
 
-  const resultPixels = curveImage(pixels4, _width, _height);
+  const resultPixels = curve(pixels4, _width, _height);
 
   return await getPngBufferFromPixels(resultPixels, _width, _height);
 };

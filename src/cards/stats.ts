@@ -5,7 +5,7 @@ import {
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
-  pixelate,
+  pixelate, Rank,
 } from '../utils/index.js';
 import { Resvg } from '@resvg/resvg-js';
 import axios from 'axios';
@@ -13,30 +13,27 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import satori from 'satori';
 
-async function genAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer',
-  });
+const CARD_WIDTH = 1220
+const CARD_HEIGHT = 460
+const AVATAR_WIDTH = 280
+const AVATAR_HEIGHT = 280
 
-  const png = Buffer.from(response.data, 'binary');
-
-  const _pixels = await getPixelsFromPngBuffer(png);
-
-  const pixels = pixelate(_pixels, width, height, blockSize);
-
-  return await getBase64FromPixels(pixels, width, height);
+type Stats = {
+  name: string
+  username: string
+  totalStars: number
+  totalCommits: number
+  totalIssues: number
+  totalPRs: number
+  avatarUrl: string
+  contributedTo: number
+  rank: Rank
 }
 
-/**
- * Renders the stats card.
- *
- * @param {StatsData} stats The stats data.
- * @param {Partial<StatCardOptions>} options The card options.
- * @returns {Promise<string>} The stats card SVG object.
- */
-const renderStats = async (stats) => {
+export async function renderStats(stats: Stats): Promise<Buffer> {
   const {
     name,
+    username,
     totalStars,
     totalCommits,
     totalIssues,
@@ -46,14 +43,14 @@ const renderStats = async (stats) => {
     rank,
   } = stats;
 
-  const width = 1220;
-  const height = 460;
+  const width = CARD_WIDTH;
+  const height = CARD_HEIGHT;
 
   const fontPath = join(process.cwd(), 'fonts', 'PressStart2P-Regular.ttf');
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    genAvatar(avatarUrl, 280, 280),
+    makeAvatar(avatarUrl, AVATAR_WIDTH, AVATAR_HEIGHT),
   ]);
 
   const _stats = {
@@ -67,18 +64,47 @@ const renderStats = async (stats) => {
     rank,
   };
 
-  const svg = await satori(template(_stats), {
+  let isMissingFont = false
+
+  let svg = await satori(template(_stats), {
     width,
     height,
     fonts: [
       {
-        name: 'Roboto',
+        name: 'PressStart2P',
         data: fontData,
         weight: 400,
         style: 'normal',
       },
     ],
+    loadAdditionalAsset: async () => {
+      isMissingFont = true
+      return ''
+    }
   });
+
+  if (isMissingFont) {
+    _stats.name = username
+
+    svg = await satori(template(_stats), {
+      width,
+      height,
+      fonts: [
+        {
+          name: 'PressStart2P',
+          data: fontData,
+          weight: 400,
+          style: 'normal',
+        },
+      ],
+      loadAdditionalAsset: async () => {
+        isMissingFont = true
+        return ''
+      }
+    });
+  }
+
+
 
   const opts = {
     fitTo: {
@@ -87,18 +113,26 @@ const renderStats = async (stats) => {
     },
   } as const;
 
-  const resvg = new Resvg(svg, opts);
-
-  const pngData = resvg.render();
+  const pngData = new Resvg(svg, opts).render();
   const pngBuffer = pngData.asPng();
 
-  const { width: _width, height: _height } = pngData;
+  const pixels = await getPixelsFromPngBuffer(pngBuffer);
 
-  const pixels4 = await getPixelsFromPngBuffer(pngBuffer);
+  const resultPixels = curve(pixels, width, height);
 
-  const resultPixels = curve(pixels4, _width, _height);
+  return await getPngBufferFromPixels(resultPixels, width, height);
+}
 
-  return await getPngBufferFromPixels(resultPixels, _width, _height);
-};
+async function makeAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer',
+  });
 
-export { renderStats };
+  const png = Buffer.from(response.data, 'binary');
+
+  const _pixels = await getPixelsFromPngBuffer(png);
+
+  const pixels = pixelate(_pixels, width, height, blockSize);
+
+  return await getBase64FromPixels(pixels, width, height);
+}

@@ -1,29 +1,15 @@
-import axios from 'axios';
-/**
- * Retrieves num with suffix k(thousands) precise to 1 decimal if greater than 999.
- *
- * @param {number} num The number to format.
- * @returns {string|number} The formatted number.
- */
-const kFormatter = (num) => {
+import axios, { type AxiosRequestConfig } from 'axios';
+
+type AxiosRequestConfigData = AxiosRequestConfig['data']
+type AxiosRequestConfigHeaders = AxiosRequestConfig['headers']
+
+const kFormatter = (num: number): string => {
   return Math.abs(num) > 999
     ? Math.sign(num) * parseFloat((Math.abs(num) / 1000).toFixed(1)) + 'K'
-    : Math.sign(num) * Math.abs(num);
+    : `${Math.sign(num) * Math.abs(num)}`;
 };
 
-/**
- * @typedef {import('axios').AxiosRequestConfig['data']} AxiosRequestConfigData Axios request data.
- * @typedef {import('axios').AxiosRequestConfig['headers']} AxiosRequestConfigHeaders Axios request headers.
- */
-
-/**
- * Send GraphQL request to GitHub API.
- *
- * @param {AxiosRequestConfigData} data Request data.
- * @param {AxiosRequestConfigHeaders} headers Request headers.
- * @returns {Promise<any>} Request response.
- */
-const request = (data, headers) => {
+const request = (data: AxiosRequestConfigData, headers: AxiosRequestConfigHeaders) => {
   return axios({
     url: 'https://api.github.com/graphql',
     method: 'post',

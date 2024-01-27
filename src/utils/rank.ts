@@ -1,25 +1,12 @@
-/**
- * Calculates the exponential cdf.
- *
- * @param {number} x The value.
- * @returns {number} The exponential cdf.
- */
-function exponential_cdf(x) {
+function calcExponentialCDF(x: number): number {
   return 1 - 2 ** -x;
 }
 
-/**
- * Calculates the log normal cdf.
- *
- * @param {number} x The value.
- * @returns {number} The log normal cdf.
- */
-function log_normal_cdf(x) {
-  // approximation
+function calcLogNormalCDF(x: number): number {
   return x / (1 + x);
 }
 
-function formatScore(score) {
+function formatScore(score: number): number {
   if (score % 1 === 0) {
     return Math.floor(score);
   }
@@ -27,7 +14,9 @@ function formatScore(score) {
   return score;
 }
 
-function rank({
+export type Rank = {level: string, percentile: number, score: number}
+
+export function rank({
   all_commits,
   commits,
   prs,
@@ -37,7 +26,7 @@ function rank({
   repos,
   stars,
   followers,
-}) {
+}): Rank {
   const COMMITS_MEDIAN = all_commits ? 1000 : 250,
     COMMITS_WEIGHT = 2;
   const PRS_MEDIAN = 50,
@@ -63,12 +52,12 @@ function rank({
   const LEVELS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C'];
 
   const score =
-    (COMMITS_WEIGHT * exponential_cdf(commits / COMMITS_MEDIAN) +
-      PRS_WEIGHT * exponential_cdf(prs / PRS_MEDIAN) +
-      ISSUES_WEIGHT * exponential_cdf(issues / ISSUES_MEDIAN) +
-      REVIEWS_WEIGHT * exponential_cdf(reviews / REVIEWS_MEDIAN) +
-      STARS_WEIGHT * log_normal_cdf(stars / STARS_MEDIAN) +
-      FOLLOWERS_WEIGHT * log_normal_cdf(followers / FOLLOWERS_MEDIAN)) /
+    (COMMITS_WEIGHT * calcExponentialCDF(commits / COMMITS_MEDIAN) +
+      PRS_WEIGHT * calcExponentialCDF(prs / PRS_MEDIAN) +
+      ISSUES_WEIGHT * calcExponentialCDF(issues / ISSUES_MEDIAN) +
+      REVIEWS_WEIGHT * calcExponentialCDF(reviews / REVIEWS_MEDIAN) +
+      STARS_WEIGHT * calcLogNormalCDF(stars / STARS_MEDIAN) +
+      FOLLOWERS_WEIGHT * calcLogNormalCDF(followers / FOLLOWERS_MEDIAN)) /
     TOTAL_WEIGHT;
 
   const rank = 1 - score;
@@ -78,9 +67,6 @@ function rank({
   return {
     level,
     percentile: rank * 100,
-    score: formatScore((score * 100).toFixed(1)),
+    score: formatScore(Number((score * 100).toFixed(1))),
   };
 }
-
-export { rank };
-export default rank;

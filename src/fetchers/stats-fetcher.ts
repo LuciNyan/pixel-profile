@@ -3,8 +3,8 @@ import {
   request,
 } from '../common/index.js';
 import { retryer } from '../common/retryer.js';
-import { rank } from '../utils/rank.js';
-import axios from 'axios';
+import {Rank, rank} from '../utils/index.js';
+import axios, { type AxiosResponse }  from 'axios';
 import * as dotenv from 'dotenv';
 import githubUsernameRegex from 'github-username-regex';
 
@@ -86,7 +86,7 @@ const GRAPHQL_STATS_QUERY = `
  * @param {string} token GitHub token.
  * @returns {Promise<AxiosResponse>} Axios response.
  */
-const fetcher = (variables, token) => {
+const fetcher = (variables: Record<PropertyKey, unknown>, token: string): Promise<AxiosResponse> => {
   const query = variables.after ? GRAPHQL_REPOS_QUERY : GRAPHQL_STATS_QUERY;
   return request(
     {
@@ -199,35 +199,39 @@ const totalCommitsFetcher = async (username) => {
   return totalCount;
 };
 
-/**
- * @typedef {import("./types").StatsData} StatsData Stats data.
- */
+export type StatsData = {
+  name: string;
+  username;
+  bio: string;
+  avatarUrl: string;
+  totalPRs: number;
+  totalPRsMerged: number;
+  mergedPRsPercentage: number;
+  totalReviews: number;
+  totalCommits: number;
+  totalIssues: number;
+  totalStars: number;
+  totalDiscussionsStarted: number;
+  totalDiscussionsAnswered: number;
+  contributedTo: number;
+  rank: Rank;
+}
 
-/**
- * Fetch stats for a given username.
- *
- * @param {string} username GitHub username.
- * @param {boolean} include_all_commits Include all commits.
- * @param {string[]} exclude_repo Repositories to exclude.
- * @param {boolean} include_merged_pull_requests Include merged pull requests.
- * @param {boolean} include_discussions Include discussions.
- * @param {boolean} include_discussions_answers Include discussions answers.
- * @returns {Promise<StatsData>} Stats data.
- */
-const fetchStats = async (
-  username,
+export async function fetchStats(
+  username: string,
   include_all_commits = false,
   exclude_repo: string[] = [],
   include_merged_pull_requests = false,
   include_discussions = false,
   include_discussions_answers = false,
-) => {
+): Promise<StatsData> {
   if (!username) {
     throw new Error('needs a username');
   }
 
   const stats = {
     name: '',
+    username,
     avatarUrl: '',
     bio: '',
     totalPRs: 0,
@@ -240,7 +244,7 @@ const fetchStats = async (
     totalDiscussionsStarted: 0,
     totalDiscussionsAnswered: 0,
     contributedTo: 0,
-    rank: { level: 'C', percentile: 100 },
+    rank: { level: 'C', percentile: 100, score: 0 },
   };
 
   const res = await statsFetcher({
@@ -317,7 +321,4 @@ const fetchStats = async (
   });
 
   return stats;
-};
-
-export { fetchStats };
-export default fetchStats;
+}

@@ -8,7 +8,7 @@ import {
 import { fetchStats } from '../src/fetchers/stats-fetcher.js';
 
 export default async (req, res) => {
-  const { username, include_all_commits, cache_seconds, exclude_repo, show } =
+  const { username, screen_effect, include_all_commits, cache_seconds, exclude_repo, show } =
     req.query;
   res.setHeader('Content-Type', 'image/png');
 
@@ -40,7 +40,11 @@ export default async (req, res) => {
       }, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
 
-    const result = await renderStats(stats);
+    const options = {
+      screenEffect: parseBoolean(screen_effect)
+    }
+
+    const result = await renderStats(stats, options);
 
     return res.send(result);
   } catch (err) {

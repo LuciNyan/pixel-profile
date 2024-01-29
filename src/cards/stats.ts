@@ -30,7 +30,11 @@ type Stats = {
   rank: Rank
 }
 
-export async function renderStats(stats: Stats): Promise<Buffer> {
+type Options = {
+  screenEffect?: boolean
+}
+
+export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
   const {
     name,
     username,
@@ -42,6 +46,8 @@ export async function renderStats(stats: Stats): Promise<Buffer> {
     contributedTo,
     rank,
   } = stats;
+
+  const { screenEffect = true } = options
 
   const width = CARD_WIDTH;
   const height = CARD_HEIGHT;
@@ -66,7 +72,12 @@ export async function renderStats(stats: Stats): Promise<Buffer> {
 
   let isMissingFont = false
 
-  let svg = await satori(template(_stats), {
+  const templateOptions = {
+    color: 'white',
+    background: '#434343' // #00a7d0
+  }
+
+  let svg = await satori(template(_stats, templateOptions), {
     width,
     height,
     fonts: [
@@ -86,7 +97,9 @@ export async function renderStats(stats: Stats): Promise<Buffer> {
   if (isMissingFont) {
     _stats.name = username
 
-    svg = await satori(template(_stats), {
+    svg = await satori(
+      template(_stats, templateOptions),
+      {
       width,
       height,
       fonts: [
@@ -96,15 +109,9 @@ export async function renderStats(stats: Stats): Promise<Buffer> {
           weight: 400,
           style: 'normal',
         },
-      ],
-      loadAdditionalAsset: async () => {
-        isMissingFont = true
-        return ''
-      }
+      ]
     });
   }
-
-
 
   const opts = {
     fitTo: {
@@ -116,11 +123,13 @@ export async function renderStats(stats: Stats): Promise<Buffer> {
   const pngData = new Resvg(svg, opts).render();
   const pngBuffer = pngData.asPng();
 
-  const pixels = await getPixelsFromPngBuffer(pngBuffer);
+  let pixels = await getPixelsFromPngBuffer(pngBuffer);
 
-  const resultPixels = curve(pixels, width, height);
+  if (screenEffect) {
+    pixels = curve(pixels, width, height);
+  }
 
-  return await getPngBufferFromPixels(resultPixels, width, height);
+  return await getPngBufferFromPixels(pixels, width, height);
 }
 
 async function makeAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {

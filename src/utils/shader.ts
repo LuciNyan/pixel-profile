@@ -1,4 +1,5 @@
 import {render} from './renderer.js';
+import {type Vec} from './vec.js';
 
 export function pixelate(sourceBuffer, width, height, blockSize): Buffer {
   return render(sourceBuffer, width, height, (uv, texture2D) => {
@@ -16,15 +17,15 @@ const screenCurvature = 0.1;
 
 export function curve(sourcePixels, width, height): Buffer {
   return render(sourcePixels, width, height, (uv, texture2D) => {
-    function dot(a, b) {
+    function dot(a: Vec, b: Vec): number {
       return a[0] * b[0] + a[1] * b[1];
     }
 
-    function prod2(v) {
+    function prod2(v: Vec): number {
       return v[0] * v[1];
     }
 
-    function subtract(vec1, vec2) {
+    function subtract(vec1: Vec, vec2: Vec): Vec {
       return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
     }
 
@@ -39,10 +40,11 @@ export function curve(sourcePixels, width, height): Buffer {
     }
 
     const coords = distortCoordinates(uv);
+
     coords[0] = coords[0] * (margin[0] * 2 + 1) - margin[0];
     coords[1] = coords[1] * (margin[1] * 2 + 1) - margin[1];
 
-    const vignetteCoords = [uv[0] * (1 - uv[1]), uv[1] * (1 - uv[0])];
+    const vignetteCoords: Vec = [uv[0] * (1 - uv[1]), uv[1] * (1 - uv[0])];
     const vignette = Math.pow(prod2(vignetteCoords) * 15, 0.25);
 
     const samplerColor = texture2D(coords);

@@ -1,4 +1,22 @@
-export const template = (stats) => {
+import {Rank} from '../utils';
+
+type Stats = {
+  name: string
+  totalStars: string
+  totalCommits: string
+  totalPRs: string
+  totalIssues: string
+  contributedTo: string
+  rank: Rank
+  imgUrl: string
+}
+
+type Options = {
+  color: string
+  background: string
+}
+
+export const template = (stats: Stats, options: Options) => {
   const {
     name,
     totalStars,
@@ -9,6 +27,11 @@ export const template = (stats) => {
     rank,
     imgUrl,
   } = stats;
+
+  const {
+    color,
+    background
+  } = options
 
   return {
     type: 'div',
@@ -21,7 +44,7 @@ export const template = (stats) => {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#434343',
+        background,
       },
       children: {
         type: 'div',
@@ -33,11 +56,11 @@ export const template = (stats) => {
             justifyContent: 'space-between',
             flexDirection: 'row',
             fontSize: '23px',
-            color: 'white',
+            color,
             width: '92%',
             height: '80%',
             padding: 40,
-            border: 'white 4px solid',
+            border: `${color} 4px solid`,
             position: 'relative',
           },
           children: [
@@ -75,8 +98,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Total Stars Earned: ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -85,13 +106,9 @@ export const template = (stats) => {
                           props: {
                             children: `${totalStars}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -113,8 +130,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Total Commits: ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -123,13 +138,9 @@ export const template = (stats) => {
                           props: {
                             children: `${totalCommits}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -151,8 +162,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Total PRs: ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -161,13 +170,9 @@ export const template = (stats) => {
                           props: {
                             children: `${totalPRs}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -189,8 +194,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Total Issues: ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -199,13 +202,9 @@ export const template = (stats) => {
                           props: {
                             children: `${totalIssues}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -227,8 +226,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Contributed to (last year): ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -237,13 +234,9 @@ export const template = (stats) => {
                           props: {
                             children: `${contributedTo}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -264,12 +257,8 @@ export const template = (stats) => {
                         props: {
                           children: '-------------------------------',
                         },
-                        _owner: null,
-                        _store: {},
                       },
                     },
-                    _owner: null,
-                    _store: {},
                   },
                   {
                     type: 'div',
@@ -291,8 +280,6 @@ export const template = (stats) => {
                           props: {
                             children: 'Score: ',
                           },
-                          _owner: null,
-                          _store: {},
                         },
                         {
                           type: 'div',
@@ -301,18 +288,12 @@ export const template = (stats) => {
                           props: {
                             children: `${rank.score}`,
                           },
-                          _owner: null,
-                          _store: {},
                         },
                       ],
                     },
-                    _owner: null,
-                    _store: {},
                   },
                 ],
               },
-              _owner: null,
-              _store: {},
             },
             {
               type: 'img',
@@ -324,8 +305,6 @@ export const template = (stats) => {
                   height: '100%',
                 },
               },
-              _owner: null,
-              _store: {},
             },
             {
               type: 'div',
@@ -337,21 +316,15 @@ export const template = (stats) => {
                   position: 'absolute',
                   top: '-6px',
                   left: '33px',
-                  background: '#434343',
+                  background,
                   padding: '0 4px',
                 },
                 children: `${name}'s GitHub Stats`,
               },
-              _owner: null,
-              _store: {},
             },
           ],
         },
-        _owner: null,
-        _store: {},
       },
     },
-    _owner: null,
-    _store: {},
   };
 };

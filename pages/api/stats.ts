@@ -1,13 +1,14 @@
-import { renderStats } from '../src/cards/stats.js';
+import { renderStats } from '../../../src/cards/stats.js';
 import {
   clampValue,
   CONSTANTS,
   parseArray,
   parseBoolean,
-} from '../src/common/utils.js';
-import { fetchStats } from '../src/fetchers/stats-fetcher.js';
+} from '../../../src/common/utils.js';
+import { fetchStats } from '../../../src/fetchers/stats-fetcher.js';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async (req, res) => {
+export default async (req: NextApiRequest, res: NextApiResponse) => {
   const { username, screen_effect, include_all_commits, cache_seconds, exclude_repo, show } =
     req.query;
   res.setHeader('Content-Type', 'image/png');
@@ -15,7 +16,7 @@ export default async (req, res) => {
   try {
     const showStats = parseArray(show);
     const stats = await fetchStats(
-      username,
+      typeof username === 'string' ? username : '',
       parseBoolean(include_all_commits),
       parseArray(exclude_repo),
       showStats.includes('prs_merged') ||

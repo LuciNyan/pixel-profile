@@ -11,6 +11,7 @@
   },
   "scripts": {
     "dev": "node ./express.js",
+    "dev:playground": "turbo dev --filter=playground...",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
@@ -41,6 +42,7 @@
     "github-username-regex": "^1.0.0",
     "jimp": "^0.22.10",
     "satori": "^0.10.11",
+    "turbo": "^1.6.3",
     "upgrade": "^1.1.0"
   },
   "lint-staged": {

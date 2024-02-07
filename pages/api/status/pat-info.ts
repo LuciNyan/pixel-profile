@@ -5,7 +5,7 @@
  * @description This function is currently rate limited to 1 request per 5 minutes.
  */
 
-import { dateDiff, logger, request } from '../../src/index.js';
+import { dateDiff, logger, request } from '../../../../src';
 export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
 
 /**

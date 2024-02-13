@@ -1,14 +1,13 @@
-import { renderStats } from '../../../src/cards/stats.js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
   clampValue,
   CONSTANTS,
+  fetchStats,
   parseArray,
   parseBoolean,
-} from '../../../src/common/utils.js';
-import { fetchStats } from '../../../src/fetchers/stats-fetcher.js';
-import type { NextApiRequest, NextApiResponse } from 'next';
+  renderStats} from 'pixel-profile';
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+export default async (req: VercelRequest, res: VercelResponse) => {
   const { username, screen_effect, include_all_commits, cache_seconds, exclude_repo, show } =
     req.query;
   res.setHeader('Content-Type', 'image/png');

@@ -1,5 +1,5 @@
-import {render} from './renderer.js';
-import {type Vec} from './vec.js';
+import {render} from './renderer';
+import {type Vec} from './vec';
 
 export function pixelate(sourceBuffer, width, height, blockSize): Buffer {
   return render(sourceBuffer, width, height, (uv, texture2D) => {

@@ -1,9 +1,9 @@
 import {
   logger,
   request,
-} from '../common/index.js';
-import { retryer } from '../common/retryer.js';
-import {Rank, rank} from '../utils/index.js';
+} from '../common';
+import { retryer } from '../common/retryer';
+import {Rank, rank} from '../utils';
 import axios, { type AxiosResponse }  from 'axios';
 import * as dotenv from 'dotenv';
 import githubUsernameRegex from 'github-username-regex';

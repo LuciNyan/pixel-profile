@@ -1,4 +1,4 @@
-import {clamp} from './vec.js';
+import {clamp} from './vec';
 
 type Coordinates = [number, number]
 type RGBA = [number, number, number, number]

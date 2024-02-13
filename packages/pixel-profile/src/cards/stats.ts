@@ -1,12 +1,12 @@
-import { kFormatter } from '../common/index.js';
-import { template } from '../template/index.js';
+import { kFormatter } from '../common';
+import { template } from '../template';
 import {
   curve,
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
   pixelate, Rank,
-} from '../utils/index.js';
+} from '../utils';
 import { Resvg } from '@resvg/resvg-js';
 import axios from 'axios';
 import { readFile } from 'node:fs/promises';

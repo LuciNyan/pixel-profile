@@ -11,9 +11,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noImplicitAny": false,
+    "emitDeclarationOnly": true
   },
   "include": [
-    "api",
+    "src",
   ],
   "exclude": ["node_modules"]
 }

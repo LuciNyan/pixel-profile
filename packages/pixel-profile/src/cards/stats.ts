@@ -1,5 +1,5 @@
 import { kFormatter } from '../common';
-import { template } from '../template';
+import { makeGithubStats } from '../templates/github-stats';
 import {
   curve,
   getBase64FromPixels,
@@ -77,7 +77,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     background: '#434343' // #00a7d0
   }
 
-  let svg = await satori(template(_stats, templateOptions), {
+  let svg = await satori(makeGithubStats(_stats, templateOptions), {
     width,
     height,
     fonts: [
@@ -98,7 +98,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     _stats.name = username
 
     svg = await satori(
-      template(_stats, templateOptions),
+      makeGithubStats(_stats, templateOptions),
       {
       width,
       height,

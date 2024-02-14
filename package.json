@@ -10,7 +10,7 @@
     "url": "https://github.com/LuciNyan/github-pixel-profile.git"
   },
   "scripts": {
-    "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
+    "start6": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
     "dev:vercel": "vercel dev",
     "dev:pixel-profile": "turbo dev --filter=pixel-profile",
     "build": "pnpm --filter \"pixel-profile\" run build",
@@ -39,7 +39,8 @@
     "concurrently": "^7.3.0"
   },
   "dependencies": {
-    "pixel-profile": "workspace:*"
+    "pixel-profile": "workspace:*",
+    "ts-known": "^0.1.3"
   },
   "lint-staged": {
     "*.{js,css,md}": "prettier --write"

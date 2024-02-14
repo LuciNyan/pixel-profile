@@ -3,6 +3,9 @@
   "functions": {
     "api/*.ts": {
       "maxDuration": 10
+    },
+    "api/status/*.ts": {
+      "maxDuration": 10
     }
   }
 }

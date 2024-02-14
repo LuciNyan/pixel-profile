@@ -5,7 +5,8 @@
  * @description This function is currently rate limited to 1 request per 5 minutes.
  */
 
-import { dateDiff, logger, request } from '../../../../src';
+import {hasMessage, isPATError} from '../../utils';
+import { dateDiff, logger, request } from 'pixel-profile';
 export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
 
 /**
@@ -94,15 +95,19 @@ const getPATInfo = async (fetcher, variables) => {
       }
     } catch (err) {
       // Store the PAT if it is expired.
-      const errorMessage = err.response?.data?.message?.toLowerCase();
-      if (errorMessage === 'bad credentials') {
-        details[pat] = {
-          status: 'expired',
-        };
-      } else if (errorMessage === 'sorry. your account was suspended.') {
-        details[pat] = {
-          status: 'suspended',
-        };
+      if (isPATError(err)) {
+        const errorMessage = err.response?.data?.message?.toLowerCase();
+        if (errorMessage === 'bad credentials') {
+          details[pat] = {
+            status: 'expired',
+          };
+        } else if (errorMessage === 'sorry. your account was suspended.') {
+          details[pat] = {
+            status: 'suspended',
+          };
+        } else {
+          throw err;
+        }
       } else {
         throw err;
       }
@@ -153,6 +158,8 @@ export default async (_, res) => {
     // Throw error if something went wrong.
     logger.error(err);
     res.setHeader('Cache-Control', 'no-store');
-    res.send('Something went wrong: ' + err.message);
+    if (hasMessage(err)) {
+      res.send('Something went wrong: ' + err.message);
+    }
   }
 };

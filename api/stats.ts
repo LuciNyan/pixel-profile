@@ -6,10 +6,18 @@ import {
   parseArray,
   parseBoolean,
   renderStats} from 'pixel-profile';
+import {isString} from 'ts-known';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
-  const { username, screen_effect, include_all_commits, cache_seconds, exclude_repo, show } =
-    req.query;
+  const {
+    username,
+    screen_effect,
+    include_all_commits,
+    cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
+    exclude_repo,
+    show
+  } = req.query;
+
   res.setHeader('Content-Type', 'image/png');
 
   try {
@@ -25,7 +33,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     );
 
     let cacheSeconds = clampValue(
-      parseInt(cache_seconds || CONSTANTS.CARD_CACHE_SECONDS, 10),
+      parseInt(isString(cache_seconds) ? cache_seconds : cache_seconds[0], 10),
       CONSTANTS.SIX_HOURS,
       CONSTANTS.ONE_DAY,
     );

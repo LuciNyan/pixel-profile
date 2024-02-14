@@ -5,8 +5,8 @@
  * @description This function is currently rate limited to 1 request per 5 minutes.
  */
 
-import retryer from '../../../../src/common/retryer.js';
-import { logger, request } from '../../../../src';
+import { logger, request, retryer } from 'pixel-profile';
+import {hasMessage} from "../../utils";
 
 export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
 
@@ -118,6 +118,8 @@ export default async (req, res) => {
     // Return fail boolean if something went wrong.
     logger.error(err);
     res.setHeader('Cache-Control', 'no-store');
-    res.send('Something went wrong: ' + err.message);
+    if (hasMessage(err)) {
+      res.send('Something went wrong: ' + err.message);
+    }
   }
 };

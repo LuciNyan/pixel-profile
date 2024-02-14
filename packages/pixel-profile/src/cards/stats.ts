@@ -52,7 +52,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   const width = CARD_WIDTH;
   const height = CARD_HEIGHT;
 
-  const fontPath = join(process.cwd(), 'fonts', 'PressStart2P-Regular.ttf');
+  const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf');
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),

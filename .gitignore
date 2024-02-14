@@ -13,4 +13,4 @@ vercel_token
 !.vscode/settings.json
 *.code-workspace
 
-.vercel
+dist

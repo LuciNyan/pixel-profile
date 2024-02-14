@@ -10,11 +10,10 @@
     "url": "https://github.com/LuciNyan/github-pixel-profile.git"
   },
   "scripts": {
-    "dev": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
+    "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
     "dev:vercel": "vercel dev",
-    "dev:pixel-profile": "turbo dev --filter=pixel-profile...",
-    "build:pixel-profile": "pnpm --filter \"pixel-profile\" run build",
-    "build:vercel": "pnpm run build:pixel-profile && vercel build",
+    "dev:pixel-profile": "turbo dev --filter=pixel-profile",
+    "build": "pnpm --filter \"pixel-profile\" run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",

@@ -1,6 +1,6 @@
 {
   "name": "github-pixel-profile",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "homepage": "https://github.com/LuciNyan/github-pixel-profile",
   "bugs": {
     "url": "https://github.com/LuciNyan/github-pixel-profile/issues"
@@ -14,7 +14,7 @@
     "dev:vercel": "vercel dev",
     "dev:pixel-profile": "turbo dev --filter=pixel-profile",
     "build": "pnpm --filter \"pixel-profile\" run build",
-    "release": "bumpp --commit --push --tag -r",
+    "release": "bumpp --commit --push --tag -r && pnpm publish ./packages/pixel-profile --access=public",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",

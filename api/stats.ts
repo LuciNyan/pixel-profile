@@ -12,6 +12,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   const {
     username,
     screen_effect,
+    color,
+    background,
     include_all_commits,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
     exclude_repo,
@@ -43,13 +45,13 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
     res.setHeader(
       'Cache-Control',
-      `max-age=${
-        cacheSeconds / 2
-      }, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+      `max-age=${cacheSeconds / 2}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
     );
 
     const options = {
-      screenEffect: parseBoolean(screen_effect)
+      screenEffect: parseBoolean(screen_effect),
+      color: isString(color) ? color : undefined,
+      background: isString(background) ? background : undefined
     }
 
     const result = await renderStats(stats, options);

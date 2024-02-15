@@ -32,6 +32,8 @@ type Stats = {
 
 type Options = {
   screenEffect?: boolean
+  color?: string
+  background?: string
 }
 
 export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
@@ -47,7 +49,11 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     rank,
   } = stats;
 
-  const { screenEffect = true } = options
+  const {
+    screenEffect = true,
+    color = 'white',
+    background = '#434343' // #00a7d0
+  } = options
 
   const width = CARD_WIDTH;
   const height = CARD_HEIGHT;
@@ -73,8 +79,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   let isMissingFont = false
 
   const templateOptions = {
-    color: 'white',
-    background: '#434343' // #00a7d0
+    color,
+    background
   }
 
   let svg = await satori(makeGithubStats(_stats, templateOptions), {

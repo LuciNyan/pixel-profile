@@ -159,7 +159,11 @@ export function makeGithubStats(stats: Stats, options: Options) {
               lineHeight: .5
             }}
           >
-            <div>--------------------------------</div>
+            {
+              imgUrl
+                ? <div>--------------------------------</div>
+                : <div>---------------------------------------------</div>
+            }
           </div>
           <div
             style={{
@@ -174,7 +178,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
             <div>{ `${rank.score}` }</div>
           </div>
         </div>
-        <img src={imgUrl} style={{ height: '100%' }} />
+        { imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}
       </div>
     </div>
   </div>

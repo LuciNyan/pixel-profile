@@ -34,6 +34,7 @@ type Options = {
   screenEffect?: boolean
   color?: string
   background?: string
+  showAvatar?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
@@ -52,7 +53,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   const {
     screenEffect = true,
     color = 'white',
-    background = '#434343'
+    background = '#434343',
+    showAvatar = true
   } = options
 
   const width = CARD_WIDTH;
@@ -62,7 +64,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(avatarUrl, AVATAR_WIDTH, AVATAR_HEIGHT),
+    makeAvatar(showAvatar ? avatarUrl : '', AVATAR_WIDTH, AVATAR_HEIGHT),
   ]);
 
   const _stats = {
@@ -139,6 +141,10 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 }
 
 async function makeAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {
+  if (!url) {
+    return ''
+  }
+
   const response = await axios.get(url, {
     responseType: 'arraybuffer',
   });

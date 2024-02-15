@@ -13,8 +13,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import satori from 'satori';
 
-const CARD_WIDTH = 1220
-const CARD_HEIGHT = 460
+const CARD_WIDTH = 1226
+const CARD_HEIGHT = 430
 const AVATAR_WIDTH = 280
 const AVATAR_HEIGHT = 280
 
@@ -52,7 +52,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   const {
     screenEffect = true,
     color = 'white',
-    background = '#434343' // #00a7d0
+    background = '#434343'
   } = options
 
   const width = CARD_WIDTH;

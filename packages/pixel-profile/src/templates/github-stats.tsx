@@ -79,7 +79,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
         flexDirection: 'row',
         width: '100%',
         height: '100%',
-        padding: '28px 40px 62px 40px'
+        padding: '22px 40px 56px 40px'
       }}>
         <div style={{
           marginTop: 16,
@@ -155,10 +155,11 @@ export function makeGithubStats(stats: Stats, options: Options) {
               alignItems: 'flex-start',
               justifyContent: 'space-between',
               flexDirection: 'row',
-              width: '100%'
+              width: '100%',
+              lineHeight: .5
             }}
           >
-            <div>-------------------------------</div>
+            <div>--------------------------------</div>
           </div>
           <div
             style={{

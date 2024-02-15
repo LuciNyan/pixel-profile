@@ -40,126 +40,141 @@ export function makeGithubStats(stats: Stats, options: Options) {
       width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
-      background,
+      background
     }}
   >
     <div
       style={{
         display: 'flex',
-        justifyContent: 'space-between',
-        flexDirection: 'row',
-        fontSize: '23px',
+        flexDirection: 'column',
+        fontSize: 23,
         color,
         width: '92%',
         height: '80%',
-        padding: 40,
-        border: `${color} 4px solid`,
-        position: 'relative',
+        borderRight: `${color} 4px solid`,
+        borderLeft: `${color} 4px solid`,
+        borderBottom: `${color} 4px solid`,
+        position: 'relative'
       }}
     >
       <div style={{
-        marginTop: 16,
         display: 'flex',
-        justifyContent: 'space-between',
-        flexDirection: 'column',
-        flexGrow: 1,
-        paddingRight: 40
+        width: '100%',
       }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Total Stars Earned: </div>
-          <div>{ `${totalStars}` }</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Total Commits: </div>
-          <div>{ `${totalCommits}` }</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Total PRs: </div>
-          <div>{ `${totalPRs}` }</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Total Issues: </div>
-          <div>{ `${totalIssues}` }</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Contributed to (last year): </div>
-          <div>{ `${contributedTo}` }</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>-------------------------------</div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            flexDirection: 'row',
-            width: '100%'
-          }}
-        >
-          <div>Score: </div>
-          <div>{ `${rank.score}` }</div>
-        </div>
+        <div style={{
+          borderTop: `${color} 4px solid`,
+          width: '36px'
+        }}></div>
+        <div style={{
+          position: 'relative',
+          top: 6,
+        }}>{ `${name}'s GitHub Stats` }</div>
+        <div style={{
+          borderTop: `${color} 4px solid`,
+          flexGrow: '1'
+        }}></div>
       </div>
-      <img src={imgUrl} style={{
-        height: '100%'
-      }} />
       <div style={{
-        lineHeight: 2,
-        position: 'absolute',
-        top: '-6px',
-        left: '33px',
-        background,
-        padding: '0 4px',
-      }}>{ `${name}'s GitHub Stats` }</div>
+        display: 'flex',
+        flexDirection: 'row',
+        width: '100%',
+        height: '100%',
+        padding: '28px 40px 62px 40px'
+      }}>
+        <div style={{
+          marginTop: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexDirection: 'column',
+          flexGrow: 1,
+          paddingRight: 40
+        }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Total Stars Earned: </div>
+            <div>{ `${totalStars}` }</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Total Commits: </div>
+            <div>{ `${totalCommits}` }</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Total PRs: </div>
+            <div>{ `${totalPRs}` }</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Total Issues: </div>
+            <div>{ `${totalIssues}` }</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Contributed to (last year): </div>
+            <div>{ `${contributedTo}` }</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>-------------------------------</div>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              flexDirection: 'row',
+              width: '100%'
+            }}
+          >
+            <div>Score: </div>
+            <div>{ `${rank.score}` }</div>
+          </div>
+        </div>
+        <img src={imgUrl} style={{ height: '100%' }} />
+      </div>
     </div>
   </div>
 }

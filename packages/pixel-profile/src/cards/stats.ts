@@ -35,6 +35,7 @@ type Options = {
   color?: string
   background?: string
   showAvatar?: boolean
+  pixelateAvatar?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
@@ -54,7 +55,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     screenEffect = true,
     color = 'white',
     background = '#434343',
-    showAvatar = true
+    showAvatar = true,
+    pixelateAvatar = true
   } = options
 
   const width = CARD_WIDTH;
@@ -64,7 +66,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(showAvatar ? avatarUrl : '', AVATAR_WIDTH, AVATAR_HEIGHT),
+    makeAvatar(showAvatar ? avatarUrl : '', pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT),
   ]);
 
   const _stats = {
@@ -140,7 +142,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   return await getPngBufferFromPixels(pixels, width, height);
 }
 
-async function makeAvatar(url: string, width: number, height: number, blockSize: number = 6.8): Promise<string> {
+async function makeAvatar(url: string, pixelateAvatar: boolean, width: number, height: number, blockSize: number = 6.8): Promise<string> {
   if (!url) {
     return ''
   }
@@ -151,9 +153,11 @@ async function makeAvatar(url: string, width: number, height: number, blockSize:
 
   const png = Buffer.from(response.data, 'binary');
 
-  const _pixels = await getPixelsFromPngBuffer(png);
+  let pixels = await getPixelsFromPngBuffer(png);
 
-  const pixels = pixelate(_pixels, width, height, blockSize);
+  if (pixelateAvatar) {
+    pixels = pixelate(pixels, width, height, blockSize);
+  }
 
   return await getBase64FromPixels(pixels, width, height);
 }

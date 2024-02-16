@@ -13,6 +13,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     username,
     screen_effect,
     show_avatar,
+    pixelate_avatar,
     color,
     background,
     include_all_commits,
@@ -53,7 +54,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       screenEffect: parseBoolean(screen_effect),
       color: isString(color) ? color : undefined,
       background: isString(background) ? background : undefined,
-      showAvatar: parseBoolean(show_avatar)
+      showAvatar: parseBoolean(show_avatar),
+      pixelateAvatar: parseBoolean(pixelate_avatar)
     }
 
     const result = await renderStats(stats, options);

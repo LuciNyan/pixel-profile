@@ -1,8 +1,8 @@
 import {render} from './renderer';
 import {type Vec} from './vec';
 
-export function pixelate(sourceBuffer, width, height, blockSize): Buffer {
-  return render(sourceBuffer, width, height, (uv, texture2D) => {
+export function pixelate(source: Buffer, width: number, height: number, blockSize: number): Buffer {
+  return render(source, width, height, (uv, texture2D) => {
     const blockW = blockSize / width;
     const blockH = blockSize / height;
     const x = Math.floor(uv[0] / blockW);
@@ -15,8 +15,8 @@ export function pixelate(sourceBuffer, width, height, blockSize): Buffer {
 const margin = [0, 0];
 const screenCurvature = 0.1;
 
-export function curve(sourcePixels, width, height): Buffer {
-  return render(sourcePixels, width, height, (uv, texture2D) => {
+export function curve(source: Buffer, width: number, height: number): Buffer {
+  return render(source, width, height, (uv, texture2D) => {
     function dot(a: Vec, b: Vec): number {
       return a[0] * b[0] + a[1] * b[1];
     }

@@ -9,7 +9,7 @@ function coordsToIndex(x: number, y: number, width: number): number {
   return (y * width + x) * 4;
 }
 
-export function render(sourcePixels: number[], width: number, height: number, fragShader: FragShader): Buffer {
+export function render(sourcePixels: Buffer, width: number, height: number, fragShader: FragShader): Buffer {
   const targetBuffer = Buffer.alloc(width * height * 4);
 
   function biLinearInterpolate(v1: number, v2: number, v3: number, v4: number, sx: number, sy: number): number {

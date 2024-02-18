@@ -94,7 +94,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
           justifyContent: 'space-between',
           flexDirection: 'column',
           flexGrow: 1,
-          paddingRight: 40
+          paddingRight: imgUrl ? 40 : 0
         }}>
           <div
             style={{

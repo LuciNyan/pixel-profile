@@ -26,6 +26,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     const showStats = parseArray(show);
+
     const stats = await fetchStats(
       typeof username === 'string' ? username : '',
       parseBoolean(include_all_commits),

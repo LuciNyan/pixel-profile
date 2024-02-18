@@ -174,8 +174,8 @@ export function makeGithubStats(stats: Stats, options: Options) {
               width: '100%'
             }}
           >
-            <div>Score: </div>
-            <div>{ `${rank.score}` }</div>
+            <div>Rank: </div>
+            <div>{ `${rank.level}` }</div>
           </div>
         </div>
         { imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}

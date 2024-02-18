@@ -33,6 +33,7 @@ type Stats = {
 type Options = {
   screenEffect?: boolean
   color?: string
+  showRank?: boolean
   background?: string
   showAvatar?: boolean
   pixelateAvatar?: boolean
@@ -55,6 +56,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   const {
     screenEffect = true,
     color = 'white',
+    showRank = true,
     background = '#434343',
     showAvatar = true,
     pixelateAvatar = true,
@@ -86,6 +88,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 
   const templateOptions = {
     color,
+    showRank,
     background,
     includeAllCommits
   }

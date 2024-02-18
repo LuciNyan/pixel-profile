@@ -13,6 +13,7 @@ type Stats = {
 
 type Options = {
   color: string
+  showRank: boolean
   background: string,
   includeAllCommits: boolean
 }
@@ -31,6 +32,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
 
   const {
     color,
+    showRank,
     background,
     includeAllCommits
   } = options
@@ -154,34 +156,42 @@ export function makeGithubStats(stats: Stats, options: Options) {
             <div>Contributed to (last year): </div>
             <div>{ `${contributedTo}` }</div>
           </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%',
-              lineHeight: .5
-            }}
-          >
-            {
-              imgUrl
-                ? <div>--------------------------------</div>
-                : <div>---------------------------------------------</div>
-            }
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
-            }}
-          >
-            <div>Rank: </div>
-            <div>{ `${rank.level}` }</div>
-          </div>
+          {
+            showRank
+              ? <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%',
+                  lineHeight: .5
+                }}
+              >
+                {
+                  imgUrl
+                    ? <div>--------------------------------</div>
+                    : <div>---------------------------------------------</div>
+                }
+              </div>
+              : null
+          }
+          {
+            showRank
+              ? <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>Rank: </div>
+                <div>{ `${rank.level}` }</div>
+              </div>
+              : null
+          }
         </div>
         { imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}
       </div>

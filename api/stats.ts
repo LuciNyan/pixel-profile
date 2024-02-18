@@ -16,6 +16,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     pixelate_avatar,
     color,
     background,
+    show_rank,
     include_all_commits,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
     exclude_repo,
@@ -58,6 +59,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       background: isString(background) ? background : undefined,
       showAvatar: parseBoolean(show_avatar),
       pixelateAvatar: parseBoolean(pixelate_avatar),
+      showRank: parseBoolean(show_rank),
       includeAllCommits
     }
 

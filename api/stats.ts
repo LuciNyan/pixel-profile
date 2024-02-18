@@ -26,10 +26,11 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     const showStats = parseArray(show);
+    const includeAllCommits = parseBoolean(include_all_commits)
 
     const stats = await fetchStats(
       typeof username === 'string' ? username : '',
-      parseBoolean(include_all_commits),
+      includeAllCommits,
       parseArray(exclude_repo),
       showStats.includes('prs_merged') ||
         showStats.includes('prs_merged_percentage'),
@@ -56,7 +57,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       color: isString(color) ? color : undefined,
       background: isString(background) ? background : undefined,
       showAvatar: parseBoolean(show_avatar),
-      pixelateAvatar: parseBoolean(pixelate_avatar)
+      pixelateAvatar: parseBoolean(pixelate_avatar),
+      includeAllCommits
     }
 
     const result = await renderStats(stats, options);

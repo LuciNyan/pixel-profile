@@ -36,6 +36,7 @@ type Options = {
   background?: string
   showAvatar?: boolean
   pixelateAvatar?: boolean
+  includeAllCommits?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
@@ -56,7 +57,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     color = 'white',
     background = '#434343',
     showAvatar = true,
-    pixelateAvatar = true
+    pixelateAvatar = true,
+    includeAllCommits = false
   } = options
 
   const width = CARD_WIDTH;
@@ -84,7 +86,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 
   const templateOptions = {
     color,
-    background
+    background,
+    includeAllCommits
   }
 
   let svg = await satori(makeGithubStats(_stats, templateOptions), {

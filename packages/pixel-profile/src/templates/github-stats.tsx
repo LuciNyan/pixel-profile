@@ -13,7 +13,8 @@ type Stats = {
 
 type Options = {
   color: string
-  background: string
+  background: string,
+  includeAllCommits: boolean
 }
 
 export function makeGithubStats(stats: Stats, options: Options) {
@@ -30,8 +31,12 @@ export function makeGithubStats(stats: Stats, options: Options) {
 
   const {
     color,
-    background
+    background,
+    includeAllCommits
   } = options
+
+  const date = new Date();
+  const year = date.getFullYear();
 
   return <div
     style={{
@@ -110,7 +115,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
               width: '100%'
             }}
           >
-            <div>Total Commits: </div>
+            <div>{`Total Commits${includeAllCommits ? '' : '(' + year + ')'}: `}</div>
             <div>{ `${totalCommits}` }</div>
           </div>
           <div

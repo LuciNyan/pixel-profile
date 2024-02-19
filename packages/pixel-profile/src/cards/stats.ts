@@ -1,11 +1,12 @@
-import { kFormatter } from '../common';
 import { makeGithubStats } from '../templates/github-stats';
 import {
   curve,
+  kFormatter,
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
-  pixelate, Rank,
+  pixelate,
+  Rank,
 } from '../utils';
 import { Resvg } from '@resvg/resvg-js';
 import axios from 'axios';

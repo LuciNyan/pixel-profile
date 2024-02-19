@@ -2,3 +2,6 @@ export { getPixelsFromPngBuffer, getBase64FromPixels, getPngBufferFromPixels } f
 export { render } from './renderer'
 export { pixelate, curve } from './shader'
 export { rank, type Rank } from './rank'
+export { clamp, kFormatter } from './math'
+export { request } from './request'
+export { retryer, RETRIES } from './retryer'

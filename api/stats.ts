@@ -1,12 +1,15 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import {
-  clampValue,
   CONSTANTS,
-  fetchStats,
   parseArray,
   parseBoolean,
-  renderStats} from 'pixel-profile';
-import {isString} from 'ts-known';
+  parseString
+} from '../utils/index.js';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import {
+  clamp,
+  fetchStats,
+  renderStats
+} from 'pixel-profile';
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   const {
@@ -39,11 +42,12 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       showStats.includes('discussions_answered'),
     );
 
-    let cacheSeconds = clampValue(
-      parseInt(isString(cache_seconds) ? cache_seconds : cache_seconds[0], 10),
+    let cacheSeconds = clamp(
+      parseInt(parseString(cache_seconds) ?? '0', 10),
       CONSTANTS.SIX_HOURS,
       CONSTANTS.ONE_DAY,
     );
+
     cacheSeconds = process.env.CACHE_SECONDS
       ? parseInt(process.env.CACHE_SECONDS, 10) || cacheSeconds
       : cacheSeconds;
@@ -55,8 +59,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
     const options = {
       screenEffect: parseBoolean(screen_effect),
-      color: isString(color) ? color : undefined,
-      background: isString(background) ? background : undefined,
+      color: parseString(color),
+      background: parseString(background),
       showAvatar: parseBoolean(show_avatar),
       pixelateAvatar: parseBoolean(pixelate_avatar),
       showRank: parseBoolean(show_rank),
@@ -68,12 +72,14 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     return res.send(result);
   } catch (err) {
     console.log(err);
+
     res.setHeader(
       'Cache-Control',
       `max-age=${CONSTANTS.ERROR_CACHE_SECONDS / 2}, s-maxage=${
         CONSTANTS.ERROR_CACHE_SECONDS
       }, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
-    ); // Use lower cache period for errors.
+    );
+
     return res.send(1);
   }
 };

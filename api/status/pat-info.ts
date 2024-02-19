@@ -1,27 +1,38 @@
 /**
- * @file Contains a simple cloud function that can be used to check which PATs are no
- * longer working. It returns a list of valid PATs, expired PATs and PATs with errors.
- *
- * @description This function is currently rate limited to 1 request per 5 minutes.
+ * Copyright (c) 2020 Anurag Hazra
+ * https://github.com/anuraghazra/github-readme-stats/blob/master/api/status/pat-info.js
  */
+import {dateDiff, hasMessage, isPATError} from '../../utils/index.js';
+import {VercelResponse} from '@vercel/node';
+import type {AxiosResponse } from 'axios';
+import {request} from 'pixel-profile';
 
-import {hasMessage, isPATError} from '../../utils';
-import { dateDiff, logger, request } from 'pixel-profile';
-export const RATE_LIMIT_SECONDS = 60 * 5; // 1 request per 5 minutes
+export const RATE_LIMIT_SECONDS = 60 * 5;
 
-/**
- * @typedef {import('axios').AxiosRequestHeaders} AxiosRequestHeaders Axios request headers.
- * @typedef {import('axios').AxiosResponse} AxiosResponse Axios response.
- */
+export default async (_, res: VercelResponse): Promise<void> => {
+  res.setHeader('Content-Type', 'application/json');
+  try {
+    // Add header to prevent abuse.
+    const PATsInfo = await getPATInfo(uptimeFetcher, {});
+    if (PATsInfo) {
+      res.setHeader(
+        'Cache-Control',
+        `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`,
+      );
+    }
+    res.send(JSON.stringify(PATsInfo, null, 2));
+  } catch (err) {
+    console.error(err);
 
-/**
- * Simple uptime check fetcher for the PATs.
- *
- * @param {AxiosRequestHeaders} variables Fetcher variables.
- * @param {string} token GitHub token.
- * @returns {Promise<AxiosResponse>} The response.
- */
-const uptimeFetcher = (variables, token) => {
+    res.setHeader('Cache-Control', 'no-store');
+
+    if (hasMessage(err)) {
+      res.send('Something went wrong: ' + err.message);
+    }
+  }
+};
+
+const uptimeFetcher = (variables: Record<PropertyKey, unknown>, github_token: string): Promise<AxiosResponse> => {
   return request(
     {
       query: `
@@ -34,7 +45,7 @@ const uptimeFetcher = (variables, token) => {
       variables,
     },
     {
-      Authorization: `bearer ${token}`,
+      Authorization: `bearer ${github_token}`,
     },
   );
 };
@@ -43,25 +54,18 @@ const getAllPATs = () => {
   return Object.keys(process.env).filter((key) => /PAT_\d*$/.exec(key));
 };
 
-/**
- * @typedef {(variables: AxiosRequestHeaders, token: string) => Promise<AxiosResponse>} Fetcher The fetcher function.
- * @typedef {{validPATs: string[], expiredPATs: string[], exhaustedPATs: string[], suspendedPATs: string[], errorPATs: string[], details: any}} PATInfo The PAT info.
- */
+type PATInfo = {validPATs: string[], expiredPATs: string[], exhaustedPATs: string[], suspendedPATs: string[], errorPATs: string[], details: any}
 
 /**
  * Check whether any of the PATs is expired.
- *
- * @param {Fetcher} fetcher The fetcher function.
- * @param {AxiosRequestHeaders} variables Fetcher variables.
- * @returns {Promise<PATInfo>} The response.
  */
-const getPATInfo = async (fetcher, variables) => {
+const getPATInfo = async (fetcher: typeof uptimeFetcher, variables: Record<PropertyKey, unknown>): Promise<PATInfo> => {
   const details = {};
   const PATs = getAllPATs();
 
   for (const pat of PATs) {
     try {
-      const response = await fetcher(variables, process.env[pat]);
+      const response = await fetcher(variables, process.env[pat] as string);
       const errors = response.data.errors;
       const hasErrors = Boolean(errors);
       const errorType = errors?.[0]?.type;
@@ -94,7 +98,6 @@ const getPATInfo = async (fetcher, variables) => {
         };
       }
     } catch (err) {
-      // Store the PAT if it is expired.
       if (isPATError(err)) {
         const errorMessage = err.response?.data?.message?.toLowerCase();
         if (errorMessage === 'bad credentials') {
@@ -133,33 +136,4 @@ const getPATInfo = async (fetcher, variables) => {
     errorPATs: filterPATsByStatus('error'),
     details: sortedDetails,
   };
-};
-
-/**
- * Cloud function that returns information about the used PATs.
- *
- * @param {any} _ The request.
- * @param {any} res The response.
- * @returns {Promise<void>} The response.
- */
-export default async (_, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  try {
-    // Add header to prevent abuse.
-    const PATsInfo = await getPATInfo(uptimeFetcher, {});
-    if (PATsInfo) {
-      res.setHeader(
-        'Cache-Control',
-        `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`,
-      );
-    }
-    res.send(JSON.stringify(PATsInfo, null, 2));
-  } catch (err) {
-    // Throw error if something went wrong.
-    logger.error(err);
-    res.setHeader('Cache-Control', 'no-store');
-    if (hasMessage(err)) {
-      res.send('Something went wrong: ' + err.message);
-    }
-  }
 };

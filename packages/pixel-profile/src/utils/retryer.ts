@@ -1,6 +1,8 @@
-import { logger } from './utils';
-
-// Script variables.
+/**
+ * Copyright (c) 2020 Anurag Hazra
+ * https://github.com/anuraghazra/github-readme-stats/blob/master/src/common/retryer.js
+ */
+import {AxiosResponse} from 'axios';
 
 // Count the number of GitHub API tokens available.
 const PATs = Object.keys(process.env).filter((key) =>
@@ -8,20 +10,9 @@ const PATs = Object.keys(process.env).filter((key) =>
 ).length;
 const RETRIES = process.env.NODE_ENV === 'test' ? 7 : PATs;
 
-/**
- * @typedef {import("axios").AxiosResponse} AxiosResponse Axios response.
- * @typedef {(variables: object, token: string) => Promise<AxiosResponse>} FetcherFunction Fetcher function.
- */
+type FetcherFunction = (variables: Record<PropertyKey, unknown>, token: string) => Promise<AxiosResponse>
 
-/**
- * Try to execute the fetcher function until it succeeds or the max number of retries is reached.
- *
- * @param {FetcherFunction} fetcher The fetcher function.
- * @param {object} variables Object with arguments to pass to the fetcher function.
- * @param {number} retries How many times to retry.
- * @returns {Promise<T>} The response from the fetcher function.
- */
-const retryer = async (fetcher, variables, retries = 0) => {
+const retryer = async (fetcher: FetcherFunction, variables: Record<PropertyKey, unknown>, retries = 0): Promise<AxiosResponse> => {
   if (!RETRIES) {
     throw new Error('No GitHub API tokens found');
   }
@@ -32,8 +23,7 @@ const retryer = async (fetcher, variables, retries = 0) => {
     // try to fetch with the first token since RETRIES is 0 index i'm adding +1
     const response = await fetcher(
       variables,
-      process.env[`PAT_${retries + 1}`],
-      retries,
+      process.env[`PAT_${retries + 1}`] as string,
     );
 
     // prettier-ignore
@@ -42,7 +32,7 @@ const retryer = async (fetcher, variables, retries = 0) => {
     // if rate limit is hit increase the RETRIES and recursively call the retryer
     // with username, and current RETRIES
     if (isRateExceeded) {
-      logger.log(`PAT_${retries + 1} Failed`);
+      console.log(`PAT_${retries + 1} Failed`);
       retries++;
       // directly return from the function
       return retryer(fetcher, variables, retries);
@@ -59,7 +49,7 @@ const retryer = async (fetcher, variables, retries = 0) => {
       err.response.data.message === 'Sorry. Your account was suspended.';
 
     if (isBadCredential || isAccountSuspended) {
-      logger.log(`PAT_${retries + 1} Failed`);
+      console.log(`PAT_${retries + 1} Failed`);
       retries++;
       // directly return from the function
       return retryer(fetcher, variables, retries);
@@ -70,4 +60,3 @@ const retryer = async (fetcher, variables, retries = 0) => {
 };
 
 export { retryer, RETRIES };
-export default retryer;

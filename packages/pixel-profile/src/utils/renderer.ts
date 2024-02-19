@@ -1,4 +1,4 @@
-import {clamp} from './vec';
+import {clamp} from './math';
 
 type Coordinates = [number, number]
 type RGBA = [number, number, number, number]

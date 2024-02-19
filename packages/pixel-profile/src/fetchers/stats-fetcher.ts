@@ -1,16 +1,14 @@
-import {
-  logger,
-  request,
-} from '../common';
-import { retryer } from '../common/retryer';
-import {Rank, rank} from '../utils';
-import axios, { type AxiosResponse }  from 'axios';
+/**
+ * Copyright (c) 2020 Anurag Hazra
+ * https://github.com/anuraghazra/github-readme-stats/blob/master/src/fetchers/stats-fetcher.js
+ */
+import { type Rank, rank, request, retryer } from '../utils';
+import axios, {type AxiosResponse} from 'axios';
 import * as dotenv from 'dotenv';
 import githubUsernameRegex from 'github-username-regex';
 
 dotenv.config();
 
-// GraphQL queries.
 const GRAPHQL_REPOS_FIELD = `
   repositories(first: 100, ownerAffiliations: OWNER, orderBy: {direction: DESC, field: STARGAZERS}, after: $after) {
     totalCount
@@ -75,17 +73,6 @@ const GRAPHQL_STATS_QUERY = `
   }
 `;
 
-/**
- * @typedef {import('axios').AxiosResponse} AxiosResponse Axios response.
- */
-
-/**
- * Stats fetcher object.
- *
- * @param {object} variables Fetcher variables.
- * @param {string} token GitHub token.
- * @returns {Promise<AxiosResponse>} Axios response.
- */
 const fetcher = (variables: Record<PropertyKey, unknown>, token: string): Promise<AxiosResponse> => {
   const query = variables.after ? GRAPHQL_REPOS_QUERY : GRAPHQL_STATS_QUERY;
   return request(
@@ -101,22 +88,21 @@ const fetcher = (variables: Record<PropertyKey, unknown>, token: string): Promis
 
 /**
  * Fetch stats information for a given username.
- *
- * @param {object} variables Fetcher variables.
- * @param {string} variables.username Github username.
- * @param {boolean} variables.includeMergedPullRequests Include merged pull requests.
- * @param {boolean} variables.includeDiscussions Include discussions.
- * @param {boolean} variables.includeDiscussionsAnswers Include discussions answers.
- * @returns {Promise<AxiosResponse>} Axios response.
- *
  * @description This function supports multi-page fetching if the 'FETCH_MULTI_PAGE_STARS' environment variable is set to true.
  */
+type Variables = {
+  username: string
+  includeMergedPullRequests: boolean
+  includeDiscussions: boolean
+  includeDiscussionsAnswers: boolean
+}
+
 const statsFetcher = async ({
   username,
   includeMergedPullRequests,
   includeDiscussions,
   includeDiscussionsAnswers,
-}) => {
+}: Variables): Promise<AxiosResponse> => {
   let stats;
   let hasNextPage = true;
   let endCursor = null;
@@ -156,18 +142,9 @@ const statsFetcher = async ({
   return stats;
 };
 
-/**
- * Fetch all the commits for all the repositories of a given username.
- *
- * @param {string} username GitHub username.
- * @returns {Promise<number>} Total commits.
- *
- * @description Done like this because the GitHub API does not provide a way to fetch all the commits. See
- * #92#issuecomment-661026467 and #211 for more information.
- */
-const totalCommitsFetcher = async (username) => {
+const totalCommitsFetcher = async (username: string): Promise<number> => {
   if (!githubUsernameRegex.test(username)) {
-    logger.log('Invalid username provided.');
+    console.log('Invalid username provided.');
     throw new Error('Invalid username provided.');
   }
 
@@ -188,7 +165,7 @@ const totalCommitsFetcher = async (username) => {
   try {
     res = await retryer(fetchTotalCommits, { login: username });
   } catch (err: any) {
-    logger.log(err);
+    console.log(err);
     throw new Error(err);
   }
 
@@ -256,7 +233,7 @@ export async function fetchStats(
 
   // Catch GraphQL errors.
   if (res.data.errors) {
-    logger.error(res.data.errors);
+    console.error(res.data.errors);
     if (res.data.errors[0].type === 'NOT_FOUND') {
       throw new Error(res.data.errors[0].message || 'Could not fetch user.')
     }

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      axios:
+        specifier: ^1.6.2
+        version: 1.6.2
       pixel-profile:
         specifier: workspace:*
         version: link:packages/pixel-profile

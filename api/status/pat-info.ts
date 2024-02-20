@@ -3,13 +3,13 @@
  * https://github.com/anuraghazra/github-readme-stats/blob/master/api/status/pat-info.js
  */
 import {dateDiff, hasMessage, isPATError} from '../../utils/index.js';
-import {VercelResponse} from '@vercel/node';
+import {VercelRequest, VercelResponse} from '@vercel/node';
 import type {AxiosResponse } from 'axios';
 import {request} from 'pixel-profile';
 
 export const RATE_LIMIT_SECONDS = 60 * 5;
 
-export default async (_, res: VercelResponse): Promise<void> => {
+export default async (_: VercelRequest, res: VercelResponse): Promise<void> => {
   res.setHeader('Content-Type', 'application/json');
   try {
     // Add header to prevent abuse.
@@ -56,11 +56,31 @@ const getAllPATs = () => {
 
 type PATInfo = {validPATs: string[], expiredPATs: string[], exhaustedPATs: string[], suspendedPATs: string[], errorPATs: string[], details: any}
 
+type Status =
+  | {
+  status: 'error',
+  error: {
+    type: string
+    message: string
+  }
+} | {
+  status: 'exhausted'
+  remaining: number
+  resetIn: string
+} | {
+  status: 'valid'
+  remaining: number
+} | {
+  status: 'expired'
+} | {
+  status: 'suspended'
+}
+
 /**
  * Check whether any of the PATs is expired.
  */
 const getPATInfo = async (fetcher: typeof uptimeFetcher, variables: Record<PropertyKey, unknown>): Promise<PATInfo> => {
-  const details = {};
+  const details: Record<string, Status> = {};
   const PATs = getAllPATs();
 
   for (const pat of PATs) {
@@ -117,7 +137,7 @@ const getPATInfo = async (fetcher: typeof uptimeFetcher, variables: Record<Prope
     }
   }
 
-  const filterPATsByStatus = (status) => {
+  const filterPATsByStatus = (status: string) => {
     return Object.keys(details).filter((pat) => details[pat].status === status);
   };
 
@@ -126,7 +146,7 @@ const getPATInfo = async (fetcher: typeof uptimeFetcher, variables: Record<Prope
     .reduce((obj, key) => {
       obj[key] = details[key];
       return obj;
-    }, {});
+    }, {} as Record<string, Status>);
 
   return {
     validPATs: filterPATsByStatus('valid'),

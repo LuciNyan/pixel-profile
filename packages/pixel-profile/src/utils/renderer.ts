@@ -1,6 +1,6 @@
 import {clamp} from './math';
 
-type Coordinates = [number, number]
+export type Coordinates = [number, number]
 type RGBA = [number, number, number, number]
 type Texture2D = (coords: Coordinates) => RGBA
 type FragShader = (uv: Coordinates, texture2D: Texture2D) => RGBA

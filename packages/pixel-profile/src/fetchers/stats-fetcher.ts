@@ -107,6 +107,7 @@ const statsFetcher = async ({
   let hasNextPage = true;
   let endCursor = null;
   while (hasNextPage) {
+    // @ts-ignore
     const variables = {
       login: username,
       first: 100,
@@ -115,6 +116,7 @@ const statsFetcher = async ({
       includeDiscussions,
       includeDiscussionsAnswers,
     };
+    // @ts-ignore
     const res = await retryer(fetcher, variables);
     if (res.data.errors) {
       return res;
@@ -130,7 +132,7 @@ const statsFetcher = async ({
 
     // Disable multi page fetching on public Vercel instance due to rate limits.
     const repoNodesWithStars = repoNodes.filter(
-      (node) => node.stargazers.totalCount !== 0,
+      (node: { stargazers: { totalCount: number; }; }) => node.stargazers.totalCount !== 0,
     );
     hasNextPage =
       process.env.FETCH_MULTI_PAGE_STARS === 'true' &&
@@ -139,7 +141,7 @@ const statsFetcher = async ({
     endCursor = res.data.data.user.repositories.pageInfo.endCursor;
   }
 
-  return stats;
+  return stats as AxiosResponse;
 };
 
 const totalCommitsFetcher = async (username: string): Promise<number> => {
@@ -149,7 +151,7 @@ const totalCommitsFetcher = async (username: string): Promise<number> => {
   }
 
   // https://developer.github.com/v3/search/#search-commits
-  const fetchTotalCommits = (variables, token) => {
+  const fetchTotalCommits = (variables: Record<PropertyKey, unknown>, token: string) => {
     return axios({
       method: 'get',
       url: `https://api.github.com/search/commits?q=author:${variables.login}`,
@@ -178,7 +180,7 @@ const totalCommitsFetcher = async (username: string): Promise<number> => {
 
 export type StatsData = {
   name: string;
-  username;
+  username: string;
   bio: string;
   avatarUrl: string;
   totalPRs: number;
@@ -279,10 +281,10 @@ export async function fetchStats(
   const repoToHide = new Set(exclude_repo);
 
   stats.totalStars = user.repositories.nodes
-    .filter((data) => {
+    .filter((data: { name: string; }) => {
       return !repoToHide.has(data.name);
     })
-    .reduce((prev, curr) => {
+    .reduce((prev: number, curr: { stargazers: { totalCount: number; }; }) => {
       return prev + curr.stargazers.totalCount;
     }, 0);
 
@@ -292,7 +294,7 @@ export async function fetchStats(
     prs: stats.totalPRs,
     reviews: stats.totalReviews,
     issues: stats.totalIssues,
-    repos: user.repositories.totalCount,
+    // repos: user.repositories.totalCount,
     stars: stats.totalStars,
     followers: user.followers.totalCount,
   });

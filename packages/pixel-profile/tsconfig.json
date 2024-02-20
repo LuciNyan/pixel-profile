@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "types": ["node"],
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": ["esnext"],
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -10,9 +10,7 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noImplicitAny": false,
-    "emitDeclarationOnly": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
   "include": [
     "src",

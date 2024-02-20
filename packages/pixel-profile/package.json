@@ -14,7 +14,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "NODE_ENV=development tsup src/index.ts --watch",
-    "build": "tsup"
+    "build": "tsup",
+    "type-check": "tsc --noEmit"
   },
   "type": "module",
   "author": "LuciNyan",
@@ -26,7 +27,10 @@
     }
   },
   "devDependencies": {
+    "@types/github-username-regex": "1.0.2",
+    "@types/react": "^18.2.57",
     "@types/node": "^20.11.0",
+    "@types/react-dom": "^18.2.19",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "eslint": "^8.56.0",

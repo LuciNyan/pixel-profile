@@ -16,17 +16,25 @@ function formatScore(score: number): number {
 
 export type Rank = {level: string, percentile: number, score: number}
 
+type RankParams = {
+  all_commits: boolean
+  commits: number
+  prs: number
+  issues: number
+  reviews: number
+  stars: number
+  followers: number
+}
+
 export function rank({
   all_commits,
   commits,
   prs,
   issues,
   reviews,
-  // eslint-disable-next-line no-unused-vars
-  repos,
   stars,
   followers,
-}): Rank {
+}: RankParams): Rank {
   const COMMITS_MEDIAN = all_commits ? 1000 : 250,
     COMMITS_WEIGHT = 2;
   const PRS_MEDIAN = 50,

@@ -1,5 +1,5 @@
 import {type Vec} from './math';
-import {render} from './renderer';
+import {Coordinates, render} from './renderer';
 
 export function pixelate(source: Buffer, width: number, height: number, blockSize: number): Buffer {
   return render(source, width, height, (uv, texture2D) => {
@@ -29,7 +29,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       return [vec1[0] - vec2[0], vec1[1] - vec2[1]];
     }
 
-    function distortCoordinates(coords): [number, number] {
+    function distortCoordinates(coords: Coordinates): [number, number] {
       const cc = subtract(coords, [0.5, 0.5]);
       const dist = dot(cc, cc) * screenCurvature;
       const temp = (1 + dist) * dist;

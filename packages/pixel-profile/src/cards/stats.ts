@@ -1,18 +1,18 @@
-import { makeGithubStats } from '../templates/github-stats';
+import { makeGithubStats } from '../templates/github-stats'
 import {
   curve,
-  kFormatter,
   getBase64FromPixels,
   getPixelsFromPngBuffer,
   getPngBufferFromPixels,
+  kFormatter,
   pixelate,
-  Rank,
-} from '../utils';
-import { Resvg } from '@resvg/resvg-js';
-import axios from 'axios';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import satori from 'satori';
+  Rank
+} from '../utils'
+import { Resvg } from '@resvg/resvg-js'
+import axios from 'axios'
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import satori from 'satori'
 
 const CARD_WIDTH = 1226
 const CARD_HEIGHT = 430
@@ -42,17 +42,7 @@ type Options = {
 }
 
 export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
-  const {
-    name,
-    username,
-    totalStars,
-    totalCommits,
-    totalIssues,
-    totalPRs,
-    avatarUrl,
-    contributedTo,
-    rank,
-  } = stats;
+  const { name, username, totalStars, totalCommits, totalIssues, totalPRs, avatarUrl, contributedTo, rank } = stats
 
   const {
     screenEffect = true,
@@ -64,15 +54,15 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     includeAllCommits = false
   } = options
 
-  const width = CARD_WIDTH;
-  const height = CARD_HEIGHT;
+  const width = CARD_WIDTH
+  const height = CARD_HEIGHT
 
-  const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf');
+  const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(showAvatar ? avatarUrl : '', pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT),
-  ]);
+    makeAvatar(showAvatar ? avatarUrl : '', pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT)
+  ])
 
   const _stats = {
     name,
@@ -82,8 +72,8 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     totalIssues: kFormatter(totalIssues),
     totalPRs: kFormatter(totalPRs),
     contributedTo: kFormatter(contributedTo),
-    rank,
-  };
+    rank
+  }
 
   let isMissingFont = false
 
@@ -102,21 +92,20 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
         name: 'PressStart2P',
         data: fontData,
         weight: 400,
-        style: 'normal',
-      },
+        style: 'normal'
+      }
     ],
     loadAdditionalAsset: async () => {
       isMissingFont = true
+
       return ''
     }
-  });
+  })
 
   if (isMissingFont) {
     _stats.name = username
 
-    svg = await satori(
-      makeGithubStats(_stats, templateOptions),
-      {
+    svg = await satori(makeGithubStats(_stats, templateOptions), {
       width,
       height,
       fonts: [
@@ -124,47 +113,53 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
           name: 'PressStart2P',
           data: fontData,
           weight: 400,
-          style: 'normal',
-        },
+          style: 'normal'
+        }
       ]
-    });
+    })
   }
 
   const opts = {
     fitTo: {
       mode: 'width',
-      value: width,
-    },
-  } as const;
+      value: width
+    }
+  } as const
 
-  const pngData = new Resvg(svg, opts).render();
-  const pngBuffer = pngData.asPng();
+  const pngData = new Resvg(svg, opts).render()
+  const pngBuffer = pngData.asPng()
 
-  let pixels = await getPixelsFromPngBuffer(pngBuffer);
+  let pixels = await getPixelsFromPngBuffer(pngBuffer)
 
   if (screenEffect) {
-    pixels = curve(pixels, width, height);
+    pixels = curve(pixels, width, height)
   }
 
-  return await getPngBufferFromPixels(pixels, width, height);
+  return await getPngBufferFromPixels(pixels, width, height)
 }
 
-async function makeAvatar(url: string, pixelateAvatar: boolean, width: number, height: number, blockSize: number = 6.8): Promise<string> {
+async function makeAvatar(
+  url: string,
+  pixelateAvatar: boolean,
+  width: number,
+  height: number,
+  blockSize: number = 6.8
+): Promise<string> {
   if (!url) {
     return ''
   }
 
   const response = await axios.get(url, {
-    responseType: 'arraybuffer',
-  });
+    responseType: 'arraybuffer'
+  })
 
-  const png = Buffer.from(response.data, 'binary');
+  const png = Buffer.from(response.data, 'binary')
 
-  let pixels = await getPixelsFromPngBuffer(png);
+  let pixels = await getPixelsFromPngBuffer(png)
 
   if (pixelateAvatar) {
-    pixels = pixelate(pixels, width, height, blockSize);
+    pixels = pixelate(pixels, width, height, blockSize)
   }
 
-  return await getBase64FromPixels(pixels, width, height);
+  return await getBase64FromPixels(pixels, width, height)
 }

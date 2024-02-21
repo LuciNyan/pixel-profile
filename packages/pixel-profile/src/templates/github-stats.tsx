@@ -1,4 +1,4 @@
-import {Rank} from '../utils';
+import { Rank } from '../utils'
 
 type Stats = {
   name: string
@@ -14,171 +14,167 @@ type Stats = {
 type Options = {
   color: string
   showRank: boolean
-  background: string,
+  background: string
   includeAllCommits: boolean
 }
 
 export function makeGithubStats(stats: Stats, options: Options) {
-  const {
-    name,
-    totalStars,
-    totalCommits,
-    totalPRs,
-    totalIssues,
-    contributedTo,
-    rank,
-    imgUrl,
-  } = stats;
+  const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, imgUrl } = stats
 
-  const {
-    color,
-    showRank,
-    background,
-    includeAllCommits
-  } = options
+  const { color, showRank, background, includeAllCommits } = options
 
-  const date = new Date();
-  const year = date.getFullYear();
+  const date = new Date()
+  const year = date.getFullYear()
 
-  return <div
-    style={{
-      display: 'flex',
-      height: '100%',
-      width: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background
-    }}
-  >
+  return (
     <div
       style={{
         display: 'flex',
-        flexDirection: 'column',
-        fontSize: 23,
-        color,
-        width: '92%',
-        height: '80%',
-        borderRight: `${color} 4px solid`,
-        borderLeft: `${color} 4px solid`,
-        borderBottom: `${color} 4px solid`,
-        position: 'relative'
+        height: '100%',
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background
       }}
     >
-      <div style={{
-        display: 'flex',
-        width: '100%',
-      }}>
-        <div style={{
-          borderTop: `${color} 4px solid`,
-          width: '36px'
-        }}></div>
-        <div style={{
-          position: 'relative',
-          top: 6,
-        }}>{ `${name}'s GitHub Stats` }</div>
-        <div style={{
-          borderTop: `${color} 4px solid`,
-          flexGrow: '1'
-        }}></div>
-      </div>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        width: '100%',
-        height: '100%',
-        padding: '22px 40px 56px 40px'
-      }}>
-        <div style={{
-          marginTop: 16,
+      <div
+        style={{
           display: 'flex',
-          justifyContent: 'space-between',
           flexDirection: 'column',
-          flexGrow: 1,
-          paddingRight: imgUrl ? 40 : 0
-        }}>
+          fontSize: 23,
+          color,
+          width: '92%',
+          height: '80%',
+          borderRight: `${color} 4px solid`,
+          borderLeft: `${color} 4px solid`,
+          borderBottom: `${color} 4px solid`,
+          position: 'relative'
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            width: '100%'
+          }}
+        >
           <div
             style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
+              borderTop: `${color} 4px solid`,
+              width: '36px'
             }}
-          >
-            <div>Total Stars Earned: </div>
-            <div>{ `${totalStars}` }</div>
-          </div>
+          />
           <div
             style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
+              position: 'relative',
+              top: 6
             }}
-          >
-            <div>{`Total Commits${includeAllCommits ? '' : '(' + year + ')'}: `}</div>
-            <div>{ `${totalCommits}` }</div>
-          </div>
+          >{`${name}'s GitHub Stats`}</div>
           <div
             style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
+              borderTop: `${color} 4px solid`,
+              flexGrow: '1'
             }}
-          >
-            <div>Total PRs: </div>
-            <div>{ `${totalPRs}` }</div>
-          </div>
+          />
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            width: '100%',
+            height: '100%',
+            padding: '22px 40px 56px 40px'
+          }}
+        >
           <div
             style={{
+              marginTop: 16,
               display: 'flex',
-              alignItems: 'flex-start',
               justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
+              flexDirection: 'column',
+              flexGrow: 1,
+              paddingRight: imgUrl ? 40 : 0
             }}
           >
-            <div>Total Issues: </div>
-            <div>{ `${totalIssues}` }</div>
-          </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              justifyContent: 'space-between',
-              flexDirection: 'row',
-              width: '100%'
-            }}
-          >
-            <div>Contributed to (last year): </div>
-            <div>{ `${contributedTo}` }</div>
-          </div>
-          {
-            showRank
-              ? <div
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                width: '100%'
+              }}
+            >
+              <div>Total Stars Earned: </div>
+              <div>{`${totalStars}`}</div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                width: '100%'
+              }}
+            >
+              <div>{`Total Commits${includeAllCommits ? '' : `(${year})`}: `}</div>
+              <div>{`${totalCommits}`}</div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                width: '100%'
+              }}
+            >
+              <div>Total PRs: </div>
+              <div>{`${totalPRs}`}</div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                width: '100%'
+              }}
+            >
+              <div>Total Issues: </div>
+              <div>{`${totalIssues}`}</div>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+                width: '100%'
+              }}
+            >
+              <div>Contributed to (last year): </div>
+              <div>{`${contributedTo}`}</div>
+            </div>
+            {showRank ? (
+              <div
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'space-between',
                   flexDirection: 'row',
                   width: '100%',
-                  lineHeight: .5
+                  lineHeight: 0.5
                 }}
               >
-                {
-                  imgUrl
-                    ? <div>--------------------------------</div>
-                    : <div>---------------------------------------------</div>
-                }
+                {imgUrl ? (
+                  <div>--------------------------------</div>
+                ) : (
+                  <div>---------------------------------------------</div>
+                )}
               </div>
-              : null
-          }
-          {
-            showRank
-              ? <div
+            ) : null}
+            {showRank ? (
+              <div
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
@@ -188,13 +184,13 @@ export function makeGithubStats(stats: Stats, options: Options) {
                 }}
               >
                 <div>Rank: </div>
-                <div>{ `${rank.level}` }</div>
+                <div>{`${rank.level}`}</div>
               </div>
-              : null
-          }
+            ) : null}
+          </div>
+          {imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}
         </div>
-        { imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}
       </div>
     </div>
-  </div>
+  )
 }

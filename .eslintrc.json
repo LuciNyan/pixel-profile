@@ -1,20 +1,81 @@
 {
     "env": {
         "node": true,
-        "browser": true,
         "es2021": true
     },
-    "root": true,
-    "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+    "plugins": [
+        "@typescript-eslint",
+        "react",
+        "simple-import-sort",
+        "prettier"
     ],
-    "ignorePatterns": [".eslintrc.cjs"],
+    "extends": [
+        "standard",
+        "plugin:eslint-comments/recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react/recommended",
+        "plugin:import/typescript",
+        "prettier"
+    ],
     "parser": "@typescript-eslint/parser",
-    "plugins": ["simple-import-sort"],
+    "parserOptions": {
+        "ecmaFeatures": {
+            "jsx": true
+        },
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+    },
+    "settings": {
+        "react": {
+            "version": "detect"
+        },
+        "import/resolver": {
+            "node": {
+                "extensions": [".ts", ".tsx", ".js", ".json"]
+            },
+            "typescript": {
+                "project": [
+                    "./tsconfig.json",
+                    "./packages/pixel-profile/tsconfig.json"
+                ]
+            }
+        }
+    },
     "rules": {
-        "@typescript-eslint/no-explicit-any": "off",
-        "quotes": [2, "single", { "avoidEscape": true, "allowTemplateLiterals": false }],
+        "camelcase": 0,
+        "no-void": 0,
+        "comma-dangle": ["error", "never"],
+        "prettier/prettier": "error",
+        "max-len": ["error", { "code": 120 }],
+        "no-use-before-define": 0,
+        "eslint-comments/disable-enable-pair": [2, { "allowWholeFile": true }],
+        "import/extensions": 0,
+        "newline-before-return": 2,
+        "func-names": 0,
+        "lines-between-class-members": 0,
+        "max-classes-per-file": 0,
+        "no-console": 0,
+        "no-empty": 0,
+        "no-underscore-dangle": 0,
+        "no-unused-expressions": 0,
+        "no-useless-constructor": 0,
+        "semi": [2, "never"],
+        "quotes": ["error", "single", { "avoidEscape": true, "allowTemplateLiterals": false }],
+        "node/no-callback-literal": 0,
+        "prefer-template": 2,
+
+        "react/jsx-indent": [2, 2],
+        "react/jsx-filename-extension": [2, { "extensions": [".ts", ".tsx", ".json", ".js"] }],
+        "react/jsx-uses-react": 0,
+        "react/react-in-jsx-scope": 0,
+        "react/self-closing-comp": 2,
+        "react/jsx-boolean-value": 2,
+
+        "@typescript-eslint/explicit-function-return-type": 0,
+        "@typescript-eslint/no-explicit-any": 0,
+        "@typescript-eslint/no-non-null-assertion": 0,
+        "@typescript-eslint/no-useless-constructor": 2,
+
         "simple-import-sort/imports": [
             "error",
             {
@@ -28,6 +89,7 @@
                     ["^\\\\./(?=.*/)(?!/?$)", "^\\\\.(?!/?$)", "^\\\\./?$"]
                 ]
             }
-        ]
+        ],
+        "simple-import-sort/exports": "warn"
     }
 }

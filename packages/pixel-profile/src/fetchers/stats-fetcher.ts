@@ -2,12 +2,13 @@
  * Copyright (c) 2020 Anurag Hazra
  * https://github.com/anuraghazra/github-readme-stats/blob/master/src/fetchers/stats-fetcher.js
  */
-import { type Rank, rank, request, retryer } from '../utils';
-import axios, {type AxiosResponse} from 'axios';
-import * as dotenv from 'dotenv';
-import githubUsernameRegex from 'github-username-regex';
+// eslint-disable max-len
+import { type Rank, rank, request, retryer } from '../utils'
+import axios, { type AxiosResponse } from 'axios'
+import * as dotenv from 'dotenv'
+import githubUsernameRegex from 'github-username-regex'
 
-dotenv.config();
+dotenv.config()
 
 const GRAPHQL_REPOS_FIELD = `
   repositories(first: 100, ownerAffiliations: OWNER, orderBy: {direction: DESC, field: STARGAZERS}, after: $after) {
@@ -23,7 +24,7 @@ const GRAPHQL_REPOS_FIELD = `
       endCursor
     }
   }
-`;
+`
 
 const GRAPHQL_REPOS_QUERY = `
   query userInfo($login: String!, $after: String) {
@@ -31,9 +32,10 @@ const GRAPHQL_REPOS_QUERY = `
       ${GRAPHQL_REPOS_FIELD}
     }
   }
-`;
+`
 
-const GRAPHQL_STATS_QUERY = `
+// eslint-disable-next-line eslint-comments/disable-enable-pair
+const GRAPHQL_STATS_QUERY = /* eslint-disable max-len */ `
   query userInfo($login: String!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!) {
     user(login: $login) {
       name
@@ -71,24 +73,26 @@ const GRAPHQL_STATS_QUERY = `
       ${GRAPHQL_REPOS_FIELD}
     }
   }
-`;
+`
 
 const fetcher = (variables: Record<PropertyKey, unknown>, token: string): Promise<AxiosResponse> => {
-  const query = variables.after ? GRAPHQL_REPOS_QUERY : GRAPHQL_STATS_QUERY;
+  const query = variables.after ? GRAPHQL_REPOS_QUERY : GRAPHQL_STATS_QUERY
+
   return request(
     {
       query,
-      variables,
+      variables
     },
     {
-      Authorization: `bearer ${token}`,
-    },
-  );
-};
+      Authorization: `bearer ${token}`
+    }
+  )
+}
 
 /**
  * Fetch stats information for a given username.
- * @description This function supports multi-page fetching if the 'FETCH_MULTI_PAGE_STARS' environment variable is set to true.
+ * @description This function supports multi-page fetching if
+ * the 'FETCH_MULTI_PAGE_STARS' environment variable is set to true.
  */
 type Variables = {
   username: string
@@ -101,53 +105,51 @@ const statsFetcher = async ({
   username,
   includeMergedPullRequests,
   includeDiscussions,
-  includeDiscussionsAnswers,
+  includeDiscussionsAnswers
 }: Variables): Promise<AxiosResponse> => {
-  let stats;
-  let hasNextPage = true;
-  let endCursor = null;
+  let stats
+  let hasNextPage = true
+  let endCursor = null
   while (hasNextPage) {
-    // @ts-ignore
     const variables = {
       login: username,
       first: 100,
       after: endCursor,
       includeMergedPullRequests,
       includeDiscussions,
-      includeDiscussionsAnswers,
-    };
-    // @ts-ignore
-    const res = await retryer(fetcher, variables);
+      includeDiscussionsAnswers
+    }
+    const res = await retryer(fetcher, variables)
     if (res.data.errors) {
-      return res;
+      return res
     }
 
     // Store stats data.
-    const repoNodes = res.data.data.user.repositories.nodes;
+    const repoNodes = res.data.data.user.repositories.nodes
     if (stats) {
-      stats.data.data.user.repositories.nodes.push(...repoNodes);
+      stats.data.data.user.repositories.nodes.push(...repoNodes)
     } else {
-      stats = res;
+      stats = res
     }
 
     // Disable multi page fetching on public Vercel instance due to rate limits.
     const repoNodesWithStars = repoNodes.filter(
-      (node: { stargazers: { totalCount: number; }; }) => node.stargazers.totalCount !== 0,
-    );
+      (node: { stargazers: { totalCount: number } }) => node.stargazers.totalCount !== 0
+    )
     hasNextPage =
       process.env.FETCH_MULTI_PAGE_STARS === 'true' &&
       repoNodes.length === repoNodesWithStars.length &&
-      res.data.data.user.repositories.pageInfo.hasNextPage;
-    endCursor = res.data.data.user.repositories.pageInfo.endCursor;
+      res.data.data.user.repositories.pageInfo.hasNextPage
+    endCursor = res.data.data.user.repositories.pageInfo.endCursor
   }
 
-  return stats as AxiosResponse;
-};
+  return stats as AxiosResponse
+}
 
 const totalCommitsFetcher = async (username: string): Promise<number> => {
   if (!githubUsernameRegex.test(username)) {
-    console.log('Invalid username provided.');
-    throw new Error('Invalid username provided.');
+    console.log('Invalid username provided.')
+    throw new Error('Invalid username provided.')
   }
 
   // https://developer.github.com/v3/search/#search-commits
@@ -158,42 +160,43 @@ const totalCommitsFetcher = async (username: string): Promise<number> => {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/vnd.github.cloak-preview',
-        Authorization: `token ${token}`,
-      },
-    });
-  };
+        Authorization: `token ${token}`
+      }
+    })
+  }
 
-  let res;
+  let res
   try {
-    res = await retryer(fetchTotalCommits, { login: username });
+    res = await retryer(fetchTotalCommits, { login: username })
   } catch (err: any) {
-    console.log(err);
-    throw new Error(err);
+    console.log(err)
+    throw new Error(err)
   }
 
-  const totalCount = res.data.total_count;
+  const totalCount = res.data.total_count
   if (!totalCount || isNaN(totalCount)) {
-    throw new Error('Could not fetch total commits.');
+    throw new Error('Could not fetch total commits.')
   }
-  return totalCount;
-};
+
+  return totalCount
+}
 
 export type StatsData = {
-  name: string;
-  username: string;
-  bio: string;
-  avatarUrl: string;
-  totalPRs: number;
-  totalPRsMerged: number;
-  mergedPRsPercentage: number;
-  totalReviews: number;
-  totalCommits: number;
-  totalIssues: number;
-  totalStars: number;
-  totalDiscussionsStarted: number;
-  totalDiscussionsAnswered: number;
-  contributedTo: number;
-  rank: Rank;
+  name: string
+  username: string
+  bio: string
+  avatarUrl: string
+  totalPRs: number
+  totalPRsMerged: number
+  mergedPRsPercentage: number
+  totalReviews: number
+  totalCommits: number
+  totalIssues: number
+  totalStars: number
+  totalDiscussionsStarted: number
+  totalDiscussionsAnswered: number
+  contributedTo: number
+  rank: Rank
 }
 
 export async function fetchStats(
@@ -202,10 +205,10 @@ export async function fetchStats(
   exclude_repo: string[] = [],
   include_merged_pull_requests = false,
   include_discussions = false,
-  include_discussions_answers = false,
+  include_discussions_answers = false
 ): Promise<StatsData> {
   if (!username) {
-    throw new Error('needs a username');
+    throw new Error('needs a username')
   }
 
   const stats = {
@@ -223,19 +226,19 @@ export async function fetchStats(
     totalDiscussionsStarted: 0,
     totalDiscussionsAnswered: 0,
     contributedTo: 0,
-    rank: { level: 'C', percentile: 100, score: 0 },
-  };
+    rank: { level: 'C', percentile: 100, score: 0 }
+  }
 
   const res = await statsFetcher({
     username,
     includeMergedPullRequests: include_merged_pull_requests,
     includeDiscussions: include_discussions,
-    includeDiscussionsAnswers: include_discussions_answers,
-  });
+    includeDiscussionsAnswers: include_discussions_answers
+  })
 
   // Catch GraphQL errors.
   if (res.data.errors) {
-    console.error(res.data.errors);
+    console.error(res.data.errors)
     if (res.data.errors[0].type === 'NOT_FOUND') {
       throw new Error(res.data.errors[0].message || 'Could not fetch user.')
     }
@@ -246,47 +249,44 @@ export async function fetchStats(
     throw new Error('Something went wrong while trying to retrieve the stats data using the GraphQL API.')
   }
 
-  const user = res.data.data.user;
+  const user = res.data.data.user
 
-  stats.name = user.name || user.login;
-  stats.avatarUrl = user.avatarUrl;
-  stats.bio = user.bio;
+  stats.name = user.name || user.login
+  stats.avatarUrl = user.avatarUrl
+  stats.bio = user.bio
 
   // if include_all_commits, fetch all commits using the REST API.
   if (include_all_commits) {
-    stats.totalCommits = await totalCommitsFetcher(username);
+    stats.totalCommits = await totalCommitsFetcher(username)
   } else {
-    stats.totalCommits = user.contributionsCollection.totalCommitContributions;
+    stats.totalCommits = user.contributionsCollection.totalCommitContributions
   }
 
-  stats.totalPRs = user.pullRequests.totalCount;
+  stats.totalPRs = user.pullRequests.totalCount
   if (include_merged_pull_requests) {
-    stats.totalPRsMerged = user.mergedPullRequests.totalCount;
-    stats.mergedPRsPercentage =
-      (user.mergedPullRequests.totalCount / user.pullRequests.totalCount) * 100;
+    stats.totalPRsMerged = user.mergedPullRequests.totalCount
+    stats.mergedPRsPercentage = (user.mergedPullRequests.totalCount / user.pullRequests.totalCount) * 100
   }
-  stats.totalReviews =
-    user.contributionsCollection.totalPullRequestReviewContributions;
-  stats.totalIssues = user.openIssues.totalCount + user.closedIssues.totalCount;
+  stats.totalReviews = user.contributionsCollection.totalPullRequestReviewContributions
+  stats.totalIssues = user.openIssues.totalCount + user.closedIssues.totalCount
   if (include_discussions) {
-    stats.totalDiscussionsStarted = user.repositoryDiscussions.totalCount;
+    stats.totalDiscussionsStarted = user.repositoryDiscussions.totalCount
   }
   if (include_discussions_answers) {
-    stats.totalDiscussionsAnswered =
-      user.repositoryDiscussionComments.totalCount;
+    stats.totalDiscussionsAnswered = user.repositoryDiscussionComments.totalCount
   }
-  stats.contributedTo = user.repositoriesContributedTo.totalCount;
+  stats.contributedTo = user.repositoriesContributedTo.totalCount
 
   // Retrieve stars while filtering out repositories to be hidden.
-  const repoToHide = new Set(exclude_repo);
+  const repoToHide = new Set(exclude_repo)
 
   stats.totalStars = user.repositories.nodes
-    .filter((data: { name: string; }) => {
-      return !repoToHide.has(data.name);
+    .filter((data: { name: string }) => {
+      return !repoToHide.has(data.name)
     })
-    .reduce((prev: number, curr: { stargazers: { totalCount: number; }; }) => {
-      return prev + curr.stargazers.totalCount;
-    }, 0);
+    .reduce((prev: number, curr: { stargazers: { totalCount: number } }) => {
+      return prev + curr.stargazers.totalCount
+    }, 0)
 
   stats.rank = rank({
     all_commits: include_all_commits,
@@ -296,8 +296,8 @@ export async function fetchStats(
     issues: stats.totalIssues,
     // repos: user.repositories.totalCount,
     stars: stats.totalStars,
-    followers: user.followers.totalCount,
-  });
+    followers: user.followers.totalCount
+  })
 
-  return stats;
+  return stats
 }

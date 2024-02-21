@@ -1,3 +1,3 @@
 export { renderStats } from './cards/stats'
 export { fetchStats } from './fetchers/stats-fetcher'
-export { clamp, request, retryer, RETRIES } from './utils'
+export { clamp, request, RETRIES, retryer } from './utils'

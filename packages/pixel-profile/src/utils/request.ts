@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios'
 
 type AxiosRequestConfigData = AxiosRequestConfig['data']
 type AxiosRequestConfigHeaders = AxiosRequestConfig['headers']
@@ -8,6 +8,6 @@ export function request(data: AxiosRequestConfigData, headers: AxiosRequestConfi
     url: 'https://api.github.com/graphql',
     method: 'post',
     headers,
-    data,
-  });
-};
+    data
+  })
+}

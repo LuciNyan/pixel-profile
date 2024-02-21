@@ -31,12 +31,6 @@
     "@types/react": "^18.2.57",
     "@types/node": "^20.11.0",
     "@types/react-dom": "^18.2.19",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "@typescript-eslint/parser": "^6.10.0",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-simple-import-sort": "^10.0.0",
-    "prettier": "^3.1.1",
     "react": "^17.0.2",
     "tsup": "^8.0.2",
     "typescript": "^5.3.3"

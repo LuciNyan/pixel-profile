@@ -18,8 +18,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky install",
-    "eslint": "eslint -c .eslintrc.json --ext .ts,.tsx api packages/pixel-profile/src",
-    "eslint:fix": "eslint --fix -c .eslintrc.json --ext .ts,.tsx api packages/pixel-profile/src",
+    "eslint": "eslint -c .eslintrc.json --ext .ts,.tsx api utils packages/pixel-profile/src",
+    "eslint:fix": "eslint --fix -c .eslintrc.json --ext .ts,.tsx api utils packages/pixel-profile/src",
     "check:type": "pnpm --filter=pixel-profile run type-check"
   },
   "type": "module",

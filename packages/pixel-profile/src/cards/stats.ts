@@ -38,7 +38,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
   const { name, username, totalStars, totalCommits, totalIssues, totalPRs, avatarUrl, contributedTo, rank } = stats
 
   const {
-    screenEffect = true,
+    screenEffect = false,
     color = 'white',
     showRank = true,
     background = '#434343',

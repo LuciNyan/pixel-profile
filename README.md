@@ -53,14 +53,28 @@ Github Stats Card Options
 | `color` | Set text color to any valid CSS color value | `white`       |
 | `background` | Set background color/image. Supports a subset of CSS background property values    | `#434343`     |
 
+## Deploy on your own 
+
+### On Vercel
+The GitHub API has a rate limit of 5k requests per hour. So my https://pixel-profile.vercel.app/api setup could potentially hit that cap. By self-hosting it on Vercel, you eliminate that concern. Simply click "Deploy" to begin seamlessly hosting your own instance!
+
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/LuciNyan/pixel-profile)
+
 ## Contribute
 The layout in this project is entirely done with JSX, so developing it is almost no different than a normal React project. This means anyone can easily create new cards with very little effort. If you have any ideas, feel free to contribute them here! ❤️
 
 ### TODO
 - [X] Github stats card.
+- [ ] READEME: how to deploy on Vercel.
 - [ ] Github repo card.
 - [ ] Leetcode stats card.
 
 ## Author
 
 - [LuciNyan](https://github.com/LuciNyan)
+
+***
+
+<a aria-label="Vercel logo" href="https://vercel.com">
+  <img src="https://badgen.net/badge/icon/Made%20with%20Love?icon=zeit&label&color=black&labelColor=black">
+</a>

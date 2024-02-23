@@ -10,6 +10,10 @@ export function kFormatter(num: number): string {
     : `${Math.sign(num) * Math.abs(num)}`
 }
 
+export function add2(a: Vec2, b: Vec2): Vec2 {
+  return [a[0] + b[0], a[1] + b[1]]
+}
+
 export function dot2(a: Vec2, b: Vec2): number {
   return a[0] * b[0] + a[1] * b[1]
 }

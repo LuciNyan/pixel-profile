@@ -1,5 +1,5 @@
 import type { Coordinates, Vec2 } from '../utils'
-import { dot2, prod2, render, subtract2 } from '../utils'
+import { add2, dot2, prod2, render, subtract2 } from '../utils'
 
 const margin = [0, 0]
 const screenCurvature = 0.1
@@ -13,7 +13,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       cc[0] = cc[0] * temp
       cc[1] = cc[1] * temp
 
-      return [coords[0] + cc[0], coords[1] + cc[1]]
+      return add2(coords, cc)
     }
 
     const coords = distortCoordinates(uv)

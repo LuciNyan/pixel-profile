@@ -70,3 +70,9 @@ The layout in this project is entirely done with JSX, so developing it is almost
 ## Author
 
 - [LuciNyan](https://github.com/LuciNyan)
+
+&nbsp;
+
+<a aria-label="Vercel logo" href="https://vercel.com">
+  <img src="https://badgen.net/badge/icon/Made%20with%20Love?icon=zeit&label&color=black&labelColor=black">
+</a>

@@ -11,6 +11,7 @@ on:
 
 jobs:
   lint:
+    if: github.repository_owner == 'LuciNyan'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -29,6 +30,7 @@ jobs:
         run: nr lint
 
   typecheck:
+    if: github.repository_owner == 'LuciNyan'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

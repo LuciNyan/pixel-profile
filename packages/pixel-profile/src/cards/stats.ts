@@ -1,13 +1,6 @@
+import { curve, pixelate } from '../shaders'
 import { makeGithubStats } from '../templates/github-stats'
-import {
-  curve,
-  getBase64FromPixels,
-  getPixelsFromPngBuffer,
-  getPngBufferFromPixels,
-  kFormatter,
-  pixelate,
-  Rank
-} from '../utils'
+import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
 import { Resvg } from '@resvg/resvg-js'
 import axios from 'axios'
 import { readFile } from 'node:fs/promises'

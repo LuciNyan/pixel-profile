@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsup src/index.ts --watch",
     "build": "tsup",
-    "type-check": "tsc --noEmit"
+    "test-type": "tsc --noEmit"
   },
   "type": "module",
   "author": "LuciNyan",

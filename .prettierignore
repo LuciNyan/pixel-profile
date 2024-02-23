@@ -3,3 +3,4 @@ node_modules
 *.md
 coverage
 .vercel
+*.yaml

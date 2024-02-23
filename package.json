@@ -16,7 +16,6 @@
     "build": "pnpm --filter \"pixel-profile\" run build",
     "release": "bumpp --commit --push --tag -r && pnpm publish ./packages/pixel-profile --access=public",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "prepare": "husky install",
     "lint": "eslint -c .eslintrc.json --ext .ts,.tsx api utils packages/pixel-profile/src",
     "lint:fix": "pnpm lint --fix",

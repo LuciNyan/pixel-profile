@@ -47,3 +47,22 @@ jobs:
 
       - name: Typecheck
         run: nr test-type
+
+  test:
+    if: github.repository_owner == 'LuciNyan'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Setup
+        run: npm i -g @antfu/ni
+
+      - name: Install
+        run: nci
+
+      - name: Typecheck
+        run: nr test

@@ -53,12 +53,31 @@ Github Stats Card Options
 | `color` | Set text color to any valid CSS color value | `white`       |
 | `background` | Set background color/image. Supports a subset of CSS background property values    | `#434343`     |
 
-## Deploy on your own 
+## Deploy on your own
 
-### On Vercel
+### 1. Deploy on Vercel
 The GitHub API has a rate limit of 5k requests per hour. So my https://pixel-profile.vercel.app/api setup could potentially hit that cap. By self-hosting it on Vercel, you eliminate that concern. Simply click "Deploy" to begin seamlessly hosting your own instance!
 
 [![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/LuciNyan/pixel-profile)
+
+### 2. Creating a Personal Access Token
+To use this tool to retrieve user statistics, you'll need to generate a Personal Access Token (PAT) with the proper scopes.
+
+Click [here](https://github.com/settings/tokens/new) to create a new PAT.
+
+Under "Select scopes" check the box for "repo" and "user" like in the image below:
+
+![Image of selecting repo scope for PAT](.github/img/select-scopes.png)
+
+Copy the generated PAT for use in the config file or as an environment variable.
+
+### 3. Using the PAT with Vercel
+Once you have generated a Personal Access Token (PAT) from your GitHub account, you'll need to add it to your Vercel project configuration in order to authenticate API requests.
+
+To add the PAT to Vercel:
+![Image of adding env step 1](.github/img/add-env-step-1.png)
+
+![Image of adding env step 2](.github/img/add-env-step-2.png)
 
 ## Contribute
 The layout in this project is entirely done with JSX, so developing it is almost no different than a normal React project. This means anyone can easily create new cards with very little effort. If you have any ideas, feel free to contribute them here! ❤️

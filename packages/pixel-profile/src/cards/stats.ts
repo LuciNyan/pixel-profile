@@ -10,7 +10,7 @@ import satori from 'satori'
 export type Stats = {
   name: string
   username: string
-  totalStars: number
+  totalStars: number | null
   totalCommits: number
   totalIssues: number
   totalPRs: number
@@ -54,7 +54,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const _stats = {
     name,
     avatar,
-    totalStars: kFormatter(totalStars),
+    totalStars: totalStars ? kFormatter(totalStars) : '',
     totalCommits: kFormatter(totalCommits),
     totalIssues: kFormatter(totalIssues),
     totalPRs: kFormatter(totalPRs),

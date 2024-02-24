@@ -4,17 +4,18 @@ import { clamp, fetchStats, renderStats } from 'pixel-profile'
 
 export default async (req: VercelRequest, res: VercelResponse) => {
   const {
-    username,
-    screen_effect,
-    show_avatar,
-    pixelate_avatar,
-    color,
     background,
-    show_rank,
-    include_all_commits,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
+    color,
     exclude_repo,
-    show
+    include_all_commits,
+    pixelate_avatar,
+    screen_effect,
+    show,
+    show_avatar,
+    show_rank,
+    show_total_stars,
+    username
   } = req.query
 
   res.setHeader('Content-Type', 'image/png')
@@ -23,6 +24,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     const showStats = parseArray(show)
     const showAvatar = parseBoolean(show_avatar) ?? true
     const showRank = parseBoolean(show_rank) ?? true
+    const showTotalStars = parseBoolean(show_total_stars) ?? true
     const includeAllCommits = parseBoolean(include_all_commits)
 
     const stats: Parameters<typeof renderStats>[0] = await fetchStats(
@@ -36,6 +38,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
     stats.avatarUrl = showAvatar ? stats.avatarUrl : ''
     stats.rank = showRank ? stats.rank : null
+    stats.totalStars = showTotalStars ? stats.totalStars : null
 
     let cacheSeconds = clamp(parseInt(parseString(cache_seconds) ?? '0', 10), CONSTANTS.SIX_HOURS, CONSTANTS.ONE_DAY)
 

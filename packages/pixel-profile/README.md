@@ -48,14 +48,15 @@ Github Stats Card Options
 
 | Name                  | Description                                                                     | Default value |
 | --------------------- | ------------------------------------------------------------------------------- | ------------- |
-| `username`            | GitHub username                                                                 | ''            |
-| `show_rank`           | Display rank value                                                              | `true`        |
+| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
+| `color`               | Set text color to any valid CSS color value                                     | `white`       |
 | `include_all_commits` | Count all commits                                                               | `false`       |
+| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
 | `screen_effect`       | Enable curved screen effect                                                     | `false`       |
 | `show_avatar`         | Display avatar                                                                  | `true`        |
-| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
-| `color`               | Set text color to any valid CSS color value                                     | `white`       |
-| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
+| `show_rank`           | Display rank value                                                              | `true`        |
+| `show_total_stars`    | Display total stars earned                                                      | `true`        |
+| `username`            | GitHub username                                                                 | ''            |
 
 ## Contribute
 

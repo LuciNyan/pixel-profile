@@ -29,12 +29,11 @@ type Options = {
   color?: string
   showRank?: boolean
   background?: string
-  showAvatar?: boolean
   pixelateAvatar?: boolean
   includeAllCommits?: boolean
 }
 
-export async function renderStats(stats: Stats, options: Options): Promise<Buffer> {
+export async function renderStats(stats: Stats, options: Options = {}): Promise<Buffer> {
   const { name, username, totalStars, totalCommits, totalIssues, totalPRs, avatarUrl, contributedTo, rank } = stats
 
   const {
@@ -42,7 +41,6 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
     color = 'white',
     showRank = true,
     background = '#434343',
-    showAvatar = true,
     pixelateAvatar = true,
     includeAllCommits = false
   } = options
@@ -54,7 +52,7 @@ export async function renderStats(stats: Stats, options: Options): Promise<Buffe
 
   const [fontData, imgUrl] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(showAvatar ? avatarUrl : '', pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT)
+    makeAvatar(avatarUrl, pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT)
   ])
 
   const _stats = {

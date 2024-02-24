@@ -21,6 +21,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     const showStats = parseArray(show)
+    const showAvatar = parseBoolean(show_avatar) ?? true
     const includeAllCommits = parseBoolean(include_all_commits)
 
     const stats = await fetchStats(
@@ -31,6 +32,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       showStats.includes('discussions_started'),
       showStats.includes('discussions_answered')
     )
+
+    stats.avatarUrl = showAvatar ? stats.avatarUrl : ''
 
     let cacheSeconds = clamp(parseInt(parseString(cache_seconds) ?? '0', 10), CONSTANTS.SIX_HOURS, CONSTANTS.ONE_DAY)
 
@@ -45,7 +48,6 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       screenEffect: parseBoolean(screen_effect),
       color: parseString(color),
       background: parseString(background),
-      showAvatar: parseBoolean(show_avatar),
       pixelateAvatar: parseBoolean(pixelate_avatar),
       showRank: parseBoolean(show_rank),
       includeAllCommits

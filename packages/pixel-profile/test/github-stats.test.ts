@@ -15,14 +15,14 @@ declare global {
 expect.extend({ toMatchImageSnapshot })
 
 describe('Github stats', () => {
-  it('Render card with show_avatar=false', async () => {
+  it('Render card without avatar', async () => {
     const png = await renderStats({
       name: 'LuciNyan',
       username: 'username',
-      totalStars: 12345,
-      totalCommits: 67890,
-      totalIssues: 0,
-      totalPRs: 999,
+      totalStars: 999,
+      totalCommits: 99999,
+      totalIssues: 99,
+      totalPRs: 9,
       contributedTo: 9999,
       avatarUrl: '',
       rank: {
@@ -39,10 +39,10 @@ describe('Github stats', () => {
       {
         name: 'LuciNyan',
         username: 'username',
-        totalStars: 12345,
-        totalCommits: 67890,
-        totalIssues: 0,
-        totalPRs: 999,
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
         rank: null
@@ -55,15 +55,15 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with custom color, background and screen_effect', async () => {
+  it('Render card with all commits, custom color, background and screen_effect', async () => {
     const png = await renderStats(
       {
         name: 'LuciNyan',
         username: 'username',
-        totalStars: 12345,
-        totalCommits: 67890,
-        totalIssues: 0,
-        totalPRs: 999,
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
         rank: null
@@ -71,7 +71,8 @@ describe('Github stats', () => {
       {
         background: 'linear-gradient(to bottom right, #2aeeff, #5580eb)',
         color: 'white',
-        screenEffect: true
+        screenEffect: true,
+        includeAllCommits: true
       }
     )
     expect(png).toMatchImageSnapshot()

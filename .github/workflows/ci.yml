@@ -64,5 +64,5 @@ jobs:
       - name: Install
         run: nci
 
-      - name: Typecheck
+      - name: Test
         run: nr test

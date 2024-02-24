@@ -7,7 +7,6 @@ node_modules
 coverage
 benchmarks
 vercel_token
-__image_snapshots__
 
 # IDE
 .vscode/*

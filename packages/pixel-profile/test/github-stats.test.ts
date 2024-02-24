@@ -54,4 +54,26 @@ describe('Github stats', () => {
     )
     expect(png).toMatchImageSnapshot()
   })
+
+  it('Render card with custom color, background and screen_effect', async () => {
+    const png = await renderStats(
+      {
+        name: 'LuciNyan',
+        username: 'username',
+        totalStars: 12345,
+        totalCommits: 67890,
+        totalIssues: 0,
+        totalPRs: 999,
+        contributedTo: 9999,
+        avatarUrl: '',
+        rank: null
+      },
+      {
+        background: 'linear-gradient(to bottom right, #2aeeff, #5580eb)',
+        color: 'white',
+        screenEffect: true
+      }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
 })

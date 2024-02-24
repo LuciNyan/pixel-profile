@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
-    "dev:vercel": "vercel dev",
+    "dev:vercel": "vercel dev --yes",
     "dev:pixel-profile": "turbo dev --filter=pixel-profile",
     "build": "pnpm --filter \"pixel-profile\" run build",
     "release": "bumpp --commit --push --tag -r && pnpm publish ./packages/pixel-profile --access=public",

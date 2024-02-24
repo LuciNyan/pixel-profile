@@ -1,5 +1,5 @@
 import { curve, pixelate } from '../shaders'
-import { makeGithubStats } from '../templates/github-stats'
+import { AVATAR_SIZE, CARD_SIZE, makeGithubStats } from '../templates/github-stats'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
 import { Resvg } from '@resvg/resvg-js'
 import axios from 'axios'
@@ -7,12 +7,7 @@ import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import satori from 'satori'
 
-const CARD_WIDTH = 1226
-const CARD_HEIGHT = 430
-const AVATAR_WIDTH = 280
-const AVATAR_HEIGHT = 280
-
-type Stats = {
+export type Stats = {
   name: string
   username: string
   totalStars: number
@@ -21,7 +16,7 @@ type Stats = {
   totalPRs: number
   avatarUrl: string
   contributedTo: number
-  rank: Rank
+  rank: Rank | null
 }
 
 type Options = {
@@ -39,38 +34,38 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const {
     screenEffect = false,
     color = 'white',
-    showRank = true,
     background = '#434343',
     pixelateAvatar = true,
     includeAllCommits = false
   } = options
 
-  const width = CARD_WIDTH
-  const height = CARD_HEIGHT
+  const cardSize = rank ? CARD_SIZE.BIG : CARD_SIZE.SMALL
+
+  const width = cardSize.CARD_WIDTH
+  const height = cardSize.CARD_HEIGHT
 
   const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
-  const [fontData, imgUrl] = await Promise.all([
+  const [fontData, avatar] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(avatarUrl, pixelateAvatar, AVATAR_WIDTH, AVATAR_HEIGHT)
+    makeAvatar(avatarUrl, pixelateAvatar, AVATAR_SIZE.AVATAR_WIDTH, AVATAR_SIZE.AVATAR_HEIGHT)
   ])
 
   const _stats = {
     name,
-    imgUrl,
+    avatar,
     totalStars: kFormatter(totalStars),
     totalCommits: kFormatter(totalCommits),
     totalIssues: kFormatter(totalIssues),
     totalPRs: kFormatter(totalPRs),
     contributedTo: kFormatter(contributedTo),
-    rank
+    rank: rank ? rank.level : ''
   }
 
   let isMissingFont = false
 
   const templateOptions = {
     color,
-    showRank,
     background,
     includeAllCommits
   }

@@ -22,9 +22,10 @@ export default async (req: VercelRequest, res: VercelResponse) => {
   try {
     const showStats = parseArray(show)
     const showAvatar = parseBoolean(show_avatar) ?? true
+    const showRank = parseBoolean(show_rank) ?? true
     const includeAllCommits = parseBoolean(include_all_commits)
 
-    const stats = await fetchStats(
+    const stats: Parameters<typeof renderStats>[0] = await fetchStats(
       typeof username === 'string' ? username : '',
       includeAllCommits,
       parseArray(exclude_repo),
@@ -34,6 +35,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     )
 
     stats.avatarUrl = showAvatar ? stats.avatarUrl : ''
+    stats.rank = showRank ? stats.rank : null
 
     let cacheSeconds = clamp(parseInt(parseString(cache_seconds) ?? '0', 10), CONSTANTS.SIX_HOURS, CONSTANTS.ONE_DAY)
 
@@ -49,7 +51,6 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       color: parseString(color),
       background: parseString(background),
       pixelateAvatar: parseBoolean(pixelate_avatar),
-      showRank: parseBoolean(show_rank),
       includeAllCommits
     }
 

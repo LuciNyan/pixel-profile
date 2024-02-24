@@ -1,27 +1,42 @@
 import { Rank } from '../utils'
 
-type Stats = {
+export type Stats = {
   name: string
   totalStars: string
   totalCommits: string
   totalPRs: string
   totalIssues: string
   contributedTo: string
-  rank: Rank
-  imgUrl: string
+  rank: Rank['level']
+  avatar: string
 }
 
 type Options = {
   color: string
-  showRank: boolean
   background: string
   includeAllCommits: boolean
 }
 
-export function makeGithubStats(stats: Stats, options: Options) {
-  const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, imgUrl } = stats
+export const CARD_SIZE = {
+  BIG: {
+    CARD_WIDTH: 1226,
+    CARD_HEIGHT: 430
+  },
+  SMALL: {
+    CARD_WIDTH: 1226,
+    CARD_HEIGHT: 350
+  }
+}
 
-  const { color, showRank, background, includeAllCommits } = options
+export const AVATAR_SIZE = {
+  AVATAR_WIDTH: 280,
+  AVATAR_HEIGHT: 280
+}
+
+export function makeGithubStats(stats: Stats, options: Options) {
+  const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, avatar } = stats
+
+  const { color, background, includeAllCommits } = options
 
   const date = new Date()
   const year = date.getFullYear()
@@ -92,7 +107,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
               justifyContent: 'space-between',
               flexDirection: 'column',
               flexGrow: 1,
-              paddingRight: imgUrl ? 40 : 0
+              paddingRight: avatar ? 40 : 0
             }}
           >
             <div
@@ -155,7 +170,7 @@ export function makeGithubStats(stats: Stats, options: Options) {
               <div>Contributed to (last year): </div>
               <div>{`${contributedTo}`}</div>
             </div>
-            {showRank ? (
+            {rank ? (
               <div
                 style={{
                   display: 'flex',
@@ -166,14 +181,14 @@ export function makeGithubStats(stats: Stats, options: Options) {
                   lineHeight: 0.5
                 }}
               >
-                {imgUrl ? (
+                {avatar ? (
                   <div>--------------------------------</div>
                 ) : (
                   <div>---------------------------------------------</div>
                 )}
               </div>
             ) : null}
-            {showRank ? (
+            {rank ? (
               <div
                 style={{
                   display: 'flex',
@@ -184,11 +199,11 @@ export function makeGithubStats(stats: Stats, options: Options) {
                 }}
               >
                 <div>Rank: </div>
-                <div>{`${rank.level}`}</div>
+                <div>{`${rank}`}</div>
               </div>
             ) : null}
           </div>
-          {imgUrl ? <img src={imgUrl} style={{ height: '100%' }} /> : null}
+          {avatar ? <img src={avatar} style={{ height: '100%' }} /> : null}
         </div>
       </div>
     </div>

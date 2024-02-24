@@ -1,5 +1,5 @@
 import { renderStats } from '../src'
-// @ts-expect-error 111
+// @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
 
@@ -26,7 +26,7 @@ describe('Github stats', () => {
       contributedTo: 9999,
       avatarUrl: '',
       rank: {
-        level: 'A+',
+        level: 'S',
         percentile: 0,
         score: 0
       }
@@ -34,22 +34,18 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with custom color and background', async () => {
+  it('Render card without avatar and rank, with custom color and background', async () => {
     const png = await renderStats(
       {
         name: 'LuciNyan',
         username: 'username',
         totalStars: 12345,
         totalCommits: 67890,
-        totalIssues: 999,
-        totalPRs: 0,
+        totalIssues: 0,
+        totalPRs: 999,
         contributedTo: 9999,
         avatarUrl: '',
-        rank: {
-          level: 'A',
-          percentile: 0,
-          score: 0
-        }
+        rank: null
       },
       {
         background: 'linear-gradient(to bottom right, #74dcc4, #4597e9)',

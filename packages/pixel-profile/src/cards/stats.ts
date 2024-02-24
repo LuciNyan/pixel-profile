@@ -109,7 +109,10 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     fitTo: {
       mode: 'width',
       value: width
-    }
+    },
+    font: {
+      loadSystemFonts: false, // It will be faster to disable loading system fonts.
+    },
   } as const
 
   const pngData = new Resvg(svg, opts).render()

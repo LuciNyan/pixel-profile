@@ -111,8 +111,8 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
       value: width
     },
     font: {
-      loadSystemFonts: false, // It will be faster to disable loading system fonts.
-    },
+      loadSystemFonts: false // It will be faster to disable loading system fonts.
+    }
   } as const
 
   const pngData = new Resvg(svg, opts).render()

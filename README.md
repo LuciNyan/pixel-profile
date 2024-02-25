@@ -5,7 +5,7 @@
 > 
 > [Github Readme Stats](https://github.com/anuraghazra/github-readme-stats): One of the best tools out there for generating awesome Github stats cards.
 > 
-> [Resvg Js](https://github.com/yisibl/resvg-js): A high-performance SVG renderer and toolkit.
+> [resvg-js](https://github.com/yisibl/resvg-js): A high-performance SVG renderer and toolkit.
 >
 > [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
 

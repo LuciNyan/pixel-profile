@@ -82,9 +82,30 @@ To add the PAT to Vercel:
 ## Contribute
 The layout in this project is entirely done with JSX, so developing it is almost no different than a normal React project. This means anyone can easily create new cards with very little effort. If you have any ideas, feel free to contribute them here! ❤️
 
+### Running Locally
+Follow these 4 easy steps to get `pixel-profile` running on your local machine:
+
+#### 1. Install dependencies
+```shell
+pnpm install
+```
+
+#### 2. Generate a Personal Access Token (PAT)
+Refer to the "Creating a Personal Access Token" section above
+
+#### 3. Create a .env file
+Use .env.example as a guide to set your environment variables
+```markdown
+PAT_1=xxxxxxx
+```
+
+#### 4. Run! 🚀
+```shell
+pnpm start
+```
+
 ### TODO
 - [X] Github stats card.
-- [ ] READEME: how to deploy on Vercel.
 - [ ] Github repo card.
 - [ ] Leetcode stats card.
 

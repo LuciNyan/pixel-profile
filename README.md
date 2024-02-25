@@ -40,7 +40,7 @@ If you want to include a GitHub stats card in your own README and have it displa
 [Here](https://github.com/LuciNyan) is a ready-made example configuration you can reference if you need inspiration for your own config.
 
 ## Documentation
-Github Stats Card Options
+### Github Stats Card Options
 
 | Name | Description                  | Default value |
 | --- |------------------------------|---------------|
@@ -53,6 +53,19 @@ Github Stats Card Options
 | `show_rank` | Display rank value             | `true`        |
 | `show_total_stars` | Display total stars earned             | `true`        |
 | `username` | GitHub username              | ''            |
+
+### Complex background CSS enables cool tricks! Some examples:
+#### 1. Pride Flag (light mode)
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to%20bottom%2C%20%23CD001A%200%25%2C%20%23CD001A%2014.72%25%2C%20%23F06400%2014.72%25%2C%20%23F06400%2028.56%25%2C%20%23F2CD00%2028.56%25%2C%20%23F2CD00%2042.84%25%2C%20%2379c300%2042.84%25%2C%20%2379c300%2057.12%25%2C%20%231961ae%2057.12%25%2C%20%231961ae%2071.4%25%2C%20%2331137c%2071.4%25%2C%20%2331137c%2085.24%25%2C%20%2361007d%2085.24%25%2C%20%2361007d%20100%25)
+```
+![Pride flag light](.github/img/pride-flag-light.png)
+
+#### 2. Pride Flag (dark mode)
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&background=linear-gradient(to%20bottom%2C%20%23CD001A%200%25%2C%20%23CD001A%2014.72%25%2C%20%23F06400%2014.72%25%2C%20%23F06400%2028.56%25%2C%20%23F2CD00%2028.56%25%2C%20%23F2CD00%2042.84%25%2C%20%2379c300%2042.84%25%2C%20%2379c300%2057.12%25%2C%20%231961ae%2057.12%25%2C%20%231961ae%2071.4%25%2C%20%2331137c%2071.4%25%2C%20%2331137c%2085.24%25%2C%20%2361007d%2085.24%25%2C%20%2361007d%20100%25)
+```
+![Pride flag dark](.github/img/pride-flag-dark.png)
 
 ## Deploy on your own
 
@@ -76,6 +89,7 @@ Copy the generated PAT for use in the config file or as an environment variable.
 Once you have generated a Personal Access Token (PAT) from your GitHub account, you'll need to add it to your Vercel project configuration in order to authenticate API requests.
 
 To add the PAT to Vercel:
+
 ![Image of adding env step 1](.github/img/add-env-step-1.png)
 
 ![Image of adding env step 2](.github/img/add-env-step-2.png)
@@ -92,10 +106,10 @@ pnpm install
 ```
 
 #### 2. Generate a Personal Access Token (PAT)
-Refer to the "Creating a Personal Access Token" section above
+Refer to the "Creating a Personal Access Token" section above.
 
 #### 3. Create a .env file
-Use .env.example as a guide to set your environment variables
+Use .env.example as a guide to set your environment variables.
 ```markdown
 PAT_1=xxxxxxx
 ```

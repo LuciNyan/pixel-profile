@@ -77,4 +77,23 @@ describe('Github stats', () => {
     )
     expect(png).toMatchImageSnapshot()
   })
+
+  it('Render card with totalStars set to null', async () => {
+    const png = await renderStats({
+      name: 'LuciNyan',
+      username: 'username',
+      totalStars: null,
+      totalCommits: 99999,
+      totalIssues: 99,
+      totalPRs: 9,
+      contributedTo: 9999,
+      avatarUrl: '',
+      rank: {
+        level: 'S',
+        percentile: 0,
+        score: 0
+      }
+    })
+    expect(png).toMatchImageSnapshot()
+  })
 })

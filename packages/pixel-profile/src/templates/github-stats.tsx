@@ -2,7 +2,7 @@ import { Rank } from '../utils'
 
 export type Stats = {
   name: string
-  totalStars: string
+  totalStars: string | null
   totalCommits: string
   totalPRs: string
   totalIssues: string
@@ -110,18 +110,21 @@ export function makeGithubStats(stats: Stats, options: Options) {
               paddingRight: avatar ? 40 : 0
             }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                width: '100%'
-              }}
-            >
-              <div>Total Stars Earned: </div>
-              <div>{`${totalStars}`}</div>
-            </div>
+            {totalStars ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>Total Stars Earned: </div>
+                <div>{`${totalStars}`}</div>
+              </div>
+            ) : null}
+
             <div
               style={{
                 display: 'flex',

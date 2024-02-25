@@ -67,6 +67,12 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effec
 ```
 ![Pride flag dark](.github/img/pride-flag-dark.png)
 
+#### 3. Chill summer (light mode)
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to bottom right%2C %2374dcc4%2C %234597e9)
+```
+![Chill summer](.github/img/chill-summer.png)
+
 ## Deploy on your own
 
 ### 1. Deploy on Vercel

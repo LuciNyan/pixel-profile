@@ -36,16 +36,16 @@ const GRAPHQL_REPOS_QUERY = `
 
 // eslint-disable-next-line eslint-comments/disable-enable-pair
 const GRAPHQL_STATS_QUERY = /* eslint-disable max-len */ `
-  query userInfo($login: String!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!) {
+  query userInfo($login: String!, $after: String, $includeMergedPullRequests: Boolean!, $includeDiscussions: Boolean!, $includeDiscussionsAnswers: Boolean!, $contributionFrom: DateTime) {
     user(login: $login) {
       name
       login
       avatarUrl(size: 280)
       bio
-      contributionsCollection {
-        totalCommitContributions,
+      contributionsCollection(from: $contributionFrom) {
+        totalCommitContributions,  
         totalPullRequestReviewContributions
-      }
+      } 
       repositoriesContributedTo(first: 1, contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]) {
         totalCount
       }
@@ -99,13 +99,15 @@ type Variables = {
   includeMergedPullRequests: boolean
   includeDiscussions: boolean
   includeDiscussionsAnswers: boolean
+  contributionFrom: string | null
 }
 
 const statsFetcher = async ({
   username,
   includeMergedPullRequests,
   includeDiscussions,
-  includeDiscussionsAnswers
+  includeDiscussionsAnswers,
+  contributionFrom
 }: Variables): Promise<AxiosResponse> => {
   let stats
   let hasNextPage = true
@@ -117,7 +119,8 @@ const statsFetcher = async ({
       after: endCursor,
       includeMergedPullRequests,
       includeDiscussions,
-      includeDiscussionsAnswers
+      includeDiscussionsAnswers,
+      contributionFrom
     }
     const res = await retryer(fetcher, variables)
     if (res.data.errors) {
@@ -233,7 +236,8 @@ export async function fetchStats(
     username,
     includeMergedPullRequests: include_merged_pull_requests,
     includeDiscussions: include_discussions,
-    includeDiscussionsAnswers: include_discussions_answers
+    includeDiscussionsAnswers: include_discussions_answers,
+    contributionFrom: include_all_commits ? null : getFirstSecondOfYear().toISOString()
   })
 
   // Catch GraphQL errors.
@@ -300,4 +304,14 @@ export async function fetchStats(
   })
 
   return stats
+}
+
+function getFirstSecondOfYear(): Date {
+  const d = new Date()
+  d.setFullYear(d.getFullYear())
+  d.setUTCMonth(0)
+  d.setUTCDate(1)
+  d.setUTCHours(0, 0, 0, 0)
+
+  return d
 }

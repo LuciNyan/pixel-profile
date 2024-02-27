@@ -78,7 +78,7 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with totalStars set to null', async () => {
+  it('Render card without total_stars', async () => {
     const png = await renderStats({
       name: 'LuciNyan',
       username: 'username',

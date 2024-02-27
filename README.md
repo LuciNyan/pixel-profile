@@ -67,11 +67,17 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effec
 ```
 ![Pride flag dark](.github/img/pride-flag-dark.png)
 
-#### 3. Chill summer (light mode)
+#### 3. Monica
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&background=linear-gradient(to%20bottom%20right%2C%20%230c7bb3%2C%20%23f2bae8)
+```
+![Summer](.github/img/monica.png)
+
+#### 4. Summer
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to bottom right%2C %2374dcc4%2C %234597e9)
 ```
-![Chill summer](.github/img/chill-summer.png)
+![Chill summer](.github/img/summer.png)
 
 ## Deploy on your own
 

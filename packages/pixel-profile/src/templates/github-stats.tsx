@@ -11,10 +11,15 @@ export type Stats = {
   avatar: string
 }
 
-type Options = {
+export type TemplateOptions = {
   color: string
   background: string
   includeAllCommits: boolean
+}
+
+export const defaultTemplateOptions = {
+  color: 'white',
+  background: '#434343'
 }
 
 export const CARD_SIZE = {
@@ -33,7 +38,7 @@ export const AVATAR_SIZE = {
   AVATAR_HEIGHT: 280
 }
 
-export function makeGithubStats(stats: Stats, options: Options) {
+export function makeGithubStats(stats: Stats, options: TemplateOptions) {
   const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, avatar } = stats
 
   const { color, background, includeAllCommits } = options

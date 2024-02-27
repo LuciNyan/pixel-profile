@@ -15,7 +15,8 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     show_avatar,
     show_rank,
     show_total_stars,
-    username
+    username,
+    theme
   } = req.query
 
   res.setHeader('Content-Type', 'image/png')
@@ -54,6 +55,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       color: parseString(color),
       background: parseString(background),
       pixelateAvatar: parseBoolean(pixelate_avatar),
+      theme: parseString(theme),
       includeAllCommits
     }
 

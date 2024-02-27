@@ -93,18 +93,27 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene
 
 ### Github Stats Card Options
 
-| Name                  | Description                                                                     | Default value |
-|-----------------------|---------------------------------------------------------------------------------|---------------|
-| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
-| `color`               | Set text color to any valid CSS color value                                     | `white`       |
-| `include_all_commits` | Count all commits                                                               | `false`       |
-| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
-| `screen_effect`       | Enable curved screen effect                                                     | `false`       |
-| `show_avatar`         | Display avatar                                                                  | `true`        |
-| `show_rank`           | Display rank value                                                              | `true`        |
-| `show_total_stars`    | Display total stars earned                                                      | `true`        |
-| `username`            | GitHub username                                                                 | ''            |
-| `theme`               | Check out the built-in themes below                                             | ''            |
+| Name                  | Description                                                                                                                                           | Default value |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| `background`          | Set background color/image. Supports a subset of CSS background property values                                                                       | `#434343`     |
+| `color`               | Set text color to any valid CSS color value                                                                                                           | `white`       |
+| `hide`                | Hide specific stats or elements by passing a comma-separated list. Valid keys: 'avatar', 'commits', 'contributions', 'issues', 'prs', 'rank', 'stars' |               |
+| `include_all_commits` | Count all commits                                                                                                                                     | `false`       |
+| `pixelate_avatar`     | Apply pixelation to avatar                                                                                                                            | `true`        |
+| `screen_effect`       | Enable curved screen effect                                                                                                                           | `false`       |
+| `username`            | GitHub username                                                                                                                                       | ''            |
+| `theme`               | Check out the built-in themes below                                                                                                                   | ''            |
+
+### Hiding individual stats
+
+You can pass a query parameter `&hide=` to hide any specific stats with comma-separated values.
+
+> Options: `&hide=avatar,commits,contributions,issues,prs,rank,stars`
+```html
+<!--Replace <username> with your own GitHub username.-->
+https://pixel-profile.vercel.app/api/github-stats?username=<username>&hide=avatar,stars
+```
+![Hiding individual stats](.github/img/sample-github-stats-with-hidden-stats.png)
 
 ## Deploy on your own
 

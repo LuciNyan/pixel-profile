@@ -18,7 +18,7 @@ import satori from 'satori'
 export type Stats = {
   name: string
   username: string
-  totalStars: number | null
+  totalStars: number
   totalCommits: number
   totalIssues: number
   totalPRs: number
@@ -33,41 +33,46 @@ type Options = {
   color?: string
   showRank?: boolean
   background?: string
-  pixelateAvatar?: boolean
+  hiddenStatsKeys?: string[]
   includeAllCommits?: boolean
+  pixelateAvatar?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options = {}): Promise<Buffer> {
   const { name, username, totalStars, totalCommits, totalIssues, totalPRs, avatarUrl, contributedTo, rank } = stats
+  let modifiedAvatarUrl = avatarUrl
 
   const {
-    screenEffect = false,
-    color,
-    background,
-    pixelateAvatar = true,
+    background = '#434343',
+    color = 'white',
+    hiddenStatsKeys = [],
     includeAllCommits = false,
+    pixelateAvatar = true,
+    screenEffect = false,
     theme = ''
   } = options
 
+  if (hiddenStatsKeys.includes('avatar')) {
+    modifiedAvatarUrl = ''
+  }
+
   const themeOptions = getThemeOptions(theme)
-
-  const cardSize = rank ? CARD_SIZE.BIG : CARD_SIZE.SMALL
-
-  const width = cardSize.CARD_WIDTH
-  const height = cardSize.CARD_HEIGHT
+  const baseCardSize = rank ? CARD_SIZE.BIG : CARD_SIZE.SMALL
+  const width = baseCardSize.CARD_WIDTH
+  const height = baseCardSize.CARD_HEIGHT
 
   const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
-  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(avatarUrl, pixelateAvatar, !!theme)])
+  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(modifiedAvatarUrl, pixelateAvatar, !!theme)])
 
   const _stats = {
     name,
     avatar,
-    totalStars: totalStars ? kFormatter(totalStars) : '',
-    totalCommits: kFormatter(totalCommits),
-    totalIssues: kFormatter(totalIssues),
-    totalPRs: kFormatter(totalPRs),
-    contributedTo: kFormatter(contributedTo),
+    stars: totalStars ? kFormatter(totalStars) : '',
+    commits: kFormatter(totalCommits),
+    issues: kFormatter(totalIssues),
+    prs: kFormatter(totalPRs),
+    contributions: kFormatter(contributedTo),
     rank: rank ? rank.level : ''
   }
 
@@ -80,6 +85,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
       color,
       background
     }),
+    hiddenStatsKeys,
     includeAllCommits
   }
 

@@ -1,7 +1,4 @@
 {
-  "redirects": [
-    { "source": "/", "destination": "https://github.com/LuciNyan/pixel-profile", "permanent": false }
-  ],
   "outputDirectory": ".",
   "functions": {
     "api/*.ts": {

@@ -1,3 +1,4 @@
+export { compare } from './compare'
 export { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels } from './converter'
 export { add2, clamp, dot2, kFormatter, prod2, subtract2, type Vec2 } from './math'
 export { type Rank, rank } from './rank'

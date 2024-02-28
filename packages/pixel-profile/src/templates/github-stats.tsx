@@ -33,11 +33,6 @@ export const CARD_SIZE = {
   }
 }
 
-export const AVATAR_SIZE = {
-  AVATAR_WIDTH: 280,
-  AVATAR_HEIGHT: 280
-}
-
 export function makeGithubStats(stats: Stats, options: TemplateOptions) {
   const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, avatar } = stats
 

@@ -1,6 +1,14 @@
 import { curve, pixelate } from '../shaders'
-import { AVATAR_SIZE, CARD_SIZE, makeGithubStats } from '../templates/github-stats'
+import {
+  AVATAR_SIZE,
+  CARD_SIZE,
+  defaultTemplateOptions,
+  makeGithubStats,
+  TemplateOptions
+} from '../templates/github-stats'
+import { getThemeOptions } from '../theme'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
+import { filterNotEmpty } from '../utils/filter'
 import { Resvg } from '@resvg/resvg-js'
 import axios from 'axios'
 import { readFile } from 'node:fs/promises'
@@ -20,6 +28,7 @@ export type Stats = {
 }
 
 type Options = {
+  theme?: string
   screenEffect?: boolean
   color?: string
   showRank?: boolean
@@ -33,11 +42,14 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   const {
     screenEffect = false,
-    color = 'white',
-    background = '#434343',
+    color,
+    background,
     pixelateAvatar = true,
-    includeAllCommits = false
+    includeAllCommits = false,
+    theme = ''
   } = options
+
+  const themeOptions = getThemeOptions(theme)
 
   const cardSize = rank ? CARD_SIZE.BIG : CARD_SIZE.SMALL
 
@@ -64,9 +76,13 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   let isMissingFont = false
 
-  const templateOptions = {
-    color,
-    background,
+  const templateOptions: TemplateOptions = {
+    ...defaultTemplateOptions,
+    ...themeOptions,
+    ...filterNotEmpty({
+      color,
+      background
+    }),
     includeAllCommits
   }
 

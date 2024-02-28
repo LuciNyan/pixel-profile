@@ -42,40 +42,42 @@ If you want to include a GitHub stats card in your own README and have it displa
 ## Documentation
 ### Github Stats Card Options
 
-| Name | Description                  | Default value |
-| --- |------------------------------|---------------|
-| `background` | Set background color/image. Supports a subset of CSS background property values    | `#434343`     |
-| `color` | Set text color to any valid CSS color value | `white`       |
-| `include_all_commits` | Count all commits            | `false`       |
-| `pixelate_avatar` | Apply pixelation to avatar     | `true`        |
-| `screen_effect` | Enable curved screen effect  | `false`       |
-| `show_avatar` | Display avatar                  | `true`        |
-| `show_rank` | Display rank value             | `true`        |
-| `show_total_stars` | Display total stars earned             | `true`        |
-| `username` | GitHub username              | ''            |
+| Name                  | Description                                                                     | Default value |
+|-----------------------|---------------------------------------------------------------------------------|---------------|
+| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
+| `color`               | Set text color to any valid CSS color value                                     | `white`       |
+| `include_all_commits` | Count all commits                                                               | `false`       |
+| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
+| `screen_effect`       | Enable curved screen effect                                                     | `false`       |
+| `show_avatar`         | Display avatar                                                                  | `true`        |
+| `show_rank`           | Display rank value                                                              | `true`        |
+| `show_total_stars`    | Display total stars earned                                                      | `true`        |
+| `username`            | GitHub username                                                                 | ''            |
+| `theme`               | Check out the built-in themes below                                             | ''            |
 
-### Complex background CSS enables cool tricks! Some examples:
-#### 1. Pride Flag (light mode)
+### Themes
+Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
+#### 1. Rainbow
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to%20bottom%2C%20%23CD001A%200%25%2C%20%23CD001A%2014.72%25%2C%20%23F06400%2014.72%25%2C%20%23F06400%2028.56%25%2C%20%23F2CD00%2028.56%25%2C%20%23F2CD00%2042.84%25%2C%20%2379c300%2042.84%25%2C%20%2379c300%2057.12%25%2C%20%231961ae%2057.12%25%2C%20%231961ae%2071.4%25%2C%20%2331137c%2071.4%25%2C%20%2331137c%2085.24%25%2C%20%2361007d%2085.24%25%2C%20%2361007d%20100%25)
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow
 ```
 ![Pride flag light](.github/img/pride-flag-light.png)
 
-#### 2. Pride Flag (dark mode). Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
+#### 2. Rainbow(dark mode). Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&background=linear-gradient(to%20bottom%2C%20%23CD001A%200%25%2C%20%23CD001A%2014.72%25%2C%20%23F06400%2014.72%25%2C%20%23F06400%2028.56%25%2C%20%23F2CD00%2028.56%25%2C%20%23F2CD00%2042.84%25%2C%20%2379c300%2042.84%25%2C%20%2379c300%2057.12%25%2C%20%231961ae%2057.12%25%2C%20%231961ae%2071.4%25%2C%20%2331137c%2071.4%25%2C%20%2331137c%2085.24%25%2C%20%2361007d%2085.24%25%2C%20%2361007d%20100%25)
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
 ```
 ![Pride flag dark](.github/img/pride-flag-dark.png)
 
 #### 3. Monica
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&background=linear-gradient(to%20bottom%20right%2C%20%230c7bb3%2C%20%23f2bae8)
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=monica
 ```
 ![Summer](.github/img/monica.png)
 
 #### 4. Summer
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to bottom right%2C %2374dcc4%2C %234597e9)
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer
 ```
 ![Chill summer](.github/img/summer.png)
 

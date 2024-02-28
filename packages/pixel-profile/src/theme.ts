@@ -7,9 +7,13 @@ type Theme = Record<
 >
 
 export const THEME: Theme = {
-  monica: {
+  summer: {
     color: 'white',
-    background: 'linear-gradient(to bottom right, #0c7bb3, #f2bae8)'
+    background: 'linear-gradient(to bottom right, #74dcc4, #4597e9)'
+  },
+  blue_chill: {
+    color: 'white',
+    background: 'linear-gradient(to bottom right, #5580eb, #2aeeff)'
   },
   rainbow: {
     color: 'white',
@@ -19,13 +23,9 @@ export const THEME: Theme = {
       '#79c300 57.12%, #1961ae 57.12%, #1961ae 71.4%, #31137c 71.4%, ' +
       '#31137c 85.24%, #61007d 85.24%, #61007d 100%)'
   },
-  summer: {
+  monica: {
     color: 'white',
-    background: 'linear-gradient(to bottom right, #74dcc4, #4597e9)'
-  },
-  blue_chill: {
-    color: 'white',
-    background: 'linear-gradient(to bottom right, #5580eb, #2aeeff)'
+    background: 'linear-gradient(to bottom right, #0c7bb3, #f2bae8)'
   }
 }
 

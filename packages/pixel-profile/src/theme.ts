@@ -26,6 +26,14 @@ export const THEME: Theme = {
   monica: {
     color: 'white',
     background: 'linear-gradient(to bottom right, #0c7bb3, #f2bae8)'
+  },
+  lax: {
+    color: 'white',
+    background: 'linear-gradient(to bottom right, #F9957F, #F2F5D0)'
+  },
+  serene: {
+    color: 'white',
+    background: 'linear-gradient(to bottom right, #07A3B2, #D9ECC7)'
   }
 }
 

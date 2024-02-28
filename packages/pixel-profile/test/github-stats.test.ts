@@ -1,5 +1,5 @@
 import { renderStats } from '../src'
-import { BLUE_BASE64_PNG } from './img/blue'
+import { BLUE_AVATAR } from './avatar/blue'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
@@ -25,7 +25,7 @@ describe('Github stats', () => {
       totalIssues: 99,
       totalPRs: 9,
       contributedTo: 9999,
-      avatarUrl: BLUE_BASE64_PNG,
+      avatarUrl: BLUE_AVATAR,
       rank: {
         level: 'S',
         percentile: 0,
@@ -45,7 +45,7 @@ describe('Github stats', () => {
         totalIssues: 99,
         totalPRs: 9,
         contributedTo: 9999,
-        avatarUrl: BLUE_BASE64_PNG,
+        avatarUrl: BLUE_AVATAR,
         rank: {
           level: 'S',
           percentile: 0,

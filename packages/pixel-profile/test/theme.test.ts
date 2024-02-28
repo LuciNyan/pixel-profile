@@ -1,5 +1,7 @@
 import { renderStats } from '../src'
-import { BLUE_BASE64_PNG } from './img/blue'
+import { BLUE_AVATAR } from './avatar/blue'
+import { CYAN_AVATAR } from './avatar/cyan'
+import { ORANGE_AVATAR } from './avatar/orange'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
@@ -23,7 +25,7 @@ const stats = {
   totalIssues: 99,
   totalPRs: 9,
   contributedTo: 9999,
-  avatarUrl: BLUE_BASE64_PNG,
+  avatarUrl: BLUE_AVATAR,
   rank: {
     level: 'S',
     percentile: 0,
@@ -59,6 +61,16 @@ describe('Theme', () => {
 
   it('Render card with monica theme', async () => {
     const png = await renderStats(stats, { theme: 'monica' })
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card with lax theme', async () => {
+    const png = await renderStats({ ...stats, avatarUrl: ORANGE_AVATAR }, { theme: 'lax' })
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card with serene theme', async () => {
+    const png = await renderStats({ ...stats, avatarUrl: CYAN_AVATAR }, { theme: 'serene', pixelateAvatar: false })
     expect(png).toMatchImageSnapshot()
   })
 })

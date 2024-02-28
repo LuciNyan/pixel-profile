@@ -57,29 +57,41 @@ If you want to include a GitHub stats card in your own README and have it displa
 
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
-#### 1. Rainbow
+#### 1. Rainbow.
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow
 ```
-![Pride flag light](.github/img/pride-flag-light.png)
+![Rainbow](.github/img/pride-flag-light.png)
 
-#### 2. Rainbow(dark mode). Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
+#### 2. Rainbow with screen effect. Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
 ```
-![Pride flag dark](.github/img/pride-flag-dark.png)
+![Rainbow dark](.github/img/pride-flag-dark.png)
 
-#### 3. Monica
+#### 3. Monica.
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=monica
 ```
-![Summer](.github/img/monica.png)
+![Monica](.github/img/monica.png)
 
-#### 4. Summer
+#### 4. Summer.
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer
 ```
-![Chill summer](.github/img/summer.png)
+![Summer](.github/img/summer.png)
+
+#### 4. Lax.
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=lax
+```
+![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-lax-theme-1-snap.png)
+
+#### 5. Serene without pixelated avatar.
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene&pixelate_avatar=false
+```
+![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
 
 ## Deploy on your own
 

@@ -1,5 +1,11 @@
 import { curve, pixelate } from '../shaders'
-import { CARD_SIZE, defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/github-stats'
+import {
+  AVATAR_SIZE,
+  CARD_SIZE,
+  defaultTemplateOptions,
+  makeGithubStats,
+  TemplateOptions
+} from '../templates/github-stats'
 import { getThemeOptions } from '../theme'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
 import { getPngBufferFromURL } from '../utils/converter'
@@ -134,7 +140,9 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   return await getPngBufferFromPixels(pixels, width, height)
 }
 
-async function makeAvatar(url: string, pixelateAvatar: boolean, blockSize: number = 11.17): Promise<string> {
+const BLOCK_SIZE = 6.8
+
+async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string> {
   if (!url) {
     return ''
   }
@@ -144,6 +152,7 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, blockSize: numbe
   let { pixels, width, height } = await getPixelsFromPngBuffer(png)
 
   if (pixelateAvatar) {
+    const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
   }
 

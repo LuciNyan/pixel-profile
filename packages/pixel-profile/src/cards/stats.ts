@@ -8,9 +8,9 @@ import {
 } from '../templates/github-stats'
 import { getThemeOptions } from '../theme'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
+import { getPngBufferFromURL } from '../utils/converter'
 import { filterNotEmpty } from '../utils/filter'
 import { Resvg } from '@resvg/resvg-js'
-import axios from 'axios'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import satori from 'satori'
@@ -58,10 +58,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
-  const [fontData, avatar] = await Promise.all([
-    readFile(fontPath),
-    makeAvatar(avatarUrl, pixelateAvatar, AVATAR_SIZE.AVATAR_WIDTH, AVATAR_SIZE.AVATAR_HEIGHT)
-  ])
+  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(avatarUrl, pixelateAvatar)])
 
   const _stats = {
     name,
@@ -134,7 +131,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const pngData = new Resvg(svg, opts).render()
   const pngBuffer = pngData.asPng()
 
-  let pixels = await getPixelsFromPngBuffer(pngBuffer)
+  let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
   if (screenEffect) {
     pixels = curve(pixels, width, height)
@@ -143,26 +140,19 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   return await getPngBufferFromPixels(pixels, width, height)
 }
 
-async function makeAvatar(
-  url: string,
-  pixelateAvatar: boolean,
-  width: number,
-  height: number,
-  blockSize: number = 6.8
-): Promise<string> {
+const BLOCK_SIZE = 6.8
+
+async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string> {
   if (!url) {
     return ''
   }
 
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer'
-  })
+  const png: Buffer = await getPngBufferFromURL(url)
 
-  const png = Buffer.from(response.data, 'binary')
-
-  let pixels = await getPixelsFromPngBuffer(png)
+  let { pixels, width, height } = await getPixelsFromPngBuffer(png)
 
   if (pixelateAvatar) {
+    const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
   }
 

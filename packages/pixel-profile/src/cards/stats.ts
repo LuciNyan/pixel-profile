@@ -140,7 +140,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   return await getPngBufferFromPixels(pixels, width, height)
 }
 
-const BLOCK_SIZE = 6.8
+const BASE_AVATAR_BLOCK_SIZE = 6.8
 
 async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string> {
   if (!url) {
@@ -152,7 +152,7 @@ async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string>
   let { pixels, width, height } = await getPixelsFromPngBuffer(png)
 
   if (pixelateAvatar) {
-    const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BLOCK_SIZE
+    const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
   }
 

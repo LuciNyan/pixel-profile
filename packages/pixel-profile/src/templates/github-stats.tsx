@@ -15,6 +15,10 @@ export type TemplateOptions = {
   color: string
   background: string
   includeAllCommits: boolean
+  textShadow?: string
+  backgroundImage?: string
+  backgroundSize?: string
+  backgroundRepeat?: string
 }
 
 export const defaultTemplateOptions = {
@@ -41,7 +45,7 @@ export const AVATAR_SIZE = {
 export function makeGithubStats(stats: Stats, options: TemplateOptions) {
   const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, avatar } = stats
 
-  const { color, background, includeAllCommits } = options
+  const { color, includeAllCommits } = options
 
   const date = new Date()
   const year = date.getFullYear()
@@ -54,7 +58,7 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        background
+        ...options
       }}
     >
       <div

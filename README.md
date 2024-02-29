@@ -57,13 +57,14 @@ If you want to include a GitHub stats card in your own README and have it displa
 
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
-#### 1. Rainbow.
+#### 1. Journey without pixelated avatar.
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=journey&pixelate_avatar=false
 ```
-![Rainbow](.github/img/pride-flag-light.png)
+![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-theme-journey-1-snap.png)
 
-#### 2. Rainbow with screen effect. Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
+#### 2. Rainbow with screen effect.
+Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
 ```

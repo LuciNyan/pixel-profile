@@ -155,7 +155,7 @@ async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string>
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
   } else {
-    pixels = putFrame(pixels, width, height, { frameWidth: 10, enabledTransparentBorder: true })
+    pixels = putFrame(pixels, width, height, { frameWidth: 8, enabledTransparentBorder: true })
   }
 
   return await getBase64FromPixels(pixels, width, height)

@@ -58,7 +58,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
-  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(avatarUrl, pixelateAvatar)])
+  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(avatarUrl, pixelateAvatar, !!theme)])
 
   const _stats = {
     name,
@@ -140,9 +140,9 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   return await getPngBufferFromPixels(pixels, width, height)
 }
 
-const BASE_AVATAR_BLOCK_SIZE = 6.8
+const BASE_AVATAR_BLOCK_SIZE = 6.82
 
-async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string> {
+async function makeAvatar(url: string, pixelateAvatar: boolean, enableFrame: boolean): Promise<string> {
   if (!url) {
     return ''
   }
@@ -154,8 +154,15 @@ async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string>
   if (pixelateAvatar) {
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
+    if (enableFrame) {
+      pixels = putFrame(pixels, width, height, {
+        frameWidthRatio: 0.025,
+        enabledTransparentBorder: true,
+        enabledCornerRemoval: true
+      })
+    }
   } else {
-    pixels = putFrame(pixels, width, height, { frameWidth: 8, enabledTransparentBorder: true })
+    pixels = putFrame(pixels, width, height, { frameWidthRatio: 0.0167, enabledTransparentBorder: true })
   }
 
   return await getBase64FromPixels(pixels, width, height)

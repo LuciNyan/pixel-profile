@@ -5,18 +5,20 @@ export function putFrame(
   width: number,
   height: number,
   options: {
-    frameWidth: number
+    frameWidthRatio: number
     enabledTransparentBorder?: boolean
     enabledCornerRemoval?: boolean
   }
 ) {
-  const { enabledTransparentBorder = false, enabledCornerRemoval = false, frameWidth } = options
+  const { enabledTransparentBorder = false, enabledCornerRemoval = false, frameWidthRatio } = options
 
   return render(source, width, height, (uv, texture2D) => {
     const maxX = width - 1
     const maxY = height - 1
     const x = uv[0] * maxX
     const y = uv[1] * maxY
+
+    const frameWidth = frameWidthRatio * width
 
     const rgba: RGBA = texture2D([uv[0], uv[1]])
 

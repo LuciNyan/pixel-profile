@@ -61,7 +61,7 @@ Below are some prebuilt themes to get started. However, cards are fully customiz
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=journey&pixelate_avatar=false
 ```
-![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-theme-journey-1-snap.png)
+![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-1-snap.png)
 
 #### 2. Rainbow with screen effect.
 Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩

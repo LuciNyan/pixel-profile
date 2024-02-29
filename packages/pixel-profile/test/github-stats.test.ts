@@ -35,7 +35,7 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card without pixelate avatar', async () => {
+  it('Render card without pixelated avatar', async () => {
     const png = await renderStats(
       {
         name: 'LuciNyan',

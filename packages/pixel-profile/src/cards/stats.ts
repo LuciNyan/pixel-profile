@@ -1,4 +1,4 @@
-import { curve, pixelate } from '../shaders'
+import { curve, pixelate, putFrame } from '../shaders'
 import {
   AVATAR_SIZE,
   CARD_SIZE,
@@ -154,6 +154,8 @@ async function makeAvatar(url: string, pixelateAvatar: boolean): Promise<string>
   if (pixelateAvatar) {
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
+  } else {
+    pixels = putFrame(pixels, width, height, { frameWidth: 8, enabledTransparentBorder: true })
   }
 
   return await getBase64FromPixels(pixels, width, height)

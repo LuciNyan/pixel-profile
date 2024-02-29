@@ -75,7 +75,7 @@ describe('Theme', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with theme journey', async () => {
+  it('Render card with journey theme', async () => {
     const png = await renderStats(
       { ...stats, avatarUrl: DARK_GREEN_AVATAR },
       { theme: 'journey', pixelateAvatar: false }

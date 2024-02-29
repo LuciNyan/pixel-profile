@@ -156,13 +156,13 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, enableFrame: boo
     pixels = pixelate(pixels, width, height, blockSize)
     if (enableFrame) {
       pixels = putFrame(pixels, width, height, {
-        frameWidth: 12,
+        frameWidthRatio: 0.025,
         enabledTransparentBorder: true,
         enabledCornerRemoval: true
       })
     }
   } else {
-    pixels = putFrame(pixels, width, height, { frameWidth: 8, enabledTransparentBorder: true })
+    pixels = putFrame(pixels, width, height, { frameWidthRatio: 0.0167, enabledTransparentBorder: true })
   }
 
   return await getBase64FromPixels(pixels, width, height)

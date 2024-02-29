@@ -1,9 +1,15 @@
+import { IMG_JOURNEY } from './images/journey'
+
 type Theme = Record<
   string,
-  {
+  Partial<{
     color: string
     background: string
-  }
+    textShadow: string
+    backgroundImage: string
+    backgroundSize: string
+    backgroundRepeat: string
+  }>
 >
 
 export const THEME: Theme = {
@@ -34,6 +40,12 @@ export const THEME: Theme = {
   serene: {
     color: 'white',
     background: 'linear-gradient(to bottom right, #07A3B2, #D9ECC7)'
+  },
+  journey: {
+    color: 'white',
+    backgroundImage: `url(${IMG_JOURNEY})`,
+    backgroundSize: '100% 100%',
+    backgroundRepeat: 'no-repeat'
   }
 }
 

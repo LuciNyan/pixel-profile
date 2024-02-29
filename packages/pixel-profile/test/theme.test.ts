@@ -1,6 +1,7 @@
 import { renderStats } from '../src'
 import { BLUE_AVATAR } from './avatar/blue'
 import { CYAN_AVATAR } from './avatar/cyan'
+import { DARK_GREEN_AVATAR } from './avatar/dark-green'
 import { ORANGE_AVATAR } from './avatar/orange'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
@@ -71,6 +72,14 @@ describe('Theme', () => {
 
   it('Render card with serene theme', async () => {
     const png = await renderStats({ ...stats, avatarUrl: CYAN_AVATAR }, { theme: 'serene', pixelateAvatar: false })
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card with theme journey', async () => {
+    const png = await renderStats(
+      { ...stats, avatarUrl: DARK_GREEN_AVATAR },
+      { theme: 'journey', pixelateAvatar: false }
+    )
     expect(png).toMatchImageSnapshot()
   })
 })

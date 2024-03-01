@@ -20,19 +20,19 @@ https://pixel-profile.vercel.app/api/github-stats?username=<username>
 
 Of course, you can customize the styling to better suit your preferences. For example, here is a stats card designed for GitHub's Dark Theme::
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&background=linear-gradient(to%20bottom%20right%2C%20%235580eb%2C%20%232aeeff)
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&theme=rainbow
 ```
 This is what it looks like in use in a README:
 
 ![Demo 1](.github/img/demo-1.png)
 
-If you want to include a GitHub stats card in your own README and have it display the appropriate card for both light and dark themes on GitHub, you can use the following configuration:
+If you want to include a GitHub stats card in your own README file and have it display the appropriate card for both the light and dark themes on GitHub, you can refer to the following configuration and configure your preferred theme, or fully customize elements like color, background, screen effects, etc:
 
 ```md
 <picture decoding="async" loading="lazy">
-  <source media="(prefers-color-scheme: light)" srcset="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to%20bottom%20right%2C%20%2374dcc4%2C%20%234597e9)">
-  <source media="(prefers-color-scheme: dark)" srcset="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&background=linear-gradient(to%20bottom%20right%2C%20%235580eb%2C%20%232aeeff)">
-  <img alt="github stats" src="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to%20bottom%20right%2C%20%2374dcc4%2C%20%234597e9)">
+  <source media="(prefers-color-scheme: light)" srcset="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer">
+  <source media="(prefers-color-scheme: dark)" srcset="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&theme=blue_chill">
+  <img alt="github stats" src="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer">
 </picture>
 ```
 

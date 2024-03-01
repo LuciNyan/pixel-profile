@@ -44,7 +44,7 @@ export const THEME: Theme = {
   journey: {
     color: 'white',
     backgroundImage: `url(${IMG_JOURNEY})`,
-    backgroundSize: '100% 100%',
+    backgroundSize: '1226px 430px',
     backgroundRepeat: 'no-repeat'
   }
 }

@@ -2,19 +2,22 @@
  * Copyright (c) 2020 Anurag Hazra
  * https://github.com/anuraghazra/github-readme-stats/blob/master/api/status/up.js
  */
-import { hasMessage, parseString } from '../../utils/index.js'
-import { VercelRequest, VercelResponse } from '@vercel/node'
+import { hasMessage, parseString } from '../utils/index.js'
 import { AxiosResponse } from 'axios'
+import { Hono } from 'hono'
 import { request, retryer } from 'pixel-profile'
 
 export const RATE_LIMIT_SECONDS = 60 * 5
 
-export default async (req: VercelRequest, res: VercelResponse): Promise<void> => {
-  const _type = parseString(req.query.type)
+const up = new Hono()
+
+up.get('/', async (c) => {
+  const { req, res } = c
+  const _type = parseString(req.query().type)
 
   const type = _type ? _type.toLowerCase() : 'boolean'
 
-  res.setHeader('Content-Type', 'application/json')
+  res.headers.set('Content-Type', 'application/json')
 
   try {
     let PATsValid = true
@@ -25,32 +28,29 @@ export default async (req: VercelRequest, res: VercelResponse): Promise<void> =>
     }
 
     if (PATsValid) {
-      res.setHeader('Cache-Control', `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`)
+      res.headers.set('Cache-Control', `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`)
     } else {
-      res.setHeader('Cache-Control', 'no-store')
+      res.headers.set('Cache-Control', 'no-store')
     }
 
     switch (type) {
       case 'shields':
-        res.send(shieldsUptimeBadge(PATsValid))
-        break
+        return c.json(shieldsUptimeBadge(PATsValid))
       case 'json':
-        res.send({ up: PATsValid })
-        break
+        return c.json({ up: PATsValid })
       default:
-        res.send(PATsValid)
-        break
+        return c.json(PATsValid)
     }
   } catch (err) {
     console.error(err)
 
-    res.setHeader('Cache-Control', 'no-store')
+    res.headers.set('Cache-Control', 'no-store')
 
     if (hasMessage(err)) {
-      res.send(`Something went wrong: ${err.message}`)
+      return c.json(`Something went wrong: ${err.message}`)
     }
   }
-}
+})
 
 const uptimeFetcher = (variables: Record<PropertyKey, unknown>, github_token: string): Promise<AxiosResponse> => {
   return request(
@@ -93,3 +93,5 @@ const shieldsUptimeBadge = (up: boolean): ShieldsResponse => {
     isError
   }
 }
+
+export default up

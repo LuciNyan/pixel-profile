@@ -1,8 +1,12 @@
-import { CONSTANTS, parseArray, parseBoolean, parseString } from '../utils/index.js'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { CONSTANTS, parseArray, parseBoolean, parseString } from './utils'
+import { Hono } from 'hono'
+import { stream } from 'hono/streaming'
 import { clamp, fetchStats, renderStats } from 'pixel-profile'
 
-export default async (req: VercelRequest, res: VercelResponse) => {
+const githubStats = new Hono()
+
+githubStats.get('/', async (c) => {
+  const { req, res } = c
   const {
     background,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
@@ -17,9 +21,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     show_total_stars,
     username,
     theme
-  } = req.query
+  } = req.query()
 
-  res.setHeader('Content-Type', 'image/png')
+  res.headers.set('Content-Type', 'image/png')
 
   try {
     const showStats = parseArray(show)
@@ -45,7 +49,7 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
     cacheSeconds = process.env.CACHE_SECONDS ? parseInt(process.env.CACHE_SECONDS, 10) || cacheSeconds : cacheSeconds
 
-    res.setHeader(
+    res.headers.set(
       'Cache-Control',
       `max-age=${cacheSeconds / 2}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`
     )
@@ -60,18 +64,28 @@ export default async (req: VercelRequest, res: VercelResponse) => {
     }
 
     const result = await renderStats(stats, options)
+    const resultUint8Array = Uint8Array.from(result)
 
-    return res.send(result)
+    return stream(c, async (stream) => {
+      // Write a process to be executed when aborted.
+      stream.onAbort(() => {
+        console.log('Aborted!')
+      })
+      // Write a Uint8Array.
+      await stream.write(resultUint8Array)
+    })
   } catch (err) {
     console.log(err)
 
-    res.setHeader(
+    res.headers.set(
       'Cache-Control',
       `max-age=${CONSTANTS.ERROR_CACHE_SECONDS / 2}, s-maxage=${
         CONSTANTS.ERROR_CACHE_SECONDS
       }, stale-while-revalidate=${CONSTANTS.ONE_DAY}`
     )
 
-    return res.send(1)
+    return c.html('')
   }
-}
+})
+
+export default githubStats

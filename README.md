@@ -40,21 +40,6 @@ If you want to include a GitHub stats card in your own README and have it displa
 [Here](https://github.com/LuciNyan) is a ready-made example configuration you can reference if you need inspiration for your own config.
 
 ## Documentation
-### Github Stats Card Options
-
-| Name                  | Description                                                                     | Default value |
-|-----------------------|---------------------------------------------------------------------------------|---------------|
-| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
-| `color`               | Set text color to any valid CSS color value                                     | `white`       |
-| `include_all_commits` | Count all commits                                                               | `false`       |
-| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
-| `screen_effect`       | Enable curved screen effect                                                     | `false`       |
-| `show_avatar`         | Display avatar                                                                  | `true`        |
-| `show_rank`           | Display rank value                                                              | `true`        |
-| `show_total_stars`    | Display total stars earned                                                      | `true`        |
-| `username`            | GitHub username                                                                 | ''            |
-| `theme`               | Check out the built-in themes below                                             | ''            |
-
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
 #### 1. Journey without pixelated avatar.
@@ -93,6 +78,21 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=lax
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene&pixelate_avatar=false
 ```
 ![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
+
+### Github Stats Card Options
+
+| Name                  | Description                                                                     | Default value |
+|-----------------------|---------------------------------------------------------------------------------|---------------|
+| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
+| `color`               | Set text color to any valid CSS color value                                     | `white`       |
+| `include_all_commits` | Count all commits                                                               | `false`       |
+| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
+| `screen_effect`       | Enable curved screen effect                                                     | `false`       |
+| `show_avatar`         | Display avatar                                                                  | `true`        |
+| `show_rank`           | Display rank value                                                              | `true`        |
+| `show_total_stars`    | Display total stars earned                                                      | `true`        |
+| `username`            | GitHub username                                                                 | ''            |
+| `theme`               | Check out the built-in themes below                                             | ''            |
 
 ## Deploy on your own
 

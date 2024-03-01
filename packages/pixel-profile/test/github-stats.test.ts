@@ -99,6 +99,46 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
+  it('Render card without avatar, with theme', async () => {
+    const png = await renderStats(
+      {
+        name: 'LuciNyan',
+        username: 'username',
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
+        contributedTo: 9999,
+        avatarUrl: '',
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
+      },
+      { theme: 'journey' }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card without avatar and rank, with theme', async () => {
+    const png = await renderStats(
+      {
+        name: 'LuciNyan',
+        username: 'username',
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
+        contributedTo: 9999,
+        avatarUrl: '',
+        rank: null
+      },
+      { theme: 'journey' }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
+
   it('Render card with all commits, custom color, background and screen_effect', async () => {
     const png = await renderStats(
       {

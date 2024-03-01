@@ -1,5 +1,5 @@
 {
-  "name": "@pixel-profile/server",
+  "name": "pixel-profile-server",
   "version": "0.0.1",
   "description": "",
   "homepage": "https://github.com/LuciNyan/pixel-profile",
@@ -12,6 +12,7 @@
   },
   "module": "./dist/index.js",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "dev": "tsup src/index.ts --watch",
     "build": "tsup",

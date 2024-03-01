@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@pixel-profile/server':
+      pixel-profile-server:
         specifier: workspace:*
-        version: link:packages/server
+        version: link:packages/pixel-profile-server
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -131,7 +131,7 @@ importers:
         specifier: ^5.3.3
         version: 5.3.3
 
-  packages/server:
+  packages/pixel-profile-server:
     dependencies:
       '@hono/node-server':
         specifier: ^1.8.2

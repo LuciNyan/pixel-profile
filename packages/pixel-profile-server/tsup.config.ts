@@ -5,7 +5,7 @@ export default defineConfig({
   splitting: false,
   sourcemap: false,
   target: 'node16',
-  dts: false,
+  dts: true,
   minify: process.env.NODE_ENV !== 'development',
   format: ['esm'],
   esbuildOptions(options) {

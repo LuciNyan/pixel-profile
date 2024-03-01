@@ -11,15 +11,15 @@
   },
   "scripts": {
     "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
-    "start:server": "node --experimental-modules packages/server/dist/node.js",
+    "start:server": "node --experimental-modules packages/pixel-profile-server/dist/node.js",
     "dev:vercel": "vercel dev --yes",
     "dev:pixel-profile": "turbo dev --filter=pixel-profile",
-    "dev:server": "turbo dev --filter=server",
+    "dev:server": "turbo dev --filter=pixel-profile-server",
     "build": "pnpm -r build",
     "release": "bumpp --commit --push --tag -r && pnpm publish ./packages/pixel-profile --access=public",
     "format": "prettier --write .",
     "prepare": "husky install",
-    "lint": "eslint -c .eslintrc.json --ext .ts,.tsx api packages/pixel-profile/src packages/server/src",
+    "lint": "eslint -c .eslintrc.json --ext .ts,.tsx api packages/pixel-profile/src packages/pixel-profile-server/src",
     "lint:fix": "pnpm lint --fix",
     "test": "vitest run",
     "test-type": "pnpm --filter=pixel-profile run test-type"
@@ -53,7 +53,7 @@
     "vitest": "^1.3.1"
   },
   "dependencies": {
-    "@pixel-profile/server": "workspace:*"
+    "pixel-profile-server": "workspace:*"
   },
   "lint-staged": {
     "*.{js,css,md}": "prettier --write",

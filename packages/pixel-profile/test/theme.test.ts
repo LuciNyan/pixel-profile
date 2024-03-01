@@ -56,7 +56,7 @@ describe('Theme', () => {
   })
 
   it('Render card with rainbow theme', async () => {
-    const png = await renderStats(stats, { theme: 'rainbow' })
+    const png = await renderStats(stats, { theme: 'rainbow', screenEffect: true })
     expect(png).toMatchImageSnapshot()
   })
 

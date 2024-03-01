@@ -34,7 +34,6 @@ If you want to include a GitHub stats card in your own README and have it displa
   <source media="(prefers-color-scheme: dark)" srcset="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=true&background=linear-gradient(to%20bottom%20right%2C%20%235580eb%2C%20%232aeeff)">
   <img alt="github stats" src="https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&screen_effect=false&background=linear-gradient(to%20bottom%20right%2C%20%2374dcc4%2C%20%234597e9)">
 </picture>
-
 ```
 
 [Here](https://github.com/LuciNyan) is a ready-made example configuration you can reference if you need inspiration for your own config.
@@ -43,41 +42,40 @@ If you want to include a GitHub stats card in your own README and have it displa
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
 #### 1. Journey without pixelated avatar.
+![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=journey&pixelate_avatar=false
 ```
-![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-1-snap.png)
 
 #### 2. Rainbow with screen effect.
-Set your profile to dark theme before trying this, I promise MAXIMUM wow factor! 🤩
+![Rainbow dark](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-rainbow-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
 ```
-![Rainbow dark](.github/img/pride-flag-dark.png)
 
 #### 3. Monica.
+![Monica](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-monica-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=monica
 ```
-![Monica](.github/img/monica.png)
 
 #### 4. Summer.
+![Summer](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-summer-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer
 ```
-![Summer](.github/img/summer.png)
 
-#### 4. Lax.
+#### 5. Lax.
+![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-lax-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=lax
 ```
-![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-lax-theme-1-snap.png)
 
-#### 5. Serene without pixelated avatar.
+#### 6. Serene without pixelated avatar.
+![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene&pixelate_avatar=false
 ```
-![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
 
 ### Github Stats Card Options
 

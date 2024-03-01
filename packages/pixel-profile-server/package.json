@@ -14,7 +14,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "tsup src/index.ts --watch",
+    "dev": "cross-env NODE_ENV=development tsup src/index.ts --watch",
     "build": "tsup",
     "start": "node --experimental-modules dist/node.js"
   },

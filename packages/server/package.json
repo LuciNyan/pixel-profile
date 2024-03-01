@@ -14,7 +14,8 @@
   "main": "./dist/index.js",
   "scripts": {
     "dev": "tsup src/index.ts --watch",
-    "build": "tsup"
+    "build": "tsup",
+    "start": "node --experimental-modules dist/node.js"
   },
   "type": "module",
   "author": "LuciNyan",
@@ -33,6 +34,7 @@
   "dependencies": {
     "@hono/node-server": "^1.8.2",
     "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
     "hono": "^4.0.8",
     "pixel-profile": "workspace:*",
     "ts-known": "^0.1.3"

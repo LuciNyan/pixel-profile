@@ -139,6 +139,9 @@ importers:
       axios:
         specifier: ^1.6.2
         version: 1.6.2
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.4.4
       hono:
         specifier: ^4.0.8
         version: 4.0.8
@@ -2508,7 +2511,6 @@ packages:
   /dotenv@16.4.4:
     resolution: {integrity: sha512-XvPXc8XAQThSjAbY6cQ/9PcBXmFoWuw1sQ3b8HqUCR6ziGXjkTi//kB9SWa2UwqlgdAIuRqAa/9hVljzPehbYg==}
     engines: {node: '>=12'}
-    dev: true
 
   /eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}

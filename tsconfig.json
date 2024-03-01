@@ -13,6 +13,7 @@
   },
   "include": [
     "api",
+    "src"
   ],
   "exclude": ["node_modules", "packages"]
 }

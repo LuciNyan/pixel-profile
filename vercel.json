@@ -1,10 +1,13 @@
 {
   "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/handle"
+    }
+  ],
   "functions": {
     "api/*.ts": {
-      "maxDuration": 10
-    },
-    "api/status/*.ts": {
       "maxDuration": 10
     }
   }

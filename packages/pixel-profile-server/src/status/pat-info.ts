@@ -2,32 +2,36 @@
  * Copyright (c) 2020 Anurag Hazra
  * https://github.com/anuraghazra/github-readme-stats/blob/master/api/status/pat-info.js
  */
-import { dateDiff, hasMessage, isPATError } from '../../utils/index.js'
-import { VercelRequest, VercelResponse } from '@vercel/node'
+import { dateDiff, hasMessage, isPATError } from '../utils/index.js'
 import type { AxiosResponse } from 'axios'
+import { Hono } from 'hono'
 import { request } from 'pixel-profile'
+
+const patInfo = new Hono()
 
 export const RATE_LIMIT_SECONDS = 60 * 5
 
-export default async (_: VercelRequest, res: VercelResponse): Promise<void> => {
-  res.setHeader('Content-Type', 'application/json')
+patInfo.get('/', async (c) => {
+  const { res } = c
+  res.headers.set('Content-Type', 'application/json')
   try {
     // Add header to prevent abuse.
     const PATsInfo = await getPATInfo(uptimeFetcher, {})
     if (PATsInfo) {
-      res.setHeader('Cache-Control', `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`)
+      res.headers.set('Cache-Control', `max-age=0, s-maxage=${RATE_LIMIT_SECONDS}`)
     }
-    res.send(JSON.stringify(PATsInfo, null, 2))
+
+    return c.json(PATsInfo)
   } catch (err) {
     console.error(err)
 
-    res.setHeader('Cache-Control', 'no-store')
+    res.headers.set('Cache-Control', 'no-store')
 
     if (hasMessage(err)) {
-      res.send(`Something went wrong: ${err.message}`)
+      return c.html(`Something went wrong: ${err.message}`)
     }
   }
-}
+})
 
 const uptimeFetcher = (variables: Record<PropertyKey, unknown>, github_token: string): Promise<AxiosResponse> => {
   return request(
@@ -168,3 +172,5 @@ const getPATInfo = async (fetcher: typeof uptimeFetcher, variables: Record<Prope
     details: sortedDetails
   }
 }
+
+export default patInfo

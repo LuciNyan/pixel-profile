@@ -10,11 +10,11 @@
     "url": "https://github.com/LuciNyan/pixel-profile.git"
   },
   "scripts": {
-    "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:pixel-profile\"",
+    "start": "concurrently \"pnpm dev:vercel\" \"pnpm dev:server\"",
     "start:server": "node --experimental-modules packages/pixel-profile-server/dist/node.js",
     "dev:vercel": "vercel dev --yes",
     "dev:pixel-profile": "turbo dev --filter=pixel-profile",
-    "dev:server": "turbo dev --filter=pixel-profile-server",
+    "dev:server": "turbo dev --filter=pixel-profile-server...",
     "build": "pnpm -r build",
     "release": "bumpp --commit --push --tag -r && pnpm publish ./packages/pixel-profile --access=public",
     "format": "prettier --write .",

@@ -1,13 +1,15 @@
 ![Pixel Profile](.github/img/card.png)
 **Pixel Profile**: Generate pixel art profiles from your GitHub data
 
-> This Pixel Profile project would not have been possible without these three amazing projects:
+> This Pixel Profile project would not have been possible without these amazing projects:
 > 
 > [Github Readme Stats](https://github.com/anuraghazra/github-readme-stats): One of the best tools out there for generating awesome Github stats cards.
 > 
 > [resvg-js](https://github.com/yisibl/resvg-js): A high-performance SVG renderer and toolkit.
 >
 > [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
+> 
+> [Jubilee](https://ko-fi.com/8pxl) A truly unmatched pixel artist! ❤️
 
 ## Overview
 

@@ -42,37 +42,49 @@ If you want to include a GitHub stats card in your own README file and have it d
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
 #### 1. Journey without pixelated avatar.
-![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-1-snap.png)
+![Journey](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=journey&pixelate_avatar=false
 ```
 
-#### 2. Rainbow.
-![Rainbow dark](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-rainbow-theme-1-snap.png)
+#### 2. Road trip without pixelated avatar.
+![Road trip](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-road-trip-theme-1-snap.png)
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=road_trip&pixelate_avatar=false
+```
+
+#### 3. Fuji without pixelated avatar.
+![Fuji](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-fuji-theme-1-snap.png)
+```html
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=fuji&pixelate_avatar=false
+```
+
+#### 4. Rainbow.
+![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-rainbow-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
 ```
 
-#### 3. Monica.
+#### 5. Monica.
 ![Monica](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-monica-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=monica
 ```
 
-#### 4. Summer.
+#### 6. Summer.
 ![Summer](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-summer-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer
 ```
 
-#### 5. Lax.
+#### 7. Lax.
 ![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-lax-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=lax
 ```
 
-#### 6. Serene without pixelated avatar.
-![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
+#### 8. Serene without pixelated avatar.
+![Serene](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene&pixelate_avatar=false
 ```

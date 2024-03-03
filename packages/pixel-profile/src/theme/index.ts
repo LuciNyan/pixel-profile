@@ -1,4 +1,6 @@
+import { IMG_FUJI } from './images/fuji'
 import { IMG_JOURNEY } from './images/journey'
+import { IMG_ROAD_TRIP } from './images/road-trip'
 
 type Theme = Record<
   string,
@@ -44,6 +46,18 @@ export const THEME: Theme = {
   journey: {
     color: 'white',
     backgroundImage: `url(${IMG_JOURNEY})`,
+    backgroundSize: '1226px 430px',
+    backgroundRepeat: 'no-repeat'
+  },
+  fuji: {
+    color: 'white',
+    backgroundImage: `url(${IMG_FUJI})`,
+    backgroundSize: '1226px 430px',
+    backgroundRepeat: 'no-repeat'
+  },
+  road_trip: {
+    color: 'white',
+    backgroundImage: `url(${IMG_ROAD_TRIP})`,
     backgroundSize: '1226px 430px',
     backgroundRepeat: 'no-repeat'
   }

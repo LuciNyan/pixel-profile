@@ -2,6 +2,7 @@ import { renderStats } from '../src'
 import { BLUE_AVATAR } from './avatar/blue'
 import { CYAN_AVATAR } from './avatar/cyan'
 import { DARK_GREEN_AVATAR } from './avatar/dark-green'
+import { LUCI_AVATAR } from './avatar/luci'
 import { ORANGE_AVATAR } from './avatar/orange'
 import { PIXEL_DOG_AVATAR } from './avatar/pixel-dog'
 import { PURPLE_AVATAR } from './avatar/purple'
@@ -63,7 +64,7 @@ describe('Theme', () => {
   })
 
   it('Render card with monica theme', async () => {
-    const png = await renderStats(stats, { theme: 'monica' })
+    const png = await renderStats({ ...stats, avatarUrl: PURPLE_AVATAR }, { theme: 'monica' })
     expect(png).toMatchImageSnapshot()
   })
 
@@ -86,7 +87,7 @@ describe('Theme', () => {
   })
 
   it('Render card with fuji theme', async () => {
-    const png = await renderStats({ ...stats, avatarUrl: PURPLE_AVATAR }, { theme: 'fuji', pixelateAvatar: false })
+    const png = await renderStats({ ...stats, avatarUrl: LUCI_AVATAR }, { theme: 'fuji', pixelateAvatar: false })
     expect(png).toMatchImageSnapshot()
   })
 

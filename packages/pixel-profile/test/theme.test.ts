@@ -2,10 +2,10 @@ import { renderStats } from '../src'
 import { BLUE_AVATAR } from './avatar/blue'
 import { CYAN_AVATAR } from './avatar/cyan'
 import { DARK_GREEN_AVATAR } from './avatar/dark-green'
+import { KITTEN_AVATAR } from './avatar/kitten'
 import { LUCI_AVATAR } from './avatar/luci'
 import { ORANGE_AVATAR } from './avatar/orange'
 import { PIXEL_DOG_AVATAR } from './avatar/pixel-dog'
-import { PIXEL_KITTEN_AVATAR } from './avatar/pixel-kitten'
 import { PURPLE_AVATAR } from './avatar/purple'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
@@ -60,10 +60,7 @@ describe('Theme', () => {
   })
 
   it('Render card with rainbow theme', async () => {
-    const png = await renderStats(
-      { ...stats, avatarUrl: PIXEL_KITTEN_AVATAR },
-      { theme: 'rainbow', pixelateAvatar: false }
-    )
+    const png = await renderStats({ ...stats, avatarUrl: KITTEN_AVATAR }, { theme: 'rainbow', pixelateAvatar: false })
     expect(png).toMatchImageSnapshot()
   })
 

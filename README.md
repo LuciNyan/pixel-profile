@@ -61,10 +61,10 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=road_t
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=fuji&pixelate_avatar=false
 ```
 
-#### 4. Rainbow.
+#### 4. Rainbow without pixelated avatar.
 ![Rainbow](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-rainbow-theme-1-snap.png)
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&screen_effect=true
+https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=rainbow&pixelate_avatar=false
 ```
 
 #### 5. Monica.

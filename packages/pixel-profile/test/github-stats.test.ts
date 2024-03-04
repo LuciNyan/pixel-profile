@@ -122,7 +122,7 @@ describe('Github stats', () => {
           score: 0
         }
       },
-      { theme: 'journey' }
+      { theme: 'journey', hiddenStatsKeys: ['avatar'] }
     )
     expect(png).toMatchImageSnapshot()
   })
@@ -140,7 +140,7 @@ describe('Github stats', () => {
         avatarUrl: '',
         rank: null
       },
-      { theme: 'journey' }
+      { theme: 'journey', hiddenStatsKeys: ['avatar', 'rank'] }
     )
     expect(png).toMatchImageSnapshot()
   })

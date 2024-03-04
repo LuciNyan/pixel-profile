@@ -43,8 +43,8 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   let modifiedAvatarUrl = avatarUrl
 
   const {
-    background = '#434343',
-    color = 'white',
+    background,
+    color,
     hiddenStatsKeys = [],
     includeAllCommits = false,
     pixelateAvatar = true,
@@ -63,7 +63,10 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
 
-  const [fontData, avatar] = await Promise.all([readFile(fontPath), makeAvatar(modifiedAvatarUrl, pixelateAvatar, !!theme)])
+  const [fontData, avatar] = await Promise.all([
+    readFile(fontPath),
+    makeAvatar(modifiedAvatarUrl, pixelateAvatar, !!theme)
+  ])
 
   const _stats = {
     name,

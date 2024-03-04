@@ -7,7 +7,6 @@ type Theme = Record<
   Partial<{
     color: string
     background: string
-    textShadow: string
     backgroundImage: string
     backgroundSize: string
     backgroundRepeat: string

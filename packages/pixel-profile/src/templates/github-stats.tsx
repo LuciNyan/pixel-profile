@@ -1,4 +1,5 @@
 import { Rank } from '../utils'
+import { filterNotEmpty } from '../utils/filter'
 
 export type Stats = {
   avatar: string
@@ -16,7 +17,6 @@ export type TemplateOptions = {
   background: string
   hiddenStatsKeys: string[]
   includeAllCommits: boolean
-  textShadow?: string
   backgroundImage?: string
   backgroundSize?: string
   backgroundRepeat?: string
@@ -44,12 +44,14 @@ export const AVATAR_SIZE = {
 }
 
 const mainStatsItems = ['stars', 'commits', 'issues', 'prs', 'contributions']
+
 const getVisibleMainStatsCount = (hiddenStatsKeys: string[]) =>
   mainStatsItems.filter((stat) => !hiddenStatsKeys.includes(stat)).length
 
 export function makeGithubStats(stats: Stats, options: TemplateOptions) {
   const { avatar, commits, contributions, issues, name, prs, rank, stars } = stats
-  const { color, hiddenStatsKeys, includeAllCommits } = options
+  const { hiddenStatsKeys, includeAllCommits, color, background, backgroundRepeat, backgroundSize, backgroundImage } =
+    options
   const date = new Date()
   const year = date.getFullYear()
 
@@ -65,7 +67,7 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        ...options
+        ...filterNotEmpty({ color, background, backgroundRepeat, backgroundSize, backgroundImage })
       }}
     >
       <div

@@ -50,7 +50,7 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=journe
 ```
 
 #### 2. Road trip without pixelated avatar.
-![Road trip](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-road-trip-theme-1-snap.png)
+![Road Trip](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-road-trip-theme-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=road_trip&pixelate_avatar=false
 ```

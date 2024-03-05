@@ -1,5 +1,6 @@
 import { renderStats } from '../src'
 import { BLUE_AVATAR } from './avatar/blue'
+import { KITTEN_AVATAR } from './avatar/kitten'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
@@ -105,7 +106,7 @@ describe('Github stats', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card without avatar, with theme', async () => {
+  it('Render card without rank, with theme', async () => {
     const png = await renderStats(
       {
         name: 'LuciNyan',
@@ -115,14 +116,14 @@ describe('Github stats', () => {
         totalIssues: 99,
         totalPRs: 9,
         contributedTo: 9999,
-        avatarUrl: '',
+        avatarUrl: KITTEN_AVATAR,
         rank: {
           level: 'S',
           percentile: 0,
           score: 0
         }
       },
-      { theme: 'journey', hiddenStatsKeys: ['avatar'] }
+      { theme: 'summer', hiddenStatsKeys: ['rank'], pixelateAvatar: false }
     )
     expect(png).toMatchImageSnapshot()
   })
@@ -144,7 +145,7 @@ describe('Github stats', () => {
           score: 0
         }
       },
-      { theme: 'journey', hiddenStatsKeys: ['avatar', 'rank'] }
+      { theme: 'summer', hiddenStatsKeys: ['avatar', 'rank'] }
     )
     expect(png).toMatchImageSnapshot()
   })

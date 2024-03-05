@@ -111,9 +111,9 @@ You can pass a query parameter `&hide=` to hide any specific stats with comma-se
 > Options: `&hide=avatar,commits,contributions,issues,prs,rank,stars`
 ```html
 <!--Replace <username> with your own GitHub username.-->
-https://pixel-profile.vercel.app/api/github-stats?username=<username>&hide=avatar,stars
+https://pixel-profile.vercel.app/api/github-stats?username=<username>&hide=rank
 ```
-![Hiding individual stats](.github/img/sample-github-stats-with-hidden-stats.png)
+![Hiding individual stats](./packages/pixel-profile/test/__image_snapshots__/github-stats-test-ts-packages-pixel-profile-test-github-stats-test-ts-github-stats-render-card-without-rank-with-theme-1-snap.png)
 
 ## Deploy on your own
 

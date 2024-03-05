@@ -124,7 +124,7 @@ Under "Select scopes" check the box for "repo" and "user" like in the image belo
 Copy the generated PAT for use in the config file or as an environment variable.
 
 #### 2. Deploy to Vercel
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile&env=PAT_1&envDescription=To%20use%20this%20tool%20to%20retrieve%20user%20statistics%2C%20you'll%20need%20to%20generate%20a%20Personal%20Access%20Token%20(PAT)%20with%20the%20proper%20scopes.&envLink=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile%3Ftab%3Dreadme-ov-file%232-creating-a-personal-access-token)
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile&env=PAT_1&envDescription=To%20use%20this%20tool%20to%20retrieve%20user%20statistics%2C%20you'll%20need%20to%20generate%20a%20Personal%20Access%20Token%20(PAT)%20with%20the%20proper%20scopes.&envLink=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile%3Ftab%3Dreadme-ov-file%231-creating-a-personal-access-token)
 
 #### 3. Using the PAT with Vercel
 Once you have generated a Personal Access Token (PAT) from your GitHub account, you'll need to add it to your Vercel project configuration in order to authenticate API requests.

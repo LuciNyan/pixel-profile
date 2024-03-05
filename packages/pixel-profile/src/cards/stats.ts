@@ -57,7 +57,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   }
 
   const themeOptions = getThemeOptions(theme)
-  const baseCardSize = rank ? CARD_SIZE.BIG : CARD_SIZE.SMALL
+  const baseCardSize = !hiddenStatsKeys.includes('rank') ? CARD_SIZE.BIG : CARD_SIZE.SMALL
   const width = baseCardSize.CARD_WIDTH
   const height = baseCardSize.CARD_HEIGHT
 

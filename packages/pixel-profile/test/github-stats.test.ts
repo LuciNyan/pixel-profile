@@ -138,7 +138,11 @@ describe('Github stats', () => {
         totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
-        rank: null
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
       },
       { theme: 'journey', hiddenStatsKeys: ['avatar', 'rank'] }
     )
@@ -156,7 +160,11 @@ describe('Github stats', () => {
         totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
-        rank: null
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
       },
       {
         background: 'linear-gradient(to bottom right, #2aeeff, #5580eb)',

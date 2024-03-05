@@ -108,12 +108,11 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene
 
 ## Deploy on your own
 
-### 1. Deploy on Vercel
-The GitHub API has a rate limit of 5k requests per hour. So my https://pixel-profile.vercel.app/api setup could potentially hit that cap. By self-hosting it on Vercel, you eliminate that concern. Simply click "Deploy" to begin seamlessly hosting your own instance!
+The GitHub API has a rate limit of 5k requests per hour. So my https://pixel-profile.vercel.app/api setup could potentially hit that cap. By self-hosting, you eliminate that concern. 
 
-[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/LuciNyan/pixel-profile)
+### Deploy on Vercel (Recommend)
 
-### 2. Creating a Personal Access Token
+#### 1. Creating a Personal Access Token
 To use this tool to retrieve user statistics, you'll need to generate a Personal Access Token (PAT) with the proper scopes.
 
 Click [here](https://github.com/settings/tokens/new) to create a new PAT.
@@ -124,7 +123,10 @@ Under "Select scopes" check the box for "repo" and "user" like in the image belo
 
 Copy the generated PAT for use in the config file or as an environment variable.
 
-### 3. Using the PAT with Vercel
+#### 2. Deploy to Vercel
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile&env=PAT_1&envDescription=To%20use%20this%20tool%20to%20retrieve%20user%20statistics%2C%20you'll%20need%20to%20generate%20a%20Personal%20Access%20Token%20(PAT)%20with%20the%20proper%20scopes.&envLink=https%3A%2F%2Fgithub.com%2FLuciNyan%2Fpixel-profile%3Ftab%3Dreadme-ov-file%232-creating-a-personal-access-token)
+
+#### 3. Using the PAT with Vercel
 Once you have generated a Personal Access Token (PAT) from your GitHub account, you'll need to add it to your Vercel project configuration in order to authenticate API requests.
 
 To add the PAT to Vercel:
@@ -132,6 +134,51 @@ To add the PAT to Vercel:
 ![Image of adding env step 1](.github/img/add-env-step-1.png)
 
 ![Image of adding env step 2](.github/img/add-env-step-2.png)
+
+### Other platforms or self-hosted
+In addition to Vercel, you can also deploy to other PaaS platforms (e.g. zeabur.com, heroku.com, fly.io) or hosted on your own server!
+
+#### Deploy on Zeabur
+First you need to have a [zeabur](zeabur.com) account.
+
+Fork this repository and log in to Zeabur.
+
+"Create a Project (or select an existing one)" - "Add Service" - "Git" - "Select the forked `pixel-profile` repository".
+
+![Image of deploy on zeabur](.github/img/deploy-on-zeabur.gif)
+
+Don't forget to add your "Personal Access Token (PAT) " in "Variable".
+
+![Image of add variable on service](.github/img/deploy-on-zeabur-add-variable.png)
+
+Finally, go to "Networking" and generate a domain (or bind your own).
+
+![Image of generate a domain on service](.github/img/deploy-on-zeabur-generate-domain.png)
+
+#### Running on docker
+> [!WARNING]  
+> When hosting on Docker, caching is not available, which can quickly cause the API rate limits to be exceeded. It is recommended to use Nginx or a CDN as a proxy to provide caching functionality and optimize performance.
+
+```bash
+# Clone repository
+git clone https://github.com/LuciNyan/pixel-profile.git
+
+# Go to the directory to build the Docker image
+cd pixel-profile
+docker build -t pixel-profile .
+
+# Create and start the container
+docker run -d \
+  --name pixel-profile \
+  -p 3000:3000 \
+  -e PAT_1=ghp_xxxxxx \ # Please change it to your "Personal Access Token (PAT) "
+  -e PORT=3000 \
+  --restart always \
+  pixel-profile
+
+# The service has successfully started on port 3000!
+
+```
 
 ## Contribute
 The layout in this project is entirely done with JSX, so developing it is almost no different than a normal React project. This means anyone can easily create new cards with very little effort. If you have any ideas, feel free to contribute them here! ❤️

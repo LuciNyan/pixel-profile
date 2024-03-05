@@ -85,11 +85,6 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=summer
 https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=lax
 ```
 
-#### 8. Serene without pixelated avatar.
-![Serene](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-serene-theme-1-snap.png)
-```html
-https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene&pixelate_avatar=false
-```
 
 ### Github Stats Card Options
 
@@ -103,6 +98,7 @@ https://pixel-profile.vercel.app/api/github-stats?username=LuciNyan&theme=serene
 | `screen_effect`       | Enable curved screen effect                                                                                                                           | `false`       |
 | `username`            | GitHub username                                                                                                                                       | ''            |
 | `theme`               | Check out the built-in themes below                                                                                                                   | ''            |
+
 
 ### Hiding individual stats
 

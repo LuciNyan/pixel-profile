@@ -1,12 +1,11 @@
 import { CONSTANTS, parseArray, parseBoolean, parseString } from './utils'
 import { Hono } from 'hono'
-import { stream } from 'hono/streaming'
 import { clamp, fetchStats, renderStats } from 'pixel-profile'
 
 const githubStats = new Hono()
 
 githubStats.get('/', async (c) => {
-  const { req, res } = c
+  const { req, res, body } = c
   const {
     background,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
@@ -64,16 +63,8 @@ githubStats.get('/', async (c) => {
     }
 
     const result = await renderStats(stats, options)
-    const resultUint8Array = Uint8Array.from(result)
 
-    return stream(c, async (stream) => {
-      // Write a process to be executed when aborted.
-      stream.onAbort(() => {
-        console.log('Aborted!')
-      })
-      // Write a Uint8Array.
-      await stream.write(resultUint8Array)
-    })
+    return body(result)
   } catch (err) {
     console.log(err)
 

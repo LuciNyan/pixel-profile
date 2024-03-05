@@ -11,13 +11,11 @@ githubStats.get('/', async (c) => {
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
     color,
     exclude_repo,
+    hide = '',
     include_all_commits,
     pixelate_avatar,
     screen_effect,
     show,
-    show_avatar,
-    show_rank,
-    show_total_stars,
     username,
     theme
   } = req.query()
@@ -26,9 +24,6 @@ githubStats.get('/', async (c) => {
 
   try {
     const showStats = parseArray(show)
-    const showAvatar = parseBoolean(show_avatar) ?? true
-    const showRank = parseBoolean(show_rank) ?? true
-    const showTotalStars = parseBoolean(show_total_stars) ?? true
     const includeAllCommits = parseBoolean(include_all_commits)
 
     const stats: Parameters<typeof renderStats>[0] = await fetchStats(
@@ -40,10 +35,6 @@ githubStats.get('/', async (c) => {
       showStats.includes('discussions_answered')
     )
 
-    stats.avatarUrl = showAvatar ? stats.avatarUrl : ''
-    stats.rank = showRank ? stats.rank : null
-    stats.totalStars = showTotalStars ? stats.totalStars : null
-
     let cacheSeconds = clamp(parseInt(parseString(cache_seconds) ?? '0', 10), CONSTANTS.SIX_HOURS, CONSTANTS.ONE_DAY)
 
     cacheSeconds = process.env.CACHE_SECONDS ? parseInt(process.env.CACHE_SECONDS, 10) || cacheSeconds : cacheSeconds
@@ -54,12 +45,13 @@ githubStats.get('/', async (c) => {
     )
 
     const options = {
-      screenEffect: parseBoolean(screen_effect),
-      color: parseString(color),
       background: parseString(background),
+      color: parseString(color),
+      hiddenStatsKeys: hide ? parseArray(hide) : undefined,
+      includeAllCommits,
       pixelateAvatar: parseBoolean(pixelate_avatar),
       theme: parseString(theme),
-      includeAllCommits
+      screenEffect: parseBoolean(screen_effect)
     }
 
     const result = await renderStats(stats, options)

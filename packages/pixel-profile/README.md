@@ -46,17 +46,15 @@ If you want to include a GitHub stats card in your own README and have it displa
 
 Github Stats Card Options
 
-| Name                  | Description                                                                     | Default value |
-| --------------------- | ------------------------------------------------------------------------------- | ------------- |
-| `background`          | Set background color/image. Supports a subset of CSS background property values | `#434343`     |
-| `color`               | Set text color to any valid CSS color value                                     | `white`       |
-| `include_all_commits` | Count all commits                                                               | `false`       |
-| `pixelate_avatar`     | Apply pixelation to avatar                                                      | `true`        |
-| `screen_effect`       | Enable curved screen effect                                                     | `false`       |
-| `show_avatar`         | Display avatar                                                                  | `true`        |
-| `show_rank`           | Display rank value                                                              | `true`        |
-| `show_total_stars`    | Display total stars earned                                                      | `true`        |
-| `username`            | GitHub username                                                                 | ''            |
+| Name                  | Description                                                                                                                                           | Default value |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `background`          | Set background color/image. Supports a subset of CSS background property values                                                                       | `#434343`     |
+| `color`               | Set text color to any valid CSS color value                                                                                                           | `white`       |
+| `hide`                | Hide specific stats or elements by passing a comma-separated list. Valid keys: 'avatar', 'commits', 'contributions', 'issues', 'prs', 'rank', 'stars' |               |
+| `include_all_commits` | Count all commits                                                                                                                                     | `false`       |
+| `pixelate_avatar`     | Apply pixelation to avatar                                                                                                                            | `true`        |
+| `screen_effect`       | Enable curved screen effect                                                                                                                           | `false`       |
+| `username`            | GitHub username                                                                                                                                       |
 
 ## Contribute
 

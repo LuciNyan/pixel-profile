@@ -1,21 +1,22 @@
 import { Rank } from '../utils'
+import { filterNotEmpty } from '../utils/filter'
 
 export type Stats = {
-  name: string
-  totalStars: string | null
-  totalCommits: string
-  totalPRs: string
-  totalIssues: string
-  contributedTo: string
-  rank: Rank['level']
   avatar: string
+  commits: string
+  contributions: string
+  issues: string
+  name: string
+  prs: string
+  rank: Rank['level']
+  stars: string
 }
 
 export type TemplateOptions = {
   color: string
   background: string
+  hiddenStatsKeys: string[]
   includeAllCommits: boolean
-  textShadow?: string
   backgroundImage?: string
   backgroundSize?: string
   backgroundRepeat?: string
@@ -42,13 +43,21 @@ export const AVATAR_SIZE = {
   AVATAR_HEIGHT: 280
 }
 
+const mainStatsItems = ['stars', 'commits', 'issues', 'prs', 'contributions']
+
+const getVisibleMainStatsCount = (hiddenStatsKeys: string[]) =>
+  mainStatsItems.filter((stat) => !hiddenStatsKeys.includes(stat)).length
+
 export function makeGithubStats(stats: Stats, options: TemplateOptions) {
-  const { name, totalStars, totalCommits, totalPRs, totalIssues, contributedTo, rank, avatar } = stats
-
-  const { color, includeAllCommits } = options
-
+  const { avatar, commits, contributions, issues, name, prs, rank, stars } = stats
+  const { hiddenStatsKeys, includeAllCommits, color, background, backgroundRepeat, backgroundSize, backgroundImage } =
+    options
   const date = new Date()
   const year = date.getFullYear()
+
+  const isVisible = (key: string) => !hiddenStatsKeys.includes(key)
+  const visibleMainStatsCount = getVisibleMainStatsCount(hiddenStatsKeys)
+  const isShowSeparator = isVisible('rank') && visibleMainStatsCount > 0
 
   return (
     <div
@@ -58,7 +67,7 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
-        ...options
+        ...filterNotEmpty({ color, background, backgroundRepeat, backgroundSize, backgroundImage })
       }}
     >
       <div
@@ -75,31 +84,13 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
           position: 'relative'
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            width: '100%'
-          }}
-        >
-          <div
-            style={{
-              borderTop: `${color} 4px solid`,
-              width: '36px'
-            }}
-          />
-          <div
-            style={{
-              position: 'relative',
-              top: 6
-            }}
-          >{`${name}'s GitHub Stats`}</div>
-          <div
-            style={{
-              borderTop: `${color} 4px solid`,
-              flexGrow: '1'
-            }}
-          />
+        {/* Header */}
+        <div style={{ display: 'flex', width: '100%' }}>
+          <div style={{ borderTop: `${color} 4px solid`, width: '36px' }} />
+          <div style={{ position: 'relative', top: 6 }}>{`${name}'s GitHub Stats`}</div>
+          <div style={{ borderTop: `${color} 4px solid`, flexGrow: '1' }} />
         </div>
+        {/* Stats */}
         <div
           style={{
             display: 'flex',
@@ -119,7 +110,7 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
               paddingRight: avatar ? 40 : 0
             }}
           >
-            {totalStars ? (
+            {isVisible('stars') && (
               <div
                 style={{
                   display: 'flex',
@@ -130,59 +121,66 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
                 }}
               >
                 <div>Total Stars Earned: </div>
-                <div>{`${totalStars}`}</div>
+                <div>{stars}</div>
               </div>
-            ) : null}
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                width: '100%'
-              }}
-            >
-              <div>{`Total Commits${includeAllCommits ? '' : `(${year})`}: `}</div>
-              <div>{`${totalCommits}`}</div>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                width: '100%'
-              }}
-            >
-              <div>Total PRs: </div>
-              <div>{`${totalPRs}`}</div>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                width: '100%'
-              }}
-            >
-              <div>Total Issues: </div>
-              <div>{`${totalIssues}`}</div>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                flexDirection: 'row',
-                width: '100%'
-              }}
-            >
-              <div>Contributed to (last year): </div>
-              <div>{`${contributedTo}`}</div>
-            </div>
-            {rank ? (
+            )}
+            {isVisible('commits') && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>{`Total Commits${includeAllCommits ? '' : `(${year})`}:`}</div>
+                <div>{commits}</div>
+              </div>
+            )}
+            {isVisible('prs') && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>Total PRs:</div>
+                <div>{prs}</div>
+              </div>
+            )}
+            {isVisible('issues') && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>Total Issues:</div>
+                <div>{issues}</div>
+              </div>
+            )}
+            {isVisible('contributions') && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row',
+                  width: '100%'
+                }}
+              >
+                <div>Contributed to (last year):</div>
+                <div>{contributions}</div>
+              </div>
+            )}
+            {isShowSeparator && (
               <div
                 style={{
                   display: 'flex',
@@ -199,8 +197,8 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
                   <div>---------------------------------------------</div>
                 )}
               </div>
-            ) : null}
-            {rank ? (
+            )}
+            {isVisible('rank') && (
               <div
                 style={{
                   display: 'flex',
@@ -210,12 +208,12 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
                   width: '100%'
                 }}
               >
-                <div>Rank: </div>
-                <div>{`${rank}`}</div>
+                <div>Rank:</div>
+                <div>{rank}</div>
               </div>
-            ) : null}
+            )}
           </div>
-          {avatar ? <img src={avatar} style={{ height: '100%' }} /> : null}
+          {isVisible('avatar') && <img src={avatar} alt='Avatar' style={{ height: '100%' }} />}
         </div>
       </div>
     </div>

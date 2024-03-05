@@ -60,21 +60,26 @@ describe('Github stats', () => {
   })
 
   it('Render card without avatar', async () => {
-    const png = await renderStats({
-      name: 'LuciNyan',
-      username: 'username',
-      totalStars: 999,
-      totalCommits: 99999,
-      totalIssues: 99,
-      totalPRs: 9,
-      contributedTo: 9999,
-      avatarUrl: '',
-      rank: {
-        level: 'S',
-        percentile: 0,
-        score: 0
+    const png = await renderStats(
+      {
+        name: 'LuciNyan',
+        username: 'username',
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
+        contributedTo: 9999,
+        avatarUrl: '',
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
+      },
+      {
+        hiddenStatsKeys: ['avatar']
       }
-    })
+    )
     expect(png).toMatchImageSnapshot()
   })
 
@@ -93,7 +98,8 @@ describe('Github stats', () => {
       },
       {
         background: 'linear-gradient(to bottom right, #74dcc4, #4597e9)',
-        color: 'white'
+        color: 'white',
+        hiddenStatsKeys: ['avatar', 'rank']
       }
     )
     expect(png).toMatchImageSnapshot()
@@ -116,7 +122,7 @@ describe('Github stats', () => {
           score: 0
         }
       },
-      { theme: 'journey' }
+      { theme: 'journey', hiddenStatsKeys: ['avatar'] }
     )
     expect(png).toMatchImageSnapshot()
   })
@@ -132,9 +138,13 @@ describe('Github stats', () => {
         totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
-        rank: null
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
       },
-      { theme: 'journey' }
+      { theme: 'journey', hiddenStatsKeys: ['avatar', 'rank'] }
     )
     expect(png).toMatchImageSnapshot()
   })
@@ -150,34 +160,44 @@ describe('Github stats', () => {
         totalPRs: 9,
         contributedTo: 9999,
         avatarUrl: '',
-        rank: null
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
       },
       {
         background: 'linear-gradient(to bottom right, #2aeeff, #5580eb)',
         color: 'white',
-        screenEffect: true,
-        includeAllCommits: true
+        hiddenStatsKeys: ['avatar', 'rank'],
+        includeAllCommits: true,
+        screenEffect: true
       }
     )
     expect(png).toMatchImageSnapshot()
   })
 
   it('Render card without total_stars', async () => {
-    const png = await renderStats({
-      name: 'LuciNyan',
-      username: 'username',
-      totalStars: null,
-      totalCommits: 99999,
-      totalIssues: 99,
-      totalPRs: 9,
-      contributedTo: 9999,
-      avatarUrl: '',
-      rank: {
-        level: 'S',
-        percentile: 0,
-        score: 0
+    const png = await renderStats(
+      {
+        name: 'LuciNyan',
+        username: 'username',
+        totalStars: 999,
+        totalCommits: 99999,
+        totalIssues: 99,
+        totalPRs: 9,
+        contributedTo: 9999,
+        avatarUrl: '',
+        rank: {
+          level: 'S',
+          percentile: 0,
+          score: 0
+        }
+      },
+      {
+        hiddenStatsKeys: ['avatar', 'stars']
       }
-    })
+    )
     expect(png).toMatchImageSnapshot()
   })
 })

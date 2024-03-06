@@ -71,7 +71,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const _stats = {
     name,
     avatar,
-    stars: totalStars ? kFormatter(totalStars) : '',
+    stars: kFormatter(totalStars),
     commits: kFormatter(totalCommits),
     issues: kFormatter(totalIssues),
     prs: kFormatter(totalPRs),

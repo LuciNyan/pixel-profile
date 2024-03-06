@@ -22,16 +22,16 @@ declare global {
 expect.extend({ toMatchImageSnapshot })
 
 const stats = {
-  name: 'User Name',
-  username: 'username',
-  totalStars: 999,
-  totalCommits: 99999,
-  totalIssues: 99,
-  totalPRs: 9,
-  contributedTo: 9999,
+  name: 'Kumiko',
+  username: 'Reina',
+  totalStars: 21999,
+  totalCommits: 38,
+  totalPRs: 14001,
+  totalIssues: 233,
+  contributedTo: 11,
   avatarUrl: BLUE_AVATAR,
   rank: {
-    level: 'S',
+    level: 'A',
     percentile: 0,
     score: 0
   }

@@ -1,11 +1,12 @@
 import { renderStats } from '../src'
-import { BLUE_AVATAR } from './avatar/blue'
-import { DARK_GREEN_AVATAR } from './avatar/dark-green'
-import { KITTEN_AVATAR } from './avatar/kitten'
-import { LUCI_AVATAR } from './avatar/luci'
-import { ORANGE_AVATAR } from './avatar/orange'
-import { PIXEL_DOG_AVATAR } from './avatar/pixel-dog'
-import { PURPLE_AVATAR } from './avatar/purple'
+import { BLUE_AVATAR } from './utils/avatar/blue'
+import { DARK_GREEN_AVATAR } from './utils/avatar/dark-green'
+import { KITTEN_AVATAR } from './utils/avatar/kitten'
+import { LUCI_AVATAR } from './utils/avatar/luci'
+import { ORANGE_AVATAR } from './utils/avatar/orange'
+import { PIXEL_DOG_AVATAR } from './utils/avatar/pixel-dog'
+import { PURPLE_AVATAR } from './utils/avatar/purple'
+import { stats } from './utils/data'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
@@ -21,22 +22,6 @@ declare global {
 
 expect.extend({ toMatchImageSnapshot })
 
-const stats = {
-  name: 'Kumiko',
-  username: 'Reina',
-  totalStars: 21999,
-  totalCommits: 38,
-  totalPRs: 14001,
-  totalIssues: 233,
-  contributedTo: 11,
-  avatarUrl: BLUE_AVATAR,
-  rank: {
-    level: 'A',
-    percentile: 0,
-    score: 0
-  }
-}
-
 describe('Theme', () => {
   it('Render card with summer theme and custom color', async () => {
     const png = await renderStats(stats, { theme: 'summer', color: 'yellow' })
@@ -49,7 +34,7 @@ describe('Theme', () => {
   })
 
   it('Render card with summer theme', async () => {
-    const png = await renderStats(stats, { theme: 'summer' })
+    const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'summer' })
     expect(png).toMatchImageSnapshot()
   })
 

@@ -1,5 +1,5 @@
 import { renderStats } from '../src'
-import { KITTEN_AVATAR } from './avatar/kitten'
+import { stats } from './utils/data'
 // @ts-expect-error ...
 import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
@@ -14,22 +14,6 @@ declare global {
 }
 
 expect.extend({ toMatchImageSnapshot })
-
-const stats = {
-  name: 'Kumiko',
-  username: 'Reina',
-  totalStars: 21999,
-  totalCommits: 38,
-  totalPRs: 14001,
-  totalIssues: 233,
-  contributedTo: 11,
-  avatarUrl: KITTEN_AVATAR,
-  rank: {
-    level: 'A',
-    percentile: 0,
-    score: 0
-  }
-}
 
 describe('Github stats', () => {
   it('Render card', async () => {

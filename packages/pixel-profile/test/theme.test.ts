@@ -7,20 +7,7 @@ import { ORANGE_AVATAR } from './utils/avatar/orange'
 import { PIXEL_DOG_AVATAR } from './utils/avatar/pixel-dog'
 import { PURPLE_AVATAR } from './utils/avatar/purple'
 import { stats } from './utils/data'
-// @ts-expect-error ...
-import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      toMatchImageSnapshot(): R
-    }
-  }
-}
-
-expect.extend({ toMatchImageSnapshot })
 
 describe('Theme', () => {
   it('Render card with summer theme and custom color', async () => {

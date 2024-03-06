@@ -1,19 +1,6 @@
 import { renderStats } from '../src'
 import { stats } from './utils/data'
-// @ts-expect-error ...
-import { toMatchImageSnapshot } from 'jest-image-snapshot'
 import { describe, expect, it } from 'vitest'
-
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace jest {
-    interface Matchers<R> {
-      toMatchImageSnapshot(): R
-    }
-  }
-}
-
-expect.extend({ toMatchImageSnapshot })
 
 describe('Github stats', () => {
   it('Render card', async () => {

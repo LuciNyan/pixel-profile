@@ -1,4 +1,4 @@
-import { curve, pixelate, putFrame } from '../shaders'
+import { addBorder, curve, pixelate } from '../shaders'
 import {
   AVATAR_SIZE,
   CARD_SIZE,
@@ -164,14 +164,12 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, enableFrame: boo
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
     if (enableFrame) {
-      pixels = putFrame(pixels, width, height, {
-        frameWidthRatio: 0.025,
-        enabledTransparentBorder: true,
-        enabledCornerRemoval: true
+      pixels = addBorder(pixels, width, height, {
+        frameWidthRatio: 0.025
       })
     }
   } else {
-    pixels = putFrame(pixels, width, height, { frameWidthRatio: 0.0167, enabledTransparentBorder: true })
+    pixels = addBorder(pixels, width, height, { frameWidthRatio: 0.0167, enabledCornerRemoval: false })
   }
 
   return await getBase64FromPixels(pixels, width, height)

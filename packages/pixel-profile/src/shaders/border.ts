@@ -1,6 +1,6 @@
 import { render, type RGBA } from '../utils'
 
-export function putFrame(
+export function addBorder(
   source: Buffer,
   width: number,
   height: number,
@@ -10,7 +10,7 @@ export function putFrame(
     enabledCornerRemoval?: boolean
   }
 ) {
-  const { enabledTransparentBorder = false, enabledCornerRemoval = false, frameWidthRatio } = options
+  const { enabledTransparentBorder = true, enabledCornerRemoval = true, frameWidthRatio } = options
 
   return render(source, width, height, (uv, texture2D) => {
     const maxX = width - 1

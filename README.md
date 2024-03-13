@@ -1,6 +1,10 @@
 ![Pixel Profile](.github/img/card.png)
 **Pixel Profile**: Generate pixel art profiles from your GitHub data
 
+> 🎉🎉🎉 [Halid](https://github.com/imhalid) has created an awesome [UI](https://github.com/imhalid/pixel-profile-generator) for pixel-profile, which makes it a breeze to edit our own GitHub cards!
+>
+> Check it out! ✨ https://pixel-profile-generator.vercel.app
+
 > This Pixel Profile project would not have been possible without these amazing projects:
 > 
 > [Github Readme Stats](https://github.com/anuraghazra/github-readme-stats): One of the best tools out there for generating awesome Github stats cards.

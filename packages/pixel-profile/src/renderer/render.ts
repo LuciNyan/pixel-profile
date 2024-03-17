@@ -18,11 +18,11 @@ export function render(
   const maxX = width - 1
   const maxY = height - 1
 
-  const filter = textureFilterGeneratorByName[textureFilter](source, width, height)
+  const texture2D = textureFilterGeneratorByName[textureFilter](source, width, height)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const rgba = fragShader([x / maxX, y / maxY], filter)
+      const rgba = fragShader([x / maxX, y / maxY], texture2D)
       const index = coordsToIndex(x, y, width)
       target[index] = rgba[0]
       target[index + 1] = rgba[1]

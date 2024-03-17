@@ -1,5 +1,5 @@
 import { clamp } from '../../utils'
-import type { Coordinates, RGBA, Texture2D } from '../common'
+import { Coordinates, coordsToPixel, RGBA, Texture2D } from '../common'
 
 export function genBiLinearFilter(source: Buffer, width: number, height: number): Texture2D {
   const maxX = width - 1
@@ -22,15 +22,15 @@ export function genBiLinearFilter(source: Buffer, width: number, height: number)
     const sx = x - x0
     const sy = y - y0
 
-    const p00 = (y0 * width + x0) * 4
-    const p01 = (y1 * width + x0) * 4
-    const p10 = (y0 * width + x1) * 4
-    const p11 = (y1 * width + x1) * 4
+    const p00 = coordsToPixel(source, x0, y0, width)
+    const p01 = coordsToPixel(source, x0, y1, width)
+    const p10 = coordsToPixel(source, x1, y0, width)
+    const p11 = coordsToPixel(source, x1, y1, width)
 
-    const r = biLinearInterpolate(source[p00], source[p10], source[p01], source[p11], sx, sy)
-    const g = biLinearInterpolate(source[p00 + 1], source[p10 + 1], source[p01 + 1], source[p11 + 1], sx, sy)
-    const b = biLinearInterpolate(source[p00 + 2], source[p10 + 2], source[p01 + 2], source[p11 + 2], sx, sy)
-    const a = biLinearInterpolate(source[p00 + 3], source[p10 + 3], source[p01 + 3], source[p11 + 3], sx, sy)
+    const r = biLinearInterpolate(p00[0], p10[0], p01[0], p11[0], sx, sy)
+    const g = biLinearInterpolate(p00[1], p10[1], p01[1], p11[1], sx, sy)
+    const b = biLinearInterpolate(p00[2], p10[2], p01[2], p11[2], sx, sy)
+    const a = biLinearInterpolate(p00[3], p10[3], p01[3], p11[3], sx, sy)
 
     return [r, g, b, a]
   }

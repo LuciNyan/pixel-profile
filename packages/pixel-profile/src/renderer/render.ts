@@ -6,7 +6,7 @@ type Options = {
 }
 
 export function render(
-  source: Buffer,
+  pixels: Buffer,
   width: number,
   height: number,
   fragShader: FragShader,
@@ -18,7 +18,7 @@ export function render(
   const maxX = width - 1
   const maxY = height - 1
 
-  const texture2D = textureFilterGeneratorByName[textureFilter](source, width, height)
+  const texture2D = textureFilterGeneratorByName[textureFilter](pixels, width, height)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

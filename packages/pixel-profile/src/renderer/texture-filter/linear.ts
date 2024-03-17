@@ -1,7 +1,7 @@
 import { clamp } from '../../utils'
 import { Coordinates, coordsToPixel, RGBA, Texture2D } from '../common'
 
-export function genBiLinearFilter(source: Buffer, width: number, height: number): Texture2D {
+export function genBiLinearFilter(pixels: Buffer, width: number, height: number): Texture2D {
   const maxX = width - 1
   const maxY = height - 1
 
@@ -22,10 +22,10 @@ export function genBiLinearFilter(source: Buffer, width: number, height: number)
     const sx = x - x0
     const sy = y - y0
 
-    const p00 = coordsToPixel(source, x0, y0, width)
-    const p01 = coordsToPixel(source, x0, y1, width)
-    const p10 = coordsToPixel(source, x1, y0, width)
-    const p11 = coordsToPixel(source, x1, y1, width)
+    const p00 = coordsToPixel(pixels, x0, y0, width)
+    const p01 = coordsToPixel(pixels, x0, y1, width)
+    const p10 = coordsToPixel(pixels, x1, y0, width)
+    const p11 = coordsToPixel(pixels, x1, y1, width)
 
     const r = biLinearInterpolate(p00[0], p10[0], p01[0], p11[0], sx, sy)
     const g = biLinearInterpolate(p00[1], p10[1], p01[1], p11[1], sx, sy)

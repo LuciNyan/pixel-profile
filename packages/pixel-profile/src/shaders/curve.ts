@@ -1,5 +1,6 @@
-import type { Coordinates, Vec2 } from '../utils'
-import { add2, dot2, prod2, render, subtract2 } from '../utils'
+import { type Coordinates, render } from '../renderer'
+import type { Vec2 } from '../utils'
+import { add2, dot2, prod2, subtract2 } from '../utils'
 
 const margin = [0, 0]
 const screenCurvature = 0.1

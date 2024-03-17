@@ -1,4 +1,4 @@
-import { render } from '../utils'
+import { render } from '../renderer'
 
 export function pixelate(source: Buffer, width: number, height: number, blockSize: number): Buffer {
   return render(source, width, height, (uv, texture2D) => {

@@ -1,16 +1,7 @@
-import { clamp } from './math'
+import { clamp } from '../../utils'
+import type { Coordinates, RGBA, Texture2D } from '../common'
 
-export type Coordinates = [number, number]
-export type RGBA = [number, number, number, number]
-type Texture2D = (coords: Coordinates) => RGBA
-type FragShader = (uv: Coordinates, texture2D: Texture2D) => RGBA
-
-export function coordsToIndex(x: number, y: number, width: number): number {
-  return (y * width + x) * 4
-}
-
-export function render(source: Buffer, width: number, height: number, fragShader: FragShader): Buffer {
-  const target = Buffer.alloc(width * height * 4)
+export function genBiLinearFilter(source: Buffer, width: number, height: number): Texture2D {
   const maxX = width - 1
   const maxY = height - 1
 
@@ -20,7 +11,6 @@ export function render(source: Buffer, width: number, height: number, fragShader
 
     return tmp1 * (1 - sy) + tmp2 * sy
   }
-
   function biLinearFilter(coords: Coordinates): RGBA {
     const x = coords[0] * maxX
     const y = coords[1] * maxY
@@ -45,16 +35,5 @@ export function render(source: Buffer, width: number, height: number, fragShader
     return [r, g, b, a]
   }
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const rgba = fragShader([x / maxX, y / maxY], biLinearFilter)
-      const index = coordsToIndex(x, y, width)
-      target[index] = rgba[0]
-      target[index + 1] = rgba[1]
-      target[index + 2] = rgba[2]
-      target[index + 3] = rgba[3]
-    }
-  }
-
-  return target
+  return biLinearFilter
 }

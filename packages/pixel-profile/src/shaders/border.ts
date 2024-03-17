@@ -1,4 +1,4 @@
-import { render, type RGBA } from '../utils'
+import { render, type RGBA } from '../renderer'
 
 export function addBorder(
   source: Buffer,

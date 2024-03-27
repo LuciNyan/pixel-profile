@@ -36,6 +36,7 @@ type Options = {
   hiddenStatsKeys?: string[]
   includeAllCommits?: boolean
   pixelateAvatar?: boolean
+  avatarBorder?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options = {}): Promise<Buffer> {
@@ -49,8 +50,11 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     includeAllCommits = false,
     pixelateAvatar = true,
     screenEffect = false,
+    avatarBorder,
     theme = ''
   } = options
+
+  const applyAvatarBorder = avatarBorder !== undefined ? avatarBorder : theme !== ''
 
   if (hiddenStatsKeys.includes('avatar')) {
     modifiedAvatarUrl = ''
@@ -65,7 +69,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   const [fontData, avatar] = await Promise.all([
     readFile(fontPath),
-    makeAvatar(modifiedAvatarUrl, pixelateAvatar, !!theme)
+    makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder)
   ])
 
   const _stats = {
@@ -151,7 +155,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
 const BASE_AVATAR_BLOCK_SIZE = 6.82
 
-async function makeAvatar(url: string, pixelateAvatar: boolean, enableFrame: boolean): Promise<string> {
+async function makeAvatar(url: string, pixelateAvatar: boolean, applyAvatarBorder: boolean): Promise<string> {
   if (!url) {
     return ''
   }
@@ -163,12 +167,12 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, enableFrame: boo
   if (pixelateAvatar) {
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
     pixels = pixelate(pixels, width, height, blockSize)
-    if (enableFrame) {
+    if (applyAvatarBorder) {
       pixels = addBorder(pixels, width, height, {
         frameWidthRatio: 0.025
       })
     }
-  } else {
+  } else if (applyAvatarBorder) {
     pixels = addBorder(pixels, width, height, { frameWidthRatio: 0.0167, enabledCornerRemoval: false })
   }
 

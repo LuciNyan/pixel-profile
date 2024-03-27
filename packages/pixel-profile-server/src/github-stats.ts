@@ -17,7 +17,8 @@ githubStats.get('/', async (c) => {
     screen_effect,
     show,
     username,
-    theme
+    theme,
+    avatar_border
   } = req.query()
 
   res.headers.set('Content-Type', 'image/png')
@@ -51,7 +52,8 @@ githubStats.get('/', async (c) => {
       includeAllCommits,
       pixelateAvatar: parseBoolean(pixelate_avatar),
       theme: parseString(theme),
-      screenEffect: parseBoolean(screen_effect)
+      screenEffect: parseBoolean(screen_effect),
+      avatarBorder: parseBoolean(avatar_border)
     }
 
     const result = await renderStats(stats, options)

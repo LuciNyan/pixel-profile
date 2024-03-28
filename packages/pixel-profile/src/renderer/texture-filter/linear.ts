@@ -12,6 +12,9 @@ export function genBiLinearFilter(pixels: Buffer, width: number, height: number)
     return tmp1 * (1 - sy) + tmp2 * sy
   }
   function biLinearFilter(coords: Coordinates): RGBA {
+    coords[0] = clamp(coords[0], 0, 1)
+    coords[1] = clamp(coords[1], 0, 1)
+
     const x = coords[0] * maxX
     const y = coords[1] * maxY
     const x0 = clamp(Math.floor(x), 0, maxX)

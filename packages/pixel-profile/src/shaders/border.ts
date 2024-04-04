@@ -19,8 +19,8 @@ export function addBorder(
     (uv, texture2D) => {
       const maxX = width - 1
       const maxY = height - 1
-      const x = uv[0] * maxX
-      const y = uv[1] * maxY
+      const x = uv[0]
+      const y = uv[1]
 
       const frameWidth = frameWidthRatio * width
 

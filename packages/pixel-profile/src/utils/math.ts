@@ -1,4 +1,7 @@
+import { RGBA } from '../renderer'
+
 export type Vec2 = [number, number]
+export type Vec3 = [number, number, number]
 
 export function clamp(x: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, x))
@@ -24,4 +27,20 @@ export function dot2(a: Vec2, b: Vec2): number {
 
 export function prod2(v: Vec2): number {
   return v[0] * v[1]
+}
+
+export function add3(a: Vec3 | RGBA, b: Vec3 | RGBA): Vec3 {
+  return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+export function dot3(v1: Vec3 | RGBA, v2: Vec3 | RGBA): number {
+  return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+}
+
+export function divide3(v: Vec3 | RGBA, scalar: number): Vec3 {
+  return [v[0] / scalar, v[1] / scalar, v[2] / scalar]
+}
+
+export function mix3(v1: Vec3 | RGBA, v2: Vec3 | RGBA, t: number): Vec3 {
+  return [v1[0] * (1 - t) + v2[0] * t, v1[1] * (1 - t) + v2[1] * t, v1[2] * (1 - t) + v2[2] * t]
 }

@@ -5,9 +5,7 @@ const scanlineThickness = 3
 
 export function scanline(source: Buffer, width: number, height: number): Buffer {
   return render(source, width, height, (uv, texture2D) => {
-    const scanlinePosition = Math.floor(uv[1] * height)
-
-    const onScanline = scanlinePosition % scanlineThickness === 0
+    const onScanline = uv[1] % scanlineThickness === 0
 
     const samplerColor = texture2D(uv)
 

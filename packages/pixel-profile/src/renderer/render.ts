@@ -1,4 +1,5 @@
-import { coordsToIndex, FragShader } from './common'
+import { clamp } from '../utils'
+import { Coordinates, coordsToIndex, FragShader, RGBA } from './common'
 import { TEXTURE_FILTER, textureFilterGeneratorByName, TextureFilterName } from './texture-filter'
 
 type Options = {
@@ -18,11 +19,18 @@ export function render(
   const maxX = width - 1
   const maxY = height - 1
 
-  const texture2D = textureFilterGeneratorByName[textureFilter](pixels, width, height)
+  const textureFilterFn = textureFilterGeneratorByName[textureFilter](pixels, width, height)
+
+  function texture2D(coords: Coordinates): RGBA {
+    coords[0] = clamp(coords[0], 0, maxX)
+    coords[1] = clamp(coords[1], 0, maxY)
+
+    return textureFilterFn(coords)
+  }
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const rgba = fragShader([x / maxX, y / maxY], texture2D)
+      const rgba = fragShader([x, y], texture2D)
       const index = coordsToIndex(x, y, width)
       target[index] = rgba[0]
       target[index + 1] = rgba[1]

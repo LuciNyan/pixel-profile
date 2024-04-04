@@ -15,6 +15,7 @@ import { Resvg } from '@resvg/resvg-js'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import satori from 'satori'
+// import {glow} from "../shaders/glow";
 
 export type Stats = {
   name: string
@@ -149,6 +150,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   if (screenEffect) {
     pixels = scanline(pixels, width, height)
+    // pixels = glow(pixels, width, height)
     pixels = curve(pixels, width, height)
   }
 

@@ -6,7 +6,12 @@ const margin = [0, 0]
 const screenCurvature = 0.1
 
 export function curve(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (uv, texture2D) => {
+  return render(source, width, height, (xy, texture2D) => {
+    const uv = [xy[0] / width, xy[1] / height]
+
+    const maxX = width - 1
+    const maxY = height - 1
+
     function distortCoordinates(coords: Coordinates): Vec2 {
       const cc = subtract2(coords, [0.5, 0.5])
       const dist = dot2(cc, cc) * screenCurvature
@@ -17,7 +22,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       return add2(coords, cc)
     }
 
-    const coords = distortCoordinates(uv)
+    const coords = distortCoordinates([uv[0], uv[1]])
 
     coords[0] = coords[0] * (margin[0] * 2 + 1) - margin[0]
     coords[1] = coords[1] * (margin[1] * 2 + 1) - margin[1]
@@ -25,7 +30,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
     const vignetteCoords: Vec2 = [uv[0] * (1 - uv[1]), uv[1] * (1 - uv[0])]
     const vignette = Math.pow(prod2(vignetteCoords) * 15, 0.25)
 
-    const samplerColor = texture2D(coords)
+    const samplerColor = texture2D([coords[0] * maxX, coords[1] * maxY])
 
     return [samplerColor[0] * vignette, samplerColor[1] * vignette, samplerColor[2] * vignette, 255]
   })

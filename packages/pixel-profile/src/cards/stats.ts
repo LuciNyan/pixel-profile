@@ -1,4 +1,5 @@
 import { addBorder, curve, pixelate } from '../shaders'
+import { scanline } from '../shaders/scanline'
 import {
   AVATAR_SIZE,
   CARD_SIZE,
@@ -147,6 +148,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
   if (screenEffect) {
+    pixels = scanline(pixels, width, height)
     pixels = curve(pixels, width, height)
   }
 

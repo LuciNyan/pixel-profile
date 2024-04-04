@@ -24,24 +24,24 @@ export function addBorder(
 
       const frameWidth = frameWidthRatio * width
 
-      const rgba: RGBA = texture2D([uv[0], uv[1]])
+      const samplerColor: RGBA = texture2D(uv)
 
       const count =
         Number(x < frameWidth) + Number(y < frameWidth) + Number(x > maxX - frameWidth) + Number(y > maxY - frameWidth)
 
       if (count !== 0) {
         if (enabledTransparentBorder) {
-          rgba[3] = 128
+          samplerColor[3] = 128
         }
 
         if (count === 2 && enabledCornerRemoval) {
-          rgba[3] = 0
+          samplerColor[3] = 0
         }
 
-        return rgba
+        return samplerColor
       }
 
-      return rgba
+      return samplerColor
     },
     {
       textureFilter: TEXTURE_FILTER.NEAREST

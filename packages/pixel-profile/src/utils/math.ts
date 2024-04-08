@@ -25,8 +25,16 @@ export function dot2(a: Vec2, b: Vec2): number {
   return a[0] * b[0] + a[1] * b[1]
 }
 
+export function divide2(v: Vec2, scalar: number): Vec2 {
+  return [v[0] / scalar, v[1] / scalar]
+}
+
 export function prod2(v: Vec2): number {
   return v[0] * v[1]
+}
+
+export function floor2(v: Vec2): Vec2 {
+  return [Math.floor(v[0]), Math.floor(v[1])]
 }
 
 export function add3(a: Vec3 | RGBA, b: Vec3 | RGBA): Vec3 {
@@ -43,4 +51,18 @@ export function divide3(v: Vec3 | RGBA, scalar: number): Vec3 {
 
 export function mix3(v1: Vec3 | RGBA, v2: Vec3 | RGBA, t: number): Vec3 {
   return [v1[0] * (1 - t) + v2[0] * t, v1[1] * (1 - t) + v2[1] * t, v1[2] * (1 - t) + v2[2] * t]
+}
+
+export function fract(x: number): number {
+  return x - Math.floor(x)
+}
+
+export function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+
+  return t * t * (3 - 2 * t)
+}
+
+export function luminance(color: Vec3 | RGBA): number {
+  return dot3(color, [0.2126, 0.7152, 0.0722])
 }

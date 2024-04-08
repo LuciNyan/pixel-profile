@@ -65,6 +65,11 @@ describe('Theme', () => {
     )
     expect(png).toMatchImageSnapshot()
   })
+
+  it('Render card with green phosphor theme', async () => {
+    const png = await renderStats({ ...stats, avatarUrl: PURPLE_AVATAR }, { theme: 'green_phosphor' })
+    expect(png).toMatchImageSnapshot()
+  })
 })
 
 describe('Theme with screen effect', () => {
@@ -126,6 +131,14 @@ describe('Theme with screen effect', () => {
     const png = await renderStats(
       { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
       { theme: 'road_trip', pixelateAvatar: false, screenEffect: true }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card with green phosphor theme', async () => {
+    const png = await renderStats(
+      { ...stats, avatarUrl: PURPLE_AVATAR },
+      { theme: 'green_phosphor', screenEffect: true }
     )
     expect(png).toMatchImageSnapshot()
   })

@@ -59,6 +59,10 @@ export const THEME: Theme = {
     backgroundImage: `url(${IMG_ROAD_TRIP})`,
     backgroundSize: '1226px 430px',
     backgroundRepeat: 'no-repeat'
+  },
+  green_phosphor: {
+    color: 'white',
+    background: 'linear-gradient(to bottom right, #74dcc4, #4597e9)'
   }
 }
 

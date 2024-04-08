@@ -1,4 +1,6 @@
 import { addBorder, curve, pixelate } from '../shaders'
+// import { glow } from '../shaders/glow'
+import { halftone } from '../shaders/halftone'
 import { scanline } from '../shaders/scanline'
 import {
   AVATAR_SIZE,
@@ -15,7 +17,6 @@ import { Resvg } from '@resvg/resvg-js'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import satori from 'satori'
-// import {glow} from "../shaders/glow";
 
 export type Stats = {
   name: string
@@ -148,8 +149,14 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
+  if (theme === 'green_phosphor') {
+    pixels = halftone(pixels, width, height)
+  }
+
   if (screenEffect) {
-    pixels = scanline(pixels, width, height)
+    if (theme !== 'green_phosphor') {
+      pixels = scanline(pixels, width, height)
+    }
     // pixels = glow(pixels, width, height)
     pixels = curve(pixels, width, height)
   }

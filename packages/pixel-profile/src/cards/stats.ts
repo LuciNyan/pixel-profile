@@ -1,5 +1,5 @@
 import { addBorder, curve, pixelate } from '../shaders'
-// import { glow } from '../shaders/glow'
+import { glow } from '../shaders/glow'
 import { halftone } from '../shaders/halftone'
 import { scanline } from '../shaders/scanline'
 import {
@@ -155,9 +155,9 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   if (screenEffect) {
     if (theme !== 'green_phosphor') {
+      pixels = glow(pixels, width, height)
       pixels = scanline(pixels, width, height)
     }
-    // pixels = glow(pixels, width, height)
     pixels = curve(pixels, width, height)
   }
 

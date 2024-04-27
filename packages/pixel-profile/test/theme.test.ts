@@ -53,8 +53,24 @@ describe('Theme', () => {
     expect(png).toMatchImageSnapshot()
   })
 
+  it('Render card with journey theme and dithering', async () => {
+    const png = await renderStats(
+      { ...stats, avatarUrl: DARK_GREEN_AVATAR },
+      { theme: 'journey', pixelateAvatar: false, dithering: true }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
+
   it('Render card with fuji theme', async () => {
     const png = await renderStats({ ...stats, avatarUrl: LUCI_AVATAR }, { theme: 'fuji', pixelateAvatar: false })
+    expect(png).toMatchImageSnapshot()
+  })
+
+  it('Render card with fuji theme and dithering', async () => {
+    const png = await renderStats(
+      { ...stats, avatarUrl: LUCI_AVATAR },
+      { theme: 'fuji', pixelateAvatar: false, dithering: true }
+    )
     expect(png).toMatchImageSnapshot()
   })
 
@@ -63,11 +79,6 @@ describe('Theme', () => {
       { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
       { theme: 'road_trip', pixelateAvatar: false }
     )
-    expect(png).toMatchImageSnapshot()
-  })
-
-  it('Render card with green phosphor theme', async () => {
-    const png = await renderStats({ ...stats, avatarUrl: PURPLE_AVATAR }, { theme: 'green_phosphor' })
     expect(png).toMatchImageSnapshot()
   })
 })
@@ -119,6 +130,14 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
+  it('Render card with journey theme and dithering', async () => {
+    const png = await renderStats(
+      { ...stats, avatarUrl: DARK_GREEN_AVATAR },
+      { theme: 'journey', pixelateAvatar: false, dithering: true, screenEffect: true }
+    )
+    expect(png).toMatchImageSnapshot()
+  })
+
   it('Render card with fuji theme', async () => {
     const png = await renderStats(
       { ...stats, avatarUrl: LUCI_AVATAR },
@@ -127,18 +146,18 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with road trip theme', async () => {
+  it('Render card with fuji theme and dithering', async () => {
     const png = await renderStats(
-      { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
-      { theme: 'road_trip', pixelateAvatar: false, screenEffect: true }
+      { ...stats, avatarUrl: LUCI_AVATAR },
+      { theme: 'fuji', pixelateAvatar: false, dithering: true, screenEffect: true }
     )
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with green phosphor theme', async () => {
+  it('Render card with road trip theme', async () => {
     const png = await renderStats(
-      { ...stats, avatarUrl: PURPLE_AVATAR },
-      { theme: 'green_phosphor', screenEffect: true }
+      { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
+      { theme: 'road_trip', pixelateAvatar: false, screenEffect: true }
     )
     expect(png).toMatchImageSnapshot()
   })

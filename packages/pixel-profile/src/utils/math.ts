@@ -53,6 +53,12 @@ export function mix3(v1: Vec3 | RGBA, v2: Vec3 | RGBA, t: number): Vec3 {
   return [v1[0] * (1 - t) + v2[0] * t, v1[1] * (1 - t) + v2[1] * t, v1[2] * (1 - t) + v2[2] * t]
 }
 
+export function floor3(pixel: Vec3 | RGBA): RGBA {
+  const [r, g, b, a = 255] = pixel
+
+  return [Math.floor(r), Math.floor(g), Math.floor(b), a]
+}
+
 export function fract(x: number): number {
   return x - Math.floor(x)
 }
@@ -65,4 +71,10 @@ export function smoothstep(edge0: number, edge1: number, x: number): number {
 
 export function luminance(color: Vec3 | RGBA): number {
   return dot3(color, [0.2126, 0.7152, 0.0722])
+}
+
+export function pow(pixel: Vec3 | RGBA, exponent: number): RGBA {
+  const [r, g, b, a = 255] = pixel
+
+  return [Math.pow(r, exponent), Math.pow(g, exponent), Math.pow(b, exponent), a]
 }

@@ -18,7 +18,8 @@ githubStats.get('/', async (c) => {
     show,
     username,
     theme,
-    avatar_border
+    avatar_border,
+    dithering
   } = req.query()
 
   res.headers.set('Content-Type', 'image/png')
@@ -53,7 +54,8 @@ githubStats.get('/', async (c) => {
       pixelateAvatar: parseBoolean(pixelate_avatar),
       theme: parseString(theme),
       screenEffect: parseBoolean(screen_effect),
-      avatarBorder: parseBoolean(avatar_border)
+      avatarBorder: parseBoolean(avatar_border),
+      dithering: parseBoolean(dithering)
     }
 
     const result = await renderStats(stats, options)

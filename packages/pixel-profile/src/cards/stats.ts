@@ -1,6 +1,6 @@
 import { addBorder, curve, pixelate } from '../shaders'
+import { orderedBayer } from '../shaders/dithering'
 // import { glow } from '../shaders/glow'
-import { halftone } from '../shaders/halftone'
 import { scanline } from '../shaders/scanline'
 import {
   AVATAR_SIZE,
@@ -40,6 +40,7 @@ type Options = {
   includeAllCommits?: boolean
   pixelateAvatar?: boolean
   avatarBorder?: boolean
+  dithering?: boolean
 }
 
 export async function renderStats(stats: Stats, options: Options = {}): Promise<Buffer> {
@@ -54,7 +55,8 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     pixelateAvatar = true,
     screenEffect = false,
     avatarBorder,
-    theme = ''
+    theme = '',
+    dithering = false
   } = options
 
   const applyAvatarBorder = avatarBorder !== undefined ? avatarBorder : theme !== ''
@@ -149,12 +151,12 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
-  if (theme === 'green_phosphor') {
-    pixels = halftone(pixels, width, height)
+  if (dithering) {
+    pixels = orderedBayer(pixels, width, height)
   }
 
   if (screenEffect) {
-    if (theme !== 'green_phosphor') {
+    if (!dithering) {
       pixels = scanline(pixels, width, height)
     }
     // pixels = glow(pixels, width, height)
@@ -183,8 +185,10 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, applyAvatarBorde
         frameWidthRatio: 0.025
       })
     }
-  } else if (applyAvatarBorder) {
-    pixels = addBorder(pixels, width, height, { frameWidthRatio: 0.0167, enabledCornerRemoval: false })
+  } else {
+    if (applyAvatarBorder) {
+      pixels = addBorder(pixels, width, height, { frameWidthRatio: 0.0167, enabledCornerRemoval: false })
+    }
   }
 
   return await getBase64FromPixels(pixels, width, height)

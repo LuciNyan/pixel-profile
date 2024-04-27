@@ -129,14 +129,3 @@ function hue2rgb(p: number, q: number, t: number): number {
 
   return p
 }
-
-// function convert(strArray: string[]): Vec3[] {
-//   return strArray.map((str) => {
-//     str = str.slice(2)
-//     const r = parseInt(str.slice(0, 2), 16)
-//     const g = parseInt(str.slice(2, 4), 16)
-//     const b = parseInt(str.slice(4, 6), 16)
-//
-//     return rgbToHsl([r, g, b])
-//   })
-// }

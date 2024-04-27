@@ -1,3 +1,4 @@
+import { RGBA } from '../renderer'
 import { isBase64PNG } from './is'
 import { Vec3 } from './math'
 import axios from 'axios'
@@ -14,7 +15,7 @@ export async function getPixelsFromPngBuffer(png: Buffer): Promise<{
   const height = image.getHeight()
   const pixels = Buffer.alloc(width * height * 4)
 
-  image.scan(0, 0, width, height, (x, y, idx) => {
+  image.scan(0, 0, width, height, (_x, _y, idx) => {
     pixels[idx] = image.bitmap.data[idx]
     pixels[idx + 1] = image.bitmap.data[idx + 1]
     pixels[idx + 2] = image.bitmap.data[idx + 2]
@@ -68,7 +69,7 @@ export async function getPngBufferFromURL(url: string): Promise<Buffer> {
   }
 }
 
-export function rgbToHsl(r: number, g: number, b: number) {
+export function rgbToHsl([r, g, b]: Vec3 | RGBA): Vec3 {
   r /= 255
   g /= 255
   b /= 255
@@ -103,7 +104,7 @@ export function rgbToHsl(r: number, g: number, b: number) {
   return [h, s, l]
 }
 
-export function hslToRgb(h: number, s: number, l: number): Vec3 {
+export function hslToRgb([h, s, l]: Vec3): Vec3 {
   let r, g, b
 
   if (s === 0) {
@@ -128,3 +129,14 @@ function hue2rgb(p: number, q: number, t: number): number {
 
   return p
 }
+
+// function convert(strArray: string[]): Vec3[] {
+//   return strArray.map((str) => {
+//     str = str.slice(2)
+//     const r = parseInt(str.slice(0, 2), 16)
+//     const g = parseInt(str.slice(2, 4), 16)
+//     const b = parseInt(str.slice(4, 6), 16)
+//
+//     return rgbToHsl([r, g, b])
+//   })
+// }

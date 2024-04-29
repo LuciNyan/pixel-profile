@@ -54,6 +54,7 @@ https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=jour
 ```
 #### With dithering.
 The `dithering=true` configuration is a standalone setting that can be applied to any theme.
+
 ![Journey](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-and-dithering-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=journey&pixelate_avatar=false&dithering=true

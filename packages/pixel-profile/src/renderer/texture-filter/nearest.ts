@@ -1,7 +1,7 @@
-import { Coordinates, coordsToPixel, RGBA, Texture2D } from '../common'
+import { coordsToPixel, PixelCoords, RGBA, Texture } from '../common'
 
-export function genNearestNeighborFilter(pixels: Buffer, width: number): Texture2D {
-  function nearestNeighborFilter(coords: Coordinates): RGBA {
+export function genNearestNeighborFilter(pixels: Buffer, width: number): Texture {
+  function nearestNeighborFilter(coords: PixelCoords): RGBA {
     const nearestX = Math.round(coords[0])
     const nearestY = Math.round(coords[1])
 

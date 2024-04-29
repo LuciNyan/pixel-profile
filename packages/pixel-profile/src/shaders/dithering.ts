@@ -330,7 +330,6 @@ function closestColors(hue: number): [[number, number, number], [number, number,
   return [closest, secondClosest]
 }
 
-// 抖动和颜色量化
 function dither(pos: [number, number], color: [number, number, number]): [number, number, number] {
   const x = Math.floor(pos[0] % 8)
   const y = Math.floor(pos[1] % 8)
@@ -359,8 +358,8 @@ function dither(pos: [number, number], color: [number, number, number]): [number
 }
 
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (pixelCoords, texture2D) => {
-    const color = texture2D(pixelCoords)
+  return render(source, width, height, (pixelCoords, texture) => {
+    const color = texture(pixelCoords)
     const ditheredColor = dither(pixelCoords, rgbToHsl(color))
 
     return [...ditheredColor, color[3]]

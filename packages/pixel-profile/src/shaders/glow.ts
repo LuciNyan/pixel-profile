@@ -12,8 +12,8 @@ export function glow(source: Buffer, width: number, height: number): Buffer {
     source,
     width,
     height,
-    (uv, texture2D) => {
-      const originalColor = texture2D(uv)
+    (coords, texture) => {
+      const samplerColor = texture(coords)
 
       let bloomColor: Vec3 = [0, 0, 0]
       let n = 0
@@ -21,7 +21,7 @@ export function glow(source: Buffer, width: number, height: number): Buffer {
       for (let i = -radius; i <= radius; i++) {
         for (let j = -radius; j <= radius; j++) {
           const offset: Vec2 = [i / width, j / height]
-          const sampledColor = texture2D(add2(uv, offset))
+          const sampledColor = texture(add2(coords, offset))
           const luminance = dot3(sampledColor, [0.2126, 0.7152, 0.0722])
           if (luminance > _threshold) {
             bloomColor = add3(bloomColor, sampledColor)
@@ -31,14 +31,14 @@ export function glow(source: Buffer, width: number, height: number): Buffer {
       }
 
       if (n === 0) {
-        return originalColor
+        return samplerColor
       }
 
       bloomColor = divide3(bloomColor, n)
 
       const _bloomIntensity = intensity * (n / Math.pow(radius * 2 + 1, 2))
 
-      const finalColor = mix3(originalColor, bloomColor, _bloomIntensity)
+      const finalColor = mix3(samplerColor, bloomColor, _bloomIntensity)
 
       return [finalColor[0], finalColor[1], finalColor[2], 255]
     },

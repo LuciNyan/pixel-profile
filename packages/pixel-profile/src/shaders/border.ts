@@ -16,15 +16,15 @@ export function addBorder(
     source,
     width,
     height,
-    (uv, texture2D) => {
+    (coords, texture) => {
       const maxX = width - 1
       const maxY = height - 1
-      const x = uv[0]
-      const y = uv[1]
+      const x = coords[0]
+      const y = coords[1]
 
       const frameWidth = frameWidthRatio * width
 
-      const samplerColor: RGBA = texture2D(uv)
+      const samplerColor: RGBA = texture(coords)
 
       const count =
         Number(x < frameWidth) + Number(y < frameWidth) + Number(x > maxX - frameWidth) + Number(y > maxY - frameWidth)

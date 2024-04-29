@@ -1,7 +1,7 @@
 import { clamp } from '../../utils'
-import { Coordinates, coordsToPixel, RGBA, Texture2D } from '../common'
+import { coordsToPixel, PixelCoords, RGBA, Texture } from '../common'
 
-export function genBiLinearFilter(pixels: Buffer, width: number, height: number): Texture2D {
+export function genBiLinearFilter(pixels: Buffer, width: number, height: number): Texture {
   const maxX = width - 1
   const maxY = height - 1
 
@@ -11,7 +11,7 @@ export function genBiLinearFilter(pixels: Buffer, width: number, height: number)
 
     return tmp1 * (1 - sy) + tmp2 * sy
   }
-  function biLinearFilter(coords: Coordinates): RGBA {
+  function biLinearFilter(coords: PixelCoords): RGBA {
     const x = coords[0]
     const y = coords[1]
     const x0 = clamp(Math.floor(x), 0, maxX)

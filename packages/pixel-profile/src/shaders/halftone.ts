@@ -11,11 +11,11 @@ const mat = [
 const ditherRange = 0
 
 export function halftone(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (pixelCoords, texture2D) => {
+  return render(source, width, height, (pixelCoords, texture) => {
     const gridCoords = [Math.floor(pixelCoords[0] / dotSize), Math.floor(pixelCoords[1] / dotSize)]
 
-    const originalColor = texture2D(pixelCoords)
-    const grayValue = (originalColor[0] + originalColor[1] + originalColor[2]) / (3 * 255)
+    const samplerColor = texture(pixelCoords)
+    const grayValue = (samplerColor[0] + samplerColor[1] + samplerColor[2]) / (3 * 255)
     const ditherValue = (Math.random() - 0.5) * ditherRange
     const adjustedGrayValue = Math.min(Math.max(grayValue + ditherValue, 0), 1)
 

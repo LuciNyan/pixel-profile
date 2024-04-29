@@ -1,4 +1,4 @@
-import { render } from '../renderer'
+import { render, TEXTURE_FILTER } from '../renderer'
 import { hslToRgb, rgbToHsl } from '../utils'
 import { Vec3 } from '../utils/math'
 
@@ -358,10 +358,18 @@ function dither(pos: [number, number], color: [number, number, number]): [number
 }
 
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (pixelCoords, texture) => {
-    const color = texture(pixelCoords)
-    const ditheredColor = dither(pixelCoords, rgbToHsl(color))
+  return render(
+    source,
+    width,
+    height,
+    (pixelCoords, texture) => {
+      const color = texture(pixelCoords)
+      const ditheredColor = dither(pixelCoords, rgbToHsl(color))
 
-    return [...ditheredColor, color[3]]
-  })
+      return [...ditheredColor, color[3]]
+    },
+    {
+      textureFilter: TEXTURE_FILTER.NEAREST
+    }
+  )
 }

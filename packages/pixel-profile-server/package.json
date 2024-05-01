@@ -33,7 +33,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@hono/node-server": "^1.8.2",
+    "@hono/node-server": "^1.11.1",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
     "hono": "^4.0.8",

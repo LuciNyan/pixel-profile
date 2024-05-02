@@ -302,28 +302,33 @@ const saturationSteps = 4
 function hueDistance(h1: number, h2: number): number {
   const diff = Math.abs(h1 - h2)
 
-  return Math.min(Math.abs(1 - diff), diff)
+  return diff < 0.5 ? diff : 1 - diff
 }
 
 function lightnessStep(l: number): number {
-  return Math.floor(0.5 + l * lightnessSteps) / lightnessSteps
+  return Math.round(l * lightnessSteps) / lightnessSteps
 }
 
 function saturationStep(s: number): number {
-  return Math.floor(0.5 + s * saturationSteps) / saturationSteps
+  return Math.round(s * saturationSteps) / saturationSteps
 }
 
 function closestColors(hue: number): [[number, number, number], [number, number, number]] {
   let closest: [number, number, number] = [-2, 0, 0]
   let secondClosest: [number, number, number] = [-2, 0, 0]
+  let minDist = Infinity
+  let secondMinDist = Infinity
 
   for (const color of PALETTE_256) {
-    const tempDistance = hueDistance(color[0], hue)
-    if (tempDistance < hueDistance(closest[0], hue)) {
+    const dist = hueDistance(color[0], hue)
+    if (dist < minDist) {
       secondClosest = closest
+      secondMinDist = minDist
       closest = color
-    } else if (tempDistance < hueDistance(secondClosest[0], hue)) {
+      minDist = dist
+    } else if (dist < secondMinDist) {
       secondClosest = color
+      secondMinDist = dist
     }
   }
 
@@ -331,14 +336,10 @@ function closestColors(hue: number): [[number, number, number], [number, number,
 }
 
 function dither(pos: [number, number], color: [number, number, number]): [number, number, number] {
-  const x = Math.floor(pos[0] % 8)
-  const y = Math.floor(pos[1] % 8)
-  const index = x + y * 8
-
+  const index = (pos[0] & 7) + ((pos[1] & 7) << 3)
   const limit = (ditherTable[index] + 1) / 64 + BIAS_256
 
   const [closest, secondClosest] = closestColors(color[0])
-
   const hueDiff = hueDistance(color[0], closest[0]) / hueDistance(secondClosest[0], closest[0])
 
   const l1 = lightnessStep(Math.max(color[2] - 0.125, 0))

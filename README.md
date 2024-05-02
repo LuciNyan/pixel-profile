@@ -57,7 +57,7 @@ The `dithering=true` configuration is a standalone setting that can be applied t
 
 ![Journey](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-packages-pixel-profile-test-theme-test-ts-theme-render-card-with-journey-theme-and-dithering-1-snap.png)
 ```html
-https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=journey&pixelate_avatar=false&dithering=true
+https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=journey&dithering=true&hide=avatar
 ```
 
 #### 2. Road trip without pixelated avatar.
@@ -109,6 +109,7 @@ https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=lax
 | `screen_effect`       | Enable curved screen effect                                                                                                                           | `false`       |
 | `username`            | GitHub username                                                                                                                                       | ''            |
 | `theme`               | Check out the built-in themes below                                                                                                                   | ''            |
+| `dithering`           | Rendered the image using a 256-color palette with dithering                                                                                           | `false`       |
 
 
 ### Hiding individual stats

@@ -4,7 +4,7 @@ author: "LuciNyan"
 
 runs:
   using: node20
-  main: dist/index.js
+  main: libs/index.js
 
 inputs:
   github_token:

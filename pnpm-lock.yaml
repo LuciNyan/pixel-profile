@@ -85,7 +85,7 @@ importers:
         specifier: ^1.3.1
         version: 1.3.1(@edge-runtime/vm@3.2.0)(@types/node@20.11.0)
 
-  packages/github-action:
+  action:
     dependencies:
       '@actions/core':
         specifier: 1.10.1
@@ -95,7 +95,7 @@ importers:
         version: 2.6.0
       pixel-profile:
         specifier: workspace:*
-        version: link:../pixel-profile
+        version: link:../packages/pixel-profile
       ts-known:
         specifier: ^0.1.3
         version: 0.1.3

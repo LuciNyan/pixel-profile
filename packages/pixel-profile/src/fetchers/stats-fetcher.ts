@@ -95,6 +95,7 @@ const fetcher = (variables: Record<PropertyKey, unknown>, token: string): Promis
  * the 'FETCH_MULTI_PAGE_STARS' environment variable is set to true.
  */
 type Variables = {
+  token?: string
   username: string
   includeMergedPullRequests: boolean
   includeDiscussions: boolean
@@ -103,6 +104,7 @@ type Variables = {
 }
 
 const statsFetcher = async ({
+  token,
   username,
   includeMergedPullRequests,
   includeDiscussions,
@@ -122,7 +124,15 @@ const statsFetcher = async ({
       includeDiscussionsAnswers,
       contributionFrom
     }
-    const res = await retryer(fetcher, variables)
+
+    let res: any
+
+    if (token) {
+      res = await fetcher(variables, token)
+    } else {
+      res = await retryer(fetcher, variables)
+    }
+
     if (res.data.errors) {
       return res
     }
@@ -208,7 +218,8 @@ export async function fetchStats(
   exclude_repo: string[] = [],
   include_merged_pull_requests = false,
   include_discussions = false,
-  include_discussions_answers = false
+  include_discussions_answers = false,
+  token = ''
 ): Promise<StatsData> {
   if (!username) {
     throw new Error('needs a username')
@@ -233,6 +244,7 @@ export async function fetchStats(
   }
 
   const res = await statsFetcher({
+    token,
     username,
     includeMergedPullRequests: include_merged_pull_requests,
     includeDiscussions: include_discussions,

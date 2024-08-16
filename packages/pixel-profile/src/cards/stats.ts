@@ -1,6 +1,6 @@
 import { addBorder, curve, pixelate } from '../shaders'
 import { orderedBayer } from '../shaders/dithering'
-// import { glow } from '../shaders/glow'
+import { glow } from '../shaders/glow'
 import { scanline } from '../shaders/scanline'
 import {
   AVATAR_SIZE,
@@ -13,9 +13,8 @@ import { getThemeOptions } from '../theme'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
 import { getPngBufferFromURL } from '../utils/converter'
 import { filterNotEmpty } from '../utils/filter'
+import { fontBuffer } from './PressStart2P-Regular'
 import { Resvg } from '@resvg/resvg-js'
-import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import satori from 'satori'
 
 export type Stats = {
@@ -33,6 +32,7 @@ export type Stats = {
 type Options = {
   theme?: string
   screenEffect?: boolean
+  isFastMode?: boolean
   color?: string
   showRank?: boolean
   background?: string
@@ -54,6 +54,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     includeAllCommits = false,
     pixelateAvatar = true,
     screenEffect = false,
+    isFastMode = true,
     avatarBorder,
     theme = '',
     dithering = false
@@ -70,12 +71,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const width = baseCardSize.CARD_WIDTH
   const height = baseCardSize.CARD_HEIGHT
 
-  const fontPath = join(process.cwd(), 'packages', 'pixel-profile', 'fonts', 'PressStart2P-Regular.ttf')
-
-  const [fontData, avatar] = await Promise.all([
-    readFile(fontPath),
-    makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder)
-  ])
+  const avatar = await makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder)
 
   const _stats = {
     name,
@@ -107,7 +103,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     fonts: [
       {
         name: 'PressStart2P',
-        data: fontData,
+        data: fontBuffer,
         weight: 400,
         style: 'normal'
       }
@@ -128,7 +124,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
       fonts: [
         {
           name: 'PressStart2P',
-          data: fontData,
+          data: fontBuffer,
           weight: 400,
           style: 'normal'
         }
@@ -159,7 +155,9 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     if (!dithering) {
       pixels = scanline(pixels, width, height)
     }
-    // pixels = glow(pixels, width, height)
+    if (!isFastMode) {
+      pixels = glow(pixels, width, height)
+    }
     pixels = curve(pixels, width, height)
   }
 

@@ -37,7 +37,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@resvg/resvg-js": "^2.6.0",
+    "@resvg/resvg-js": "2.6.0",
     "axios": "^1.7.3",
     "dotenv": "^16.3.1",
     "emoji-name-map": "^1.2.8",
@@ -49,7 +49,7 @@
     "*.{js,css,md}": "prettier --write",
     "*.{ts,tsx}": "eslint --fix"
   },
-  "packageManager": "pnpm@8.7.0",
+  "packageManager": "pnpm@9.7.0",
   "engines": {
     "node": ">=18.17.0"
   }

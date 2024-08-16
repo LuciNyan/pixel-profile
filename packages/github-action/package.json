@@ -1,0 +1,19 @@
+{
+  "name": "pixel-profile-github-action",
+  "version": "1.0.0",
+  "dependencies": {
+    "@actions/core": "1.10.1",
+    "@resvg/resvg-js-linux-x64-gnu": "2.6.0",
+    "ts-known": "^0.1.3",
+    "pixel-profile": "workspace:*"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "0.38.0",
+    "dotenv": "16.3.1"
+  },
+  "scripts": {
+    "build:local": "ncc build --out ../../action/dist ./index.ts",
+    "run:build": "INPUT_OUTPUTS='dist/github-stats?username=LuciNyan&theme=fuji&hide=avatar&avatar_border=false&screen_effect=true' node ../../action/dist/index.js",
+    "rerun": "npm run build && npm run run:build"
+  }
+}

@@ -1,12 +1,8 @@
-name: manual run
+name: generate-and-upload-card
 
 on:
-  push:
-    branches:
-      - feat-github-action
+  pull_request:
   workflow_dispatch:
-
-
 
 jobs:
   generate:
@@ -16,7 +12,8 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - uses: LuciNyan/pixel-profile/action@feat-github-action
+      - name: generate github stats card
+        uses: LuciNyan/pixel-profile/action@feat-github-action
         with:
           outputs: |
             dist/github-stats?username=LuciNyan&screen_effect=false&theme=fuji&dithering=true&hide=avatar

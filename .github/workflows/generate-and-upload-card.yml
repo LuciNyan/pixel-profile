@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: generate github stats card
-        uses: LuciNyan/pixel-profile/action@feat-github-action
+        uses: LuciNyan/pixel-profile/action@feat-glow
         with:
           outputs: |
             dist/github-stats?username=LuciNyan&screen_effect=false&theme=fuji&dithering=true&hide=avatar

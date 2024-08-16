@@ -1,9 +1,10 @@
 {
   "extends": ["//"],
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
+  "tasks": {
     "dev": {
-      "cache": false
+      "cache": false,
+      "persistent": true
     }
   }
 }

@@ -23,7 +23,7 @@ up.get('/', async (c) => {
     let PATsValid = true
     try {
       await retryer(uptimeFetcher, {})
-    } catch (err) {
+    } catch {
       PATsValid = false
     }
 

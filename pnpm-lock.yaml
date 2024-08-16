@@ -73,8 +73,8 @@ importers:
         specifier: ^3.1.1
         version: 3.1.1
       turbo:
-        specifier: ^1.6.3
-        version: 1.12.3
+        specifier: ^2.0.14
+        version: 2.0.14
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -180,6 +180,55 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.11.0
+      tsup:
+        specifier: ^8.0.2
+        version: 8.0.2(postcss@8.4.35)(ts-node@10.9.1(@types/node@20.11.0)(typescript@5.3.3))(typescript@5.3.3)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.3.3
+
+  packages/utils:
+    dependencies:
+      '@resvg/resvg-js':
+        specifier: 2.6.0
+        version: 2.6.0
+      axios:
+        specifier: ^1.7.3
+        version: 1.7.3
+      dotenv:
+        specifier: ^16.3.1
+        version: 16.3.1
+      emoji-name-map:
+        specifier: ^1.2.8
+        version: 1.2.9
+      github-username-regex:
+        specifier: ^1.0.0
+        version: 1.0.0
+      jimp:
+        specifier: ^0.22.10
+        version: 0.22.10
+      satori:
+        specifier: ^0.10.11
+        version: 0.10.11
+    devDependencies:
+      '@types/github-username-regex':
+        specifier: 1.0.2
+        version: 1.0.2
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.11.0
+      '@types/react':
+        specifier: ^18.2.57
+        version: 18.2.57
+      '@types/react-dom':
+        specifier: ^18.2.19
+        version: 18.2.19
+      jest-image-snapshot:
+        specifier: ^6.1.0
+        version: 6.4.0
+      react:
+        specifier: ^17.0.2
+        version: 17.0.2
       tsup:
         specifier: ^8.0.2
         version: 8.0.2(postcss@8.4.35)(ts-node@10.9.1(@types/node@20.11.0)(typescript@5.3.3))(typescript@5.3.3)
@@ -693,7 +742,6 @@ packages:
   '@resvg/resvg-js-linux-x64-gnu@2.6.0':
     resolution: {integrity: sha512-n3zC8DWsvxC1AwxpKFclIPapDFibs5XdIRoV/mcIlxlh0vseW1F49b97F33BtJQRmlntsqqN6GMMqx8byB7B+Q==}
     engines: {node: '>= 10'}
-    cpu: [x64]
     os: [linux]
 
   '@resvg/resvg-js-linux-x64-musl@2.6.0':
@@ -3331,38 +3379,38 @@ packages:
     resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
     engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
 
-  turbo-darwin-64@1.12.3:
-    resolution: {integrity: sha512-dDglIaux+A4jOnB9CDH69sujmrnuLJLrKw1t3J+if6ySlFuxSwC++gDq9TVuOZo2+S7lFkGh+x5ytn3wp+jE8Q==}
+  turbo-darwin-64@2.0.14:
+    resolution: {integrity: sha512-kwfDmjNwlNfvtrvT29+ZBg5n1Wvxl891bFHchMJyzMoR0HOE9N1NSNdSZb9wG3e7sYNIu4uDkNk+VBEqJW0HzQ==}
     cpu: [x64]
     os: [darwin]
 
-  turbo-darwin-arm64@1.12.3:
-    resolution: {integrity: sha512-5TqqeujEyHMoVUWGzSzUl5ERSg7HDCdbU3gBs5ziWTpFRpeJ/+Y15kYyZJcMQcubRIH3Y1hL/yA5IhlGdgXOMA==}
+  turbo-darwin-arm64@2.0.14:
+    resolution: {integrity: sha512-m3LXYEshCx3wc4ZClM6gb01KYpFmtjQ9IBF3A7ofjb6ahux3xlYZJZ3uFCLAGHuvGLuJ3htfiPbwlDPTdknqqw==}
     cpu: [arm64]
     os: [darwin]
 
-  turbo-linux-64@1.12.3:
-    resolution: {integrity: sha512-yUreU+/gq4vlBtcdyfjz7slwz4zM1RG8sSXvyHmAS+QXqSrGkegg4qLl2fRbv/c3EyA/XbfcZuD6tcrXkejr6g==}
+  turbo-linux-64@2.0.14:
+    resolution: {integrity: sha512-7vBzCPdoTtR92SNn2JMgj1FlMmyonGmpMaQdgAB1OVYtuQ6NVGoh7/lODfaILqXjpvmFSVbpBIDrKOT6EvcprQ==}
     cpu: [x64]
     os: [linux]
 
-  turbo-linux-arm64@1.12.3:
-    resolution: {integrity: sha512-XRwAsp2eRSqZmaMVNrmHoKqofeJMuD87zmefZLTRAObh38hIwKgyl2QRsJIbteob5RN77yFbv3lAJ36UIY5h7w==}
+  turbo-linux-arm64@2.0.14:
+    resolution: {integrity: sha512-jwH+c0bfjpBf26K/tdEFatmnYyXwGROjbr6bZmNcL8R+IkGAc/cglL+OToqJnQZTgZvH7uDGbeSyUo7IsHyjuA==}
     cpu: [arm64]
     os: [linux]
 
-  turbo-windows-64@1.12.3:
-    resolution: {integrity: sha512-CPnRfnUCtmFeShOtUdMCthySjmyHaoTyh9JueiYFvtCNeO3WfDMj63dpOQstQWHdJFYmIrIGfhAclcds9ePQYA==}
+  turbo-windows-64@2.0.14:
+    resolution: {integrity: sha512-w9/XwkHSzvLjmioo6cl3S1yRfI6swxsV1j1eJwtl66JM4/pn0H2rBa855R0n7hZnmI6H5ywLt/nLt6Ae8RTDmw==}
     cpu: [x64]
     os: [win32]
 
-  turbo-windows-arm64@1.12.3:
-    resolution: {integrity: sha512-cYA/wlzvp4vlCNHYJ2AjNS3FLXWwUC/5CJompBkTeKFFB6AviE/iLkbIhFikCVSNXZk/3AGanpMUXIkt3bdlwg==}
+  turbo-windows-arm64@2.0.14:
+    resolution: {integrity: sha512-XaQlyYk+Rf4xS5XWCo8XCMIpssgGGy8blzLfolN6YBp4baElIWMlkLZHDbGyiFmCbNf9I9gJI64XGRG+LVyyjA==}
     cpu: [arm64]
     os: [win32]
 
-  turbo@1.12.3:
-    resolution: {integrity: sha512-a6q8I0TK9ohACYbkmxzG/JYPuDC4VCvfmXLTlf321qQ4BIAhoyaOj/O2g+zJ6L1vNYnZ82G4LrbMfgLLngbLsg==}
+  turbo@2.0.14:
+    resolution: {integrity: sha512-00JjdCMD/cpsjP0Izkjcm8Oaor5yUCfDwODtaLb+WyblyadkaDEisGhy3Dbd5az9n+5iLSPiUgf+WjPbns6MRg==}
     hasBin: true
 
   type-check@0.4.0:
@@ -7053,32 +7101,32 @@ snapshots:
 
   tunnel@0.0.6: {}
 
-  turbo-darwin-64@1.12.3:
+  turbo-darwin-64@2.0.14:
     optional: true
 
-  turbo-darwin-arm64@1.12.3:
+  turbo-darwin-arm64@2.0.14:
     optional: true
 
-  turbo-linux-64@1.12.3:
+  turbo-linux-64@2.0.14:
     optional: true
 
-  turbo-linux-arm64@1.12.3:
+  turbo-linux-arm64@2.0.14:
     optional: true
 
-  turbo-windows-64@1.12.3:
+  turbo-windows-64@2.0.14:
     optional: true
 
-  turbo-windows-arm64@1.12.3:
+  turbo-windows-arm64@2.0.14:
     optional: true
 
-  turbo@1.12.3:
+  turbo@2.0.14:
     optionalDependencies:
-      turbo-darwin-64: 1.12.3
-      turbo-darwin-arm64: 1.12.3
-      turbo-linux-64: 1.12.3
-      turbo-linux-arm64: 1.12.3
-      turbo-windows-64: 1.12.3
-      turbo-windows-arm64: 1.12.3
+      turbo-darwin-64: 2.0.14
+      turbo-darwin-arm64: 2.0.14
+      turbo-linux-64: 2.0.14
+      turbo-linux-arm64: 2.0.14
+      turbo-windows-64: 2.0.14
+      turbo-windows-arm64: 2.0.14
 
   type-check@0.4.0:
     dependencies:

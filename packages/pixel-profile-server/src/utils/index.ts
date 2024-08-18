@@ -1,4 +1,5 @@
 import { isString, objectOf, optional } from 'ts-known'
+export { parseArray, parseBoolean, parseString } from 'pixel-profile-utils'
 
 export const hasMessage = objectOf({
   message: isString
@@ -48,32 +49,4 @@ export function dateDiff(d1: number | string | Date, d2: number | string | Date)
   const diff = date1.getTime() - date2.getTime()
 
   return Math.round(diff / (1000 * 60))
-}
-
-export function parseArray(str: string | string[]): string[] {
-  if (Array.isArray(str)) {
-    return []
-  }
-
-  if (!str) {
-    return []
-  }
-
-  return str.split(',')
-}
-
-export function parseBoolean(value: string | string[]): boolean | undefined {
-  if (!isString(value)) {
-    return undefined
-  }
-
-  if (value.toLowerCase() === 'true') {
-    return true
-  } else if (value.toLowerCase() === 'false') {
-    return false
-  }
-}
-
-export function parseString(value: string | string[]): string | undefined {
-  return isString(value) ? value : undefined
 }

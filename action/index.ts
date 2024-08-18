@@ -1,9 +1,9 @@
 import { parseOutputs } from './parseOutputs'
-import { parseArray, parseBoolean, parseString } from './utils'
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
 import { fetchStats, renderStats } from 'pixel-profile'
+import { parseArray, parseBoolean, parseString } from 'pixel-profile-utils'
 
 async function main() {
   try {

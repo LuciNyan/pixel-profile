@@ -1,7 +1,9 @@
 name: generate-and-upload-card
 
 on:
-  pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -13,7 +15,7 @@ jobs:
 
     steps:
       - name: generate github stats card
-        uses: LuciNyan/pixel-profile/action@feat-glow
+        uses: LuciNyan/pixel-profile/action@main
         with:
           outputs: |
             dist/github-stats?username=LuciNyan&screen_effect=false&theme=fuji&dithering=true&hide=avatar

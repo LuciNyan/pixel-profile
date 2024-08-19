@@ -1,19 +1,24 @@
 ![Pixel Profile](.github/img/card.png)
 **Pixel Profile**: Generate pixel art profiles from your GitHub data
 
+> ### 🚀 What's New
+>
+> ### GitHub Actions Integration
+>
+> We've introduced GitHub Actions support for automatic pre-generation of GitHub stats cards. This means:
+>
+> - Your stats card will always be visible, even in poor network conditions
+> - Faster loading times for your GitHub profile
+>
+> **How to use:**
+> 1. Check out our example setup: [LuciNyan's Profile](https://github.com/LuciNyan/LuciNyan)
+> 2. Copy the workflow file to your repository
+> 3. Replace the username with your own
+> 4. Enjoy automatically updated stats cards!
+
 > 🎉🎉🎉 [Halid](https://github.com/imhalid) has created an awesome [UI](https://github.com/imhalid/pixel-profile-generator) for pixel-profile, which makes it a breeze to edit our own GitHub cards!
 >
 > Check it out! ✨ https://pixel-profile-generator.vercel.app
-
-> This Pixel Profile project would not have been possible without these amazing projects:
-> 
-> [Github Readme Stats](https://github.com/anuraghazra/github-readme-stats): One of the best tools out there for generating awesome Github stats cards.
-> 
-> [resvg-js](https://github.com/yisibl/resvg-js): A high-performance SVG renderer and toolkit.
->
-> [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
-> 
-> [Jubilee](https://ko-fi.com/8pxl) A truly unmatched pixel artist! ❤️
 
 ## Overview
 
@@ -236,3 +241,13 @@ pnpm start
 <a aria-label="Vercel logo" href="https://vercel.com">
   <img src="https://badgen.net/badge/icon/Made%20with%20Love?icon=zeit&label&color=black&labelColor=black">
 </a>
+
+> This Pixel Profile project would not have been possible without these amazing projects:
+>
+> [Github Readme Stats](https://github.com/anuraghazra/github-readme-stats): One of the best tools out there for generating awesome Github stats cards.
+>
+> [resvg-js](https://github.com/yisibl/resvg-js): A high-performance SVG renderer and toolkit.
+>
+> [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
+>
+> [Jubilee](https://ko-fi.com/8pxl) A truly unmatched pixel artist! ❤️

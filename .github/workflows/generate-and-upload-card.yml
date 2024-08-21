@@ -1,9 +1,6 @@
 name: generate-and-upload-card
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:

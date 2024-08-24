@@ -9,6 +9,8 @@ import { PURPLE_AVATAR } from './utils/avatar/purple'
 import { stats } from './utils/data'
 import { describe, expect, it } from 'vitest'
 
+const TEST_TIMEOUT = 20 * 1000
+
 describe('Theme', () => {
   it('Render card with summer theme and custom color', async () => {
     const png = await renderStats(stats, { theme: 'summer', color: 'yellow' })
@@ -104,6 +106,17 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
+  it(
+    'Render card with blue_chill theme and glow',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats(stats, { theme: 'blue_chill', isFastMode: false, screenEffect: true })
+      expect(png).toMatchImageSnapshot()
+    }
+  )
+
   it('Render card with rainbow theme', async () => {
     const png = await renderStats(
       { ...stats, avatarUrl: KITTEN_AVATAR },
@@ -130,13 +143,19 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with journey theme and dithering', async () => {
-    const png = await renderStats(
-      { ...stats, avatarUrl: DARK_GREEN_AVATAR },
-      { theme: 'journey', pixelateAvatar: false, dithering: true, screenEffect: true }
-    )
-    expect(png).toMatchImageSnapshot()
-  })
+  it(
+    'Render card with journey theme and glow',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats(
+        { ...stats, avatarUrl: DARK_GREEN_AVATAR },
+        { theme: 'journey', pixelateAvatar: false, isFastMode: false, screenEffect: true }
+      )
+      expect(png).toMatchImageSnapshot()
+    }
+  )
 
   it('Render card with fuji theme', async () => {
     const png = await renderStats(
@@ -146,13 +165,19 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it('Render card with fuji theme and dithering', async () => {
-    const png = await renderStats(
-      { ...stats, avatarUrl: LUCI_AVATAR },
-      { theme: 'fuji', pixelateAvatar: false, dithering: true, screenEffect: true }
-    )
-    expect(png).toMatchImageSnapshot()
-  })
+  it(
+    'Render card with fuji theme and glow',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats(
+        { ...stats, avatarUrl: LUCI_AVATAR },
+        { theme: 'fuji', pixelateAvatar: false, isFastMode: false, screenEffect: true }
+      )
+      expect(png).toMatchImageSnapshot()
+    }
+  )
 
   it('Render card with road trip theme', async () => {
     const png = await renderStats(
@@ -161,4 +186,18 @@ describe('Theme with screen effect', () => {
     )
     expect(png).toMatchImageSnapshot()
   })
+
+  it(
+    'Render card with road trip theme and glow',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats(
+        { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
+        { theme: 'road_trip', pixelateAvatar: false, isFastMode: false, screenEffect: true }
+      )
+      expect(png).toMatchImageSnapshot()
+    }
+  )
 })

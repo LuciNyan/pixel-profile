@@ -281,10 +281,13 @@ const PALETTE_256: Vec3[] = [
   [0.5, 1, 0.5],
   [0, 0, 1]
 ]
+
 const BIAS_256 = 0
+const lightnessSteps = 4
+const saturationSteps = 4
 
 /* eslint-disable prettier/prettier */
-const ditherTable: number[] = [
+const ditherTable = new Uint8Array([
   0, 48, 12, 60, 3, 51, 15, 63,
   32, 16, 44, 28, 35, 19, 47, 31,
   8, 56, 4, 52, 11, 59, 7, 55,
@@ -293,11 +296,8 @@ const ditherTable: number[] = [
   34, 18, 46, 30, 33, 17, 45, 29,
   10, 58, 6, 54, 9, 57, 5, 53,
   42, 26, 38, 22, 41, 25, 37, 21
-]
+])
 /* eslint-enable prettier/prettier */
-
-const lightnessSteps = 4
-const saturationSteps = 4
 
 function hueDistance(h1: number, h2: number): number {
   const diff = Math.abs(h1 - h2)
@@ -305,17 +305,17 @@ function hueDistance(h1: number, h2: number): number {
   return diff < 0.5 ? diff : 1 - diff
 }
 
-function lightnessStep(l: number): number {
-  return Math.round(l * lightnessSteps) / lightnessSteps
-}
+const lightnessStep = (l: number) => Math.round(l * lightnessSteps) / lightnessSteps
+const saturationStep = (s: number) => Math.round(s * saturationSteps) / saturationSteps
 
-function saturationStep(s: number): number {
-  return Math.round(s * saturationSteps) / saturationSteps
-}
+const closestColorsCache = new Map<number, [Vec3, Vec3]>()
 
-function closestColors(hue: number): [[number, number, number], [number, number, number]] {
-  let closest: [number, number, number] = [-2, 0, 0]
-  let secondClosest: [number, number, number] = [-2, 0, 0]
+function closestColors(hue: number): [Vec3, Vec3] {
+  const cachedResult = closestColorsCache.get(hue)
+  if (cachedResult) return cachedResult
+
+  let closest: Vec3 = [-2, 0, 0]
+  let secondClosest: Vec3 = [-2, 0, 0]
   let minDist = Infinity
   let secondMinDist = Infinity
 
@@ -332,10 +332,13 @@ function closestColors(hue: number): [[number, number, number], [number, number,
     }
   }
 
-  return [closest, secondClosest]
+  const result: [Vec3, Vec3] = [closest, secondClosest]
+  closestColorsCache.set(hue, result)
+
+  return result
 }
 
-function dither(pos: [number, number], color: [number, number, number]): [number, number, number] {
+function dither(pos: [number, number], color: Vec3): Vec3 {
   const index = (pos[0] & 7) + ((pos[1] & 7) << 3)
   const limit = (ditherTable[index] + 1) / 64 + BIAS_256
 
@@ -346,7 +349,7 @@ function dither(pos: [number, number], color: [number, number, number]): [number
   const l2 = lightnessStep(Math.min(color[2] + 0.124, 1))
   const lightnessDiff = (color[2] - l1) / (l2 - l1)
 
-  const resultColor: [number, number, number] = hueDiff < limit ? [...closest] : [...secondClosest]
+  const resultColor: Vec3 = hueDiff < limit ? [...closest] : [...secondClosest]
   resultColor[2] = lightnessDiff < limit ? l1 : l2
 
   const s1 = saturationStep(Math.max(color[1] - 0.125, 0))
@@ -369,8 +372,6 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
 
       return [...ditheredColor, color[3]]
     },
-    {
-      textureFilter: TEXTURE_FILTER.NEAREST
-    }
+    { textureFilter: TEXTURE_FILTER.NEAREST }
   )
 }

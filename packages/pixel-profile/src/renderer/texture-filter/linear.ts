@@ -14,10 +14,12 @@ export function genBiLinearFilter(pixels: Buffer, width: number, height: number)
   function biLinearFilter(coords: PixelCoords): RGBA {
     const x = coords[0]
     const y = coords[1]
-    const x0 = clamp(Math.floor(x), 0, maxX)
-    const x1 = clamp(x0 + 1, 0, maxX)
-    const y0 = clamp(Math.floor(y), 0, maxY)
-    const y1 = clamp(y0 + 1, 0, maxY)
+    const flooredX = Math.floor(x)
+    const flooredY = Math.floor(y)
+    const x0 = clamp(flooredX, 0, maxX)
+    const x1 = clamp(flooredX + 1, 0, maxX)
+    const y0 = clamp(flooredY, 0, maxY)
+    const y1 = clamp(flooredY + 1, 0, maxY)
 
     const sx = x - x0
     const sy = y - y0

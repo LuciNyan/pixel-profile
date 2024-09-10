@@ -3,8 +3,8 @@ import { RGBA } from '../renderer'
 export type Vec2 = [number, number]
 export type Vec3 = [number, number, number]
 
-export function clamp(x: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, x))
+export function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n))
 }
 
 export function kFormatter(num: number): string {

@@ -31,7 +31,7 @@ export function render(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const rgba = fragShader([x, y], texture)
-      const index = coordsToIndex(x, y, width)
+      const index = coordsToIndex(x, y, width) * 4
       target[index] = rgba[0]
       target[index + 1] = rgba[1]
       target[index + 2] = rgba[2]

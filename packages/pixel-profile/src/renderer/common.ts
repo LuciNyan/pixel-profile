@@ -4,11 +4,11 @@ export type Texture = (coords: PixelCoords) => RGBA
 export type FragShader = (coords: PixelCoords, texture: Texture) => RGBA
 
 export function coordsToIndex(x: number, y: number, width: number): number {
-  return (y * width + x) * 4
+  return y * width + x
 }
 
 export function coordsToPixel(source: Buffer, x: number, y: number, width: number): RGBA {
-  const index = coordsToIndex(x, y, width)
+  const index = coordsToIndex(x, y, width) * 4
 
   return [source[index], source[index + 1], source[index + 2], source[index + 3]]
 }

@@ -7,11 +7,20 @@ import { ORANGE_AVATAR } from './utils/avatar/orange'
 import { PIXEL_DOG_AVATAR } from './utils/avatar/pixel-dog'
 import { PURPLE_AVATAR } from './utils/avatar/purple'
 import { stats } from './utils/data'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 const TEST_TIMEOUT = 20 * 1000
+const FIXED_DATE = new Date('2024-07-27T00:00:00.000Z')
 
 describe('Theme', () => {
+  beforeAll(() => {
+    vi.spyOn(global, 'Date').mockImplementation(() => FIXED_DATE)
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
+  })
+
   it('Render card with summer theme and custom color', async () => {
     const png = await renderStats(stats, { theme: 'summer', color: 'yellow' })
     expect(png).toMatchImageSnapshot()
@@ -86,6 +95,14 @@ describe('Theme', () => {
 })
 
 describe('Theme with screen effect', () => {
+  beforeAll(() => {
+    vi.spyOn(global, 'Date').mockImplementation(() => FIXED_DATE)
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
+  })
+
   it('Render card with summer theme and custom color', async () => {
     const png = await renderStats(stats, { theme: 'summer', color: 'yellow', screenEffect: true })
     expect(png).toMatchImageSnapshot()

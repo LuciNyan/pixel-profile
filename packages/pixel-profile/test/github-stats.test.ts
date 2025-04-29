@@ -1,8 +1,18 @@
 import { renderStats } from '../src'
 import { stats } from './utils/data'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+
+const FIXED_DATE = new Date('2024-07-27T00:00:00.000Z')
 
 describe('Github stats', () => {
+  beforeAll(() => {
+    vi.spyOn(global, 'Date').mockImplementation(() => FIXED_DATE)
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
+  })
+
   it('Render card', async () => {
     const png = await renderStats({ ...stats })
     expect(png).toMatchImageSnapshot()

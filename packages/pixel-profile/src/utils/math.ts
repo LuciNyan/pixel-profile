@@ -78,3 +78,7 @@ export function pow(pixel: Vec3 | RGBA, exponent: number): RGBA {
 
   return [Math.pow(r, exponent), Math.pow(g, exponent), Math.pow(b, exponent), a]
 }
+
+export function multiply3(v1: Vec3 | RGBA, v2: Vec3 | RGBA): Vec3 {
+  return [v1[0] * v2[0], v1[1] * v2[1], v1[2] * v2[2]]
+}

@@ -156,7 +156,13 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
       pixels = scanline(pixels, width, height)
     }
     if (!isFastMode) {
-      pixels = glow(pixels, width, height)
+      pixels = glow(pixels, width, height, {
+        radius: 3,
+        intensity: 0.3,
+        color: [1, 1, 1],
+        layers: 2,
+        falloff: 'exponential'
+      })
     }
     pixels = curve(pixels, width, height)
   }

@@ -59,6 +59,10 @@ export const THEME: Theme = {
     backgroundImage: `url(${IMG_ROAD_TRIP})`,
     backgroundSize: '1226px 430px',
     backgroundRepeat: 'no-repeat'
+  },
+  crt: {
+    color: 'white',
+    background: 'black'
   }
 }
 

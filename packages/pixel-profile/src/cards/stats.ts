@@ -1,4 +1,4 @@
-import { addBorder, curve, pixelate } from '../shaders'
+import { addBorder, crt, curve, pixelate } from '../shaders'
 import { orderedBayer } from '../shaders/dithering'
 import { glow } from '../shaders/glow'
 import { scanline } from '../shaders/scanline'
@@ -147,24 +147,35 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
-  if (dithering) {
-    pixels = orderedBayer(pixels, width, height)
-  }
+  if (theme === 'crt' && !isFastMode) {
+    pixels = crt(pixels, width, height)
+    pixels = glow(pixels, width, height, {
+      radius: 3,
+      intensity: 0.3,
+      color: [1, 1, 1],
+      layers: 2,
+      falloff: 'exponential'
+    })
+  } else {
+    if (dithering) {
+      pixels = orderedBayer(pixels, width, height)
+    }
 
-  if (screenEffect) {
-    if (!dithering) {
-      pixels = scanline(pixels, width, height)
+    if (screenEffect) {
+      if (!dithering) {
+        pixels = scanline(pixels, width, height)
+      }
+      if (!isFastMode) {
+        pixels = glow(pixels, width, height, {
+          radius: 3,
+          intensity: 0.3,
+          color: [1, 1, 1],
+          layers: 2,
+          falloff: 'exponential'
+        })
+      }
+      pixels = curve(pixels, width, height)
     }
-    if (!isFastMode) {
-      pixels = glow(pixels, width, height, {
-        radius: 3,
-        intensity: 0.3,
-        color: [1, 1, 1],
-        layers: 2,
-        falloff: 'exponential'
-      })
-    }
-    pixels = curve(pixels, width, height)
   }
 
   return await getPngBufferFromPixels(pixels, width, height)

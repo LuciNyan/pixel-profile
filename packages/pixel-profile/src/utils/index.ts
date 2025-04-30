@@ -1,6 +1,6 @@
 export { compare } from './compare'
 export { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, hslToRgb, rgbToHsl } from './converter'
-export { add2, clamp, dot2, kFormatter, prod2, subtract2, type Vec2 } from './math'
+export { add2, clamp, dot2, kFormatter, length2, prod2, subtract2, type Vec2 } from './math'
 export { type Rank, rank } from './rank'
 export { request } from './request'
 export { RETRIES, retryer } from './retryer'

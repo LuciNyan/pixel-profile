@@ -147,13 +147,13 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
 
   let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
 
-  if (theme === 'crt' && !isFastMode) {
+  if (theme === 'crt') {
     pixels = crt(pixels, width, height)
     pixels = glow(pixels, width, height, {
-      radius: 3,
-      intensity: 0.3,
+      radius: 5,
+      intensity: 0.17,
       color: [1, 1, 1],
-      layers: 2,
+      layers: 5,
       falloff: 'exponential'
     })
   } else {

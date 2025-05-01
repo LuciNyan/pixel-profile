@@ -28,11 +28,11 @@ const defaultCRTOptions: CRTOptions = {
   curvatureX: 0.03,
   curvatureY: 0.03,
   cornerSize: 0.05,
-  vignetteDarkness: 0.2,
+  vignetteDarkness: 0.05,
   scanLineStrength: 0.15,
   scanLineCount: 240,
   rgbShift: 0.5,
-  bloomAmount: 0.25,
+  bloomAmount: 0.1,
   noiseIntensity: 0.05,
   borderSize: 0.03
 }

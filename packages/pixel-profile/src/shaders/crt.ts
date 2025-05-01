@@ -33,7 +33,7 @@ const defaultCRTOptions: CRTOptions = {
   scanLineStrength: 0.15,
   scanLineCount: 240,
   rgbShift: 0.5,
-  bloomAmount: 0.2,
+  bloomAmount: 0.25,
   noiseIntensity: 0.05,
   borderSize: 0.03
 }

@@ -221,7 +221,7 @@ describe('Theme with screen effect', () => {
 
 describe('Theme with crt effect', () => {
   it('Render card with crt theme', async () => {
-    const png = await renderStats(stats, { theme: 'crt', isFastMode: false })
+    const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'crt', isFastMode: false })
     expect(png).toMatchImageSnapshot()
   })
 })

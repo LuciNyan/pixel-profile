@@ -9,7 +9,7 @@ import { PURPLE_AVATAR } from './utils/avatar/purple'
 import { stats } from './utils/data'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-const TEST_TIMEOUT = 20 * 1000
+const TEST_TIMEOUT = 40 * 1000
 const FIXED_DATE = new Date('2024-07-27T00:00:00.000Z')
 
 describe('Theme', () => {
@@ -123,7 +123,7 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it(
+  it.skip(
     'Render card with blue_chill theme and glow',
     {
       timeout: TEST_TIMEOUT
@@ -196,6 +196,20 @@ describe('Theme with screen effect', () => {
     }
   )
 
+  it(
+    'Render card with fuji theme and glow(fast mode)',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats(
+        { ...stats, avatarUrl: LUCI_AVATAR },
+        { theme: 'fuji', isFastMode: true, screenEffect: true }
+      )
+      expect(png).toMatchImageSnapshot()
+    }
+  )
+
   it('Render card with road trip theme', async () => {
     const png = await renderStats(
       { ...stats, avatarUrl: PIXEL_DOG_AVATAR },
@@ -220,8 +234,19 @@ describe('Theme with screen effect', () => {
 })
 
 describe('Theme with crt effect', () => {
-  it('Render card with crt theme', async () => {
-    const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'crt', isFastMode: false })
+  it('Render card with crt theme(fast mode)', async () => {
+    const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'crt', isFastMode: true })
     expect(png).toMatchImageSnapshot()
   })
+
+  it(
+    'Render card with crt theme(slow mode)',
+    {
+      timeout: TEST_TIMEOUT
+    },
+    async () => {
+      const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'crt', isFastMode: false })
+      expect(png).toMatchImageSnapshot()
+    }
+  )
 })

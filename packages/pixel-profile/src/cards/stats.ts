@@ -71,7 +71,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const width = baseCardSize.CARD_WIDTH
   const height = baseCardSize.CARD_HEIGHT
 
-  const avatar = await makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder)
+  const avatar = await makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder, isFastMode)
 
   const _stats = {
     name,
@@ -181,9 +181,14 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   return await getPngBufferFromPixels(pixels, width, height)
 }
 
-const BASE_AVATAR_BLOCK_SIZE = 6.82
+const BASE_AVATAR_BLOCK_SIZE = 4
 
-async function makeAvatar(url: string, pixelateAvatar: boolean, applyAvatarBorder: boolean): Promise<string> {
+async function makeAvatar(
+  url: string,
+  pixelateAvatar: boolean,
+  applyAvatarBorder: boolean,
+  isFastMode: boolean = true
+): Promise<string> {
   if (!url) {
     return ''
   }
@@ -194,7 +199,11 @@ async function makeAvatar(url: string, pixelateAvatar: boolean, applyAvatarBorde
 
   if (pixelateAvatar) {
     const blockSize = (height / AVATAR_SIZE.AVATAR_HEIGHT) * BASE_AVATAR_BLOCK_SIZE
-    pixels = pixelate(pixels, width, height, blockSize)
+    pixels = pixelate(pixels, width, height, {
+      blockSize,
+      samplingMode: isFastMode ? 'center' : 'dominant',
+      antiAlias: true
+    })
     if (applyAvatarBorder) {
       pixels = addBorder(pixels, width, height, {
         frameWidthRatio: 0.025

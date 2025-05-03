@@ -53,7 +53,7 @@ If you want to include a GitHub stats card in your own README file and have it d
 ### Themes
 Below are some prebuilt themes to get started. However, cards are fully customizable by passing in background and color props. Feel free to ditch the premade themes and design unique cards by selecting your own colors and backgrounds!
 #### 0. CRT.
-![Lax](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-theme-with-crt-effect-render-card-with-crt-theme-1-snap.png)
+![CRT](./packages/pixel-profile/test/__image_snapshots__/theme-test-ts-theme-with-crt-effect-render-card-with-crt-theme-slow-mode-1-snap.png)
 ```html
 https://pixel-profile.vercel.app/api/github-stats?username=<username>&theme=crt
 ```

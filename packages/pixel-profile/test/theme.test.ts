@@ -9,7 +9,7 @@ import { PURPLE_AVATAR } from './utils/avatar/purple'
 import { stats } from './utils/data'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-const TEST_TIMEOUT = 40 * 1000
+const TEST_TIMEOUT = 20 * 1000
 const FIXED_DATE = new Date('2024-07-27T00:00:00.000Z')
 
 describe('Theme', () => {

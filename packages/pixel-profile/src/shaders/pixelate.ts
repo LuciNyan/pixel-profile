@@ -13,6 +13,14 @@ export function pixelate(source: Buffer, width: number, height: number, options:
   const { blockSize, samplingMode = 'center', antiAlias = true } = opts
   const halfBlockSize = blockSize / 2
 
+  const samplePoints = antiAlias ? 4 : 1
+  const sampleOffsets: [number, number][] = []
+  for (let i = 0; i < samplePoints; i++) {
+    for (let j = 0; j < samplePoints; j++) {
+      sampleOffsets.push([(i + 0.5) * (blockSize / samplePoints), (j + 0.5) * (blockSize / samplePoints)])
+    }
+  }
+
   return render(source, width, height, (coords, texture) => {
     const x = Math.floor(coords[0] / blockSize)
     const y = Math.floor(coords[1] / blockSize)
@@ -24,42 +32,41 @@ export function pixelate(source: Buffer, width: number, height: number, options:
     }
 
     const samples: RGBA[] = []
-    const samplePoints = antiAlias ? 4 : 1
-
-    for (let i = 0; i < samplePoints; i++) {
-      for (let j = 0; j < samplePoints; j++) {
-        const offsetX = (i + 0.5) * (blockSize / samplePoints)
-        const offsetY = (j + 0.5) * (blockSize / samplePoints)
-        samples.push(texture([blockX + offsetX, blockY + offsetY]))
-      }
+    samples.length = sampleOffsets.length
+    for (let i = 0; i < sampleOffsets.length; i++) {
+      const [offsetX, offsetY] = sampleOffsets[i]
+      samples[i] = texture([blockX + offsetX, blockY + offsetY])
     }
 
     if (samplingMode === 'average') {
-      const sum = samples.reduce(
-        (acc, color) => {
-          return [acc[0] + color[0], acc[1] + color[1], acc[2] + color[2], acc[3] + color[3]] as RGBA
-        },
-        [0, 0, 0, 0] as RGBA
-      )
+      const sum: RGBA = [0, 0, 0, 0]
+      for (const color of samples) {
+        sum[0] += color[0]
+        sum[1] += color[1]
+        sum[2] += color[2]
+        sum[3] += color[3]
+      }
+      const count = samples.length
 
-      return sum.map((v) => v / samples.length) as RGBA
+      return [sum[0] / count, sum[1] / count, sum[2] / count, sum[3] / count] as RGBA
     } else {
-      const colorMap = new Map<string, RGBA>()
-      samples.forEach((color) => {
-        const key = color.join(',')
-        colorMap.set(key, color)
-      })
-
+      const colorCount = new Map<string, { color: RGBA; count: number }>()
       let maxCount = 0
       let dominantColor = samples[0]
 
-      colorMap.forEach((color, key) => {
-        const count = samples.filter((c) => c.join(',') === key).length
-        if (count > maxCount) {
-          maxCount = count
-          dominantColor = color
+      for (const color of samples) {
+        const key = color.join(',')
+        const entry = colorCount.get(key)
+        if (entry) {
+          entry.count++
+          if (entry.count > maxCount) {
+            maxCount = entry.count
+            dominantColor = entry.color
+          }
+        } else {
+          colorCount.set(key, { color, count: 1 })
         }
-      })
+      }
 
       return dominantColor
     }

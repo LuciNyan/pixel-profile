@@ -10,6 +10,7 @@ export type Stats = {
   prs: string
   rank: Rank['level']
   stars: string
+  topLanguages: string // add top languages stat
 }
 
 export type TemplateOptions = {
@@ -43,7 +44,7 @@ export const AVATAR_SIZE = {
   AVATAR_HEIGHT: 280
 }
 
-const mainStatsItems = ['stars', 'commits', 'issues', 'prs', 'contributions']
+const mainStatsItems = ['stars', 'commits', 'issues', 'prs', 'contributions', 'topLanguages'] // add top languages
 
 const getVisibleMainStatsCount = (hiddenStatsKeys: string[]) =>
   mainStatsItems.filter((stat) => !hiddenStatsKeys.includes(stat)).length
@@ -110,6 +111,22 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
               paddingRight: avatar ? 40 : 0
             }}
           >
+            {isVisible('topLanguages') && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  width: '100%',
+                  maxWidth: isVisible('avatar') ? '700px' : '100%',
+                  wordBreak: 'keep-all',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                <div>Top Languages:</div>
+                <div style={{ marginTop: '4px' }}>{stats.topLanguages}</div>
+              </div>
+            )}
             {isVisible('stars') && (
               <div
                 style={{

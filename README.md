@@ -257,3 +257,9 @@ pnpm start
 > [Satori](https://github.com/vercel/satori): An enlightened library to convert HTML and CSS to SVG.
 >
 > [Jubilee](https://ko-fi.com/8pxl) A truly unmatched pixel artist! ❤️
+
+## 🏢 Sponsorship
+
+Thanks to the following sponsors for supporting the development of this project:
+
+[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")

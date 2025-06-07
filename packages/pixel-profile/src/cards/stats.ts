@@ -13,6 +13,7 @@ import { getThemeOptions } from '../theme'
 import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
 import { getPngBufferFromURL } from '../utils/converter'
 import { filterNotEmpty } from '../utils/filter'
+import { getTopLanguages } from '../utils/top-languages' // import top-languages
 import { fontBuffer } from './PressStart2P-Regular'
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
@@ -20,6 +21,7 @@ import satori from 'satori'
 export type Stats = {
   name: string
   username: string
+  topLanguages: string // add top languages stat
   totalStars: number
   totalCommits: number
   totalIssues: number
@@ -60,6 +62,9 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     dithering = false
   } = options
 
+  const token = process.env.PAT_1 || '' // add token for topLanguages
+  const topLanguages = await getTopLanguages(username, token) // add const topLanguages
+
   const applyAvatarBorder = avatarBorder !== undefined ? avatarBorder : theme !== ''
 
   if (hiddenStatsKeys.includes('avatar')) {
@@ -76,6 +81,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const _stats = {
     name,
     avatar,
+    topLanguages, // add top languages to _stats
     stars: kFormatter(totalStars),
     commits: kFormatter(totalCommits),
     issues: kFormatter(totalIssues),

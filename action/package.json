@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build:local": "ncc build --out libs ./index.ts",
-    "run:build": "INPUT_OUTPUTS='dist/github-stats?username=LuciNyan&screen_effect=true&pixelate_avatar=false' node libs/index.js",
+    "run:build": "INPUT_OUTPUTS='dist/github-stats?username=LuciNyan&screen_effect=true&include_all_commits=true&pixelate_avatar=false' INPUT_CRT_OUTPUTS='dist/github-stats-crt?username=LuciNyan&include_all_commits=true' node libs/index.js",
     "rerun": "npm run build:local && npm run run:build"
   }
 }

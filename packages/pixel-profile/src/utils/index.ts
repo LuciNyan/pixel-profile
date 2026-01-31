@@ -1,3 +1,4 @@
+export { blendBorder, type BorderOptions } from './border-blend'
 export { compare } from './compare'
 export { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, hslToRgb, rgbToHsl } from './converter'
 export { add2, clamp, dot2, kFormatter, length2, prod2, subtract2, type Vec2 } from './math'

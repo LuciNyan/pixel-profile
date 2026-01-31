@@ -16,3 +16,8 @@ inputs:
     default: null
     description: |
       list of files to generate.
+  crt_outputs:
+    required: false
+    default: null
+    description: |
+      list of CRT style stats files to generate.

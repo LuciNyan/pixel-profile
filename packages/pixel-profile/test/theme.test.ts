@@ -123,7 +123,7 @@ describe('Theme with screen effect', () => {
     expect(png).toMatchImageSnapshot()
   })
 
-  it.skip(
+  it(
     'Render card with blue_chill theme and glow',
     {
       timeout: TEST_TIMEOUT
@@ -234,6 +234,10 @@ describe('Theme with screen effect', () => {
 })
 
 describe('Theme with crt effect', () => {
+  beforeAll(() => {
+    vi.spyOn(global, 'Date').mockImplementation(() => FIXED_DATE)
+  })
+
   it('Render card with crt theme(fast mode)', async () => {
     const png = await renderStats({ ...stats, avatarUrl: BLUE_AVATAR }, { theme: 'crt', isFastMode: true })
     expect(png).toMatchImageSnapshot()

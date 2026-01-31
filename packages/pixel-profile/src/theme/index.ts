@@ -1,6 +1,7 @@
 import { IMG_FUJI } from './images/fuji'
 import { IMG_JOURNEY } from './images/journey'
 import { IMG_ROAD_TRIP } from './images/road-trip'
+import { IMG_ROAD_TRIP_CRT } from './images/road-trip-crt'
 
 type Theme = Record<
   string,
@@ -63,6 +64,12 @@ export const THEME: Theme = {
   crt: {
     color: 'white',
     background: 'black'
+  },
+  road_trip_crt: {
+    color: 'white',
+    backgroundImage: `url(${IMG_ROAD_TRIP_CRT})`,
+    backgroundSize: '900px 594px',
+    backgroundRepeat: 'no-repeat'
   }
 }
 

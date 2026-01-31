@@ -1,54 +1,11 @@
-import { Rank } from '../utils'
+import { TemplateStats } from '../types'
 import { filterNotEmpty } from '../utils/filter'
+import { getVisibleMainStatsCount, TemplateOptions } from './shared'
 
-export type Stats = {
-  avatar: string
-  commits: string
-  contributions: string
-  issues: string
-  name: string
-  prs: string
-  rank: Rank['level']
-  stars: string
-}
+export type { TemplateOptions } from './shared'
+export { defaultTemplateOptions } from './shared'
 
-export type TemplateOptions = {
-  color: string
-  background: string
-  hiddenStatsKeys: string[]
-  includeAllCommits: boolean
-  backgroundImage?: string
-  backgroundSize?: string
-  backgroundRepeat?: string
-}
-
-export const defaultTemplateOptions = {
-  color: 'white',
-  background: '#434343'
-}
-
-export const CARD_SIZE = {
-  BIG: {
-    CARD_WIDTH: 1226,
-    CARD_HEIGHT: 430
-  },
-  SMALL: {
-    CARD_WIDTH: 1226,
-    CARD_HEIGHT: 350
-  }
-}
-
-export const AVATAR_SIZE = {
-  AVATAR_WIDTH: 280,
-  AVATAR_HEIGHT: 280
-}
-
-const mainStatsItems = ['stars', 'commits', 'issues', 'prs', 'contributions']
-
-const getVisibleMainStatsCount = (hiddenStatsKeys: string[]) =>
-  mainStatsItems.filter((stat) => !hiddenStatsKeys.includes(stat)).length
-
-export function makeGithubStats(stats: Stats, options: TemplateOptions) {
+export function makeGithubStats(stats: TemplateStats, options: TemplateOptions) {
   const { avatar, commits, contributions, issues, name, prs, rank, stars } = stats
   const { hiddenStatsKeys, includeAllCommits, color, background, backgroundRepeat, backgroundSize, backgroundImage } =
     options
@@ -74,10 +31,10 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
         style={{
           display: 'flex',
           flexDirection: 'column',
-          fontSize: 23,
+          fontSize: 20,
           color,
-          width: '92%',
-          height: '80%',
+          width: '80%',
+          height: '48%',
           borderRight: `${color} 4px solid`,
           borderLeft: `${color} 4px solid`,
           borderBottom: `${color} 4px solid`,
@@ -191,11 +148,7 @@ export function makeGithubStats(stats: Stats, options: TemplateOptions) {
                   lineHeight: 0.5
                 }}
               >
-                {avatar ? (
-                  <div>--------------------------------</div>
-                ) : (
-                  <div>---------------------------------------------</div>
-                )}
+                <div>--------------------------------</div>
               </div>
             )}
             {isVisible('rank') && (

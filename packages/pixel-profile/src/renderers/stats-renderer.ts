@@ -2,32 +2,15 @@ import { addBorder, crt, curve, pixelate } from '../shaders'
 import { orderedBayer } from '../shaders/dithering'
 import { glow } from '../shaders/glow'
 import { scanline } from '../shaders/scanline'
-import {
-  AVATAR_SIZE,
-  CARD_SIZE,
-  defaultTemplateOptions,
-  makeGithubStats,
-  TemplateOptions
-} from '../templates/github-stats'
+import { AVATAR_SIZE, defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/stats-template'
 import { getThemeOptions } from '../theme'
-import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels, kFormatter, Rank } from '../utils'
+import { GithubStats } from '../types'
+import { getBase64FromPixels, getPixelsFromPngBuffer, getPngBufferFromPixels } from '../utils'
 import { getPngBufferFromURL } from '../utils/converter'
 import { filterNotEmpty } from '../utils/filter'
-import { fontBuffer } from './PressStart2P-Regular'
-import { Resvg } from '@resvg/resvg-js'
-import satori from 'satori'
+import { formatStatsData, renderToPixels } from './render-utils'
 
-export type Stats = {
-  name: string
-  username: string
-  totalStars: number
-  totalCommits: number
-  totalIssues: number
-  totalPRs: number
-  avatarUrl: string
-  contributedTo: number
-  rank: Rank | null
-}
+export type { GithubStats as Stats } from '../types'
 
 type Options = {
   theme?: string
@@ -43,8 +26,19 @@ type Options = {
   dithering?: boolean
 }
 
-export async function renderStats(stats: Stats, options: Options = {}): Promise<Buffer> {
-  const { name, username, totalStars, totalCommits, totalIssues, totalPRs, avatarUrl, contributedTo, rank } = stats
+const CARD_SIZE = {
+  BIG: {
+    CARD_WIDTH: 1226,
+    CARD_HEIGHT: 430
+  },
+  SMALL: {
+    CARD_WIDTH: 1226,
+    CARD_HEIGHT: 350
+  }
+}
+
+export async function renderStats(stats: GithubStats, options: Options = {}): Promise<Buffer> {
+  const { username, avatarUrl } = stats
   let modifiedAvatarUrl = avatarUrl
 
   const {
@@ -72,19 +66,7 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
   const height = baseCardSize.CARD_HEIGHT
 
   const avatar = await makeAvatar(modifiedAvatarUrl, pixelateAvatar, applyAvatarBorder, isFastMode)
-
-  const _stats = {
-    name,
-    avatar,
-    stars: kFormatter(totalStars),
-    commits: kFormatter(totalCommits),
-    issues: kFormatter(totalIssues),
-    prs: kFormatter(totalPRs),
-    contributions: kFormatter(contributedTo),
-    rank: rank ? rank.level : ''
-  }
-
-  let isMissingFont = false
+  const templateStats = formatStatsData(stats, avatar)
 
   const templateOptions: TemplateOptions = {
     ...defaultTemplateOptions,
@@ -97,55 +79,14 @@ export async function renderStats(stats: Stats, options: Options = {}): Promise<
     includeAllCommits
   }
 
-  let svg = await satori(makeGithubStats(_stats, templateOptions), {
+  const { pixels: renderedPixels } = await renderToPixels(
+    makeGithubStats(templateStats, templateOptions),
     width,
     height,
-    fonts: [
-      {
-        name: 'PressStart2P',
-        data: fontBuffer,
-        weight: 400,
-        style: 'normal'
-      }
-    ],
-    loadAdditionalAsset: async () => {
-      isMissingFont = true
+    () => makeGithubStats({ ...templateStats, name: username }, templateOptions)
+  )
 
-      return ''
-    }
-  })
-
-  if (isMissingFont) {
-    _stats.name = username
-
-    svg = await satori(makeGithubStats(_stats, templateOptions), {
-      width,
-      height,
-      fonts: [
-        {
-          name: 'PressStart2P',
-          data: fontBuffer,
-          weight: 400,
-          style: 'normal'
-        }
-      ]
-    })
-  }
-
-  const opts = {
-    fitTo: {
-      mode: 'width',
-      value: width
-    },
-    font: {
-      loadSystemFonts: false // It will be faster to disable loading system fonts.
-    }
-  } as const
-
-  const pngData = new Resvg(svg, opts).render()
-  const pngBuffer = pngData.asPng()
-
-  let { pixels } = await getPixelsFromPngBuffer(pngBuffer)
+  let pixels = renderedPixels
 
   if (theme === 'crt') {
     pixels = crt(pixels, width, height)

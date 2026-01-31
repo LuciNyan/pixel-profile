@@ -1,17 +1,18 @@
-import { parseOutputs } from './parseOutputs'
+import { parseCrtOutputs, parseOutputs } from './parseOutputs'
 import * as core from '@actions/core'
 import * as fs from 'fs'
 import * as path from 'path'
-import { fetchStats, renderStats } from 'pixel-profile'
+import { fetchStats, renderCrtStats, renderStats } from 'pixel-profile'
 import { parseArray, parseBoolean, parseString } from 'pixel-profile-utils'
 
 async function main() {
   try {
     const githubToken = process.env.GITHUB_TOKEN ?? core.getInput('github_token')
 
-    const options = parseOutputs(core.getMultilineInput('outputs'))
+    // Process regular stats outputs
+    const outputs = parseOutputs(core.getMultilineInput('outputs'))
 
-    for (const option of options) {
+    for (const option of outputs) {
       if (option === null) continue
 
       const {
@@ -43,7 +44,7 @@ async function main() {
         githubToken
       )
 
-      const options = {
+      const renderOptions = {
         background: parseString(background),
         color: parseString(color),
         hiddenStatsKeys: hide ? parseArray(hide) : undefined,
@@ -56,11 +57,43 @@ async function main() {
         isFastMode: false
       }
 
-      const result = await renderStats(stats, options)
+      const result = await renderStats(stats, renderOptions)
 
       console.log(`💾 writing to ${filename}`)
       fs.mkdirSync(path.dirname(filename), { recursive: true })
-      fs.writeFileSync(filename, result)
+      fs.writeFileSync(filename, new Uint8Array(result))
+    }
+
+    // Process CRT stats outputs
+    const crtOutputs = parseCrtOutputs(core.getMultilineInput('crt_outputs'))
+
+    for (const option of crtOutputs) {
+      if (option === null) continue
+
+      const { username, exclude_repo, include_all_commits, filename } = option
+
+      const includeAllCommits = parseBoolean(include_all_commits)
+
+      const stats: Parameters<typeof renderCrtStats>[0] = await fetchStats(
+        typeof username === 'string' ? username : '',
+        includeAllCommits,
+        parseArray(exclude_repo),
+        false,
+        false,
+        false,
+        githubToken
+      )
+
+      const crtOptions = {
+        includeAllCommits,
+        isFastMode: false
+      }
+
+      const result = await renderCrtStats(stats, crtOptions)
+
+      console.log(`💾 writing CRT stats to ${filename}`)
+      fs.mkdirSync(path.dirname(filename), { recursive: true })
+      fs.writeFileSync(filename, new Uint8Array(result))
     }
   } catch (e: any) {
     core.setFailed(`Action failed with "${e.message}"`)

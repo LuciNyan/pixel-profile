@@ -159,28 +159,32 @@ const statsFetcher = async ({
   return stats as AxiosResponse
 }
 
-const totalCommitsFetcher = async (username: string): Promise<number> => {
+const totalCommitsFetcher = async (username: string, token?: string): Promise<number> => {
   if (!githubUsernameRegex.test(username)) {
     console.log('Invalid username provided.')
     throw new Error('Invalid username provided.')
   }
 
   // https://developer.github.com/v3/search/#search-commits
-  const fetchTotalCommits = (variables: Record<PropertyKey, unknown>, token: string) => {
+  const fetchTotalCommits = (variables: Record<PropertyKey, unknown>, tokenParam: string) => {
     return axios({
       method: 'get',
       url: `https://api.github.com/search/commits?q=author:${variables.login}`,
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/vnd.github.cloak-preview',
-        Authorization: `token ${token}`
+        Authorization: `token ${tokenParam}`
       }
     })
   }
 
   let res
   try {
-    res = await retryer(fetchTotalCommits, { login: username })
+    if (token) {
+      res = await fetchTotalCommits({ login: username }, token)
+    } else {
+      res = await retryer(fetchTotalCommits, { login: username })
+    }
   } catch (err: any) {
     console.log(err)
     throw new Error(err)
@@ -273,7 +277,7 @@ export async function fetchStats(
 
   // if include_all_commits, fetch all commits using the REST API.
   if (include_all_commits) {
-    stats.totalCommits = await totalCommitsFetcher(username)
+    stats.totalCommits = await totalCommitsFetcher(username, token)
   } else {
     stats.totalCommits = user.contributionsCollection.totalCommitContributions
   }

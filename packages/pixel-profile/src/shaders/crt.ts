@@ -11,7 +11,7 @@ interface CRTOptions {
   borderSize: number
 }
 
-const defaultCRTOptions: CRTOptions = {
+export const defaultCRTOptions: CRTOptions = {
   curvatureX: 0.03,
   curvatureY: 0.03,
   cornerSize: 0.05,
@@ -24,14 +24,25 @@ const defaultCRTOptions: CRTOptions = {
   borderSize: 0.03
 }
 
-const BLOOM_OFFSETS_X = [-1, 0, 1, -1, 1, -1, 0, 1]
-const BLOOM_OFFSETS_Y = [-1, -1, -1, 0, 0, 1, 1, 1]
+/**
+ * Core CRT computation for a row range. Closure-free so it can be
+ * serialized via Function.toString() for Worker threads.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function crtCore(
+  source: any,
+  target: any,
+  width: number,
+  height: number,
+  startRow: number,
+  endRow: number,
+  opts: any
+): void {
+  const BLOOM_OFFSETS_X = [-1, 0, 1, -1, 1, -1, 0, 1]
+  const BLOOM_OFFSETS_Y = [-1, -1, -1, 0, 0, 1, 1, 1]
 
-export function crt(source: Buffer, width: number, height: number, options: Partial<CRTOptions> = {}): Buffer {
-  const opts: CRTOptions = { ...defaultCRTOptions, ...options }
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.allocUnsafe(width * height * 4)
 
   const curvX5 = opts.curvatureX * 5
   const curvY5 = opts.curvatureY * 5
@@ -48,7 +59,7 @@ export function crt(source: Buffer, width: number, height: number, options: Part
   const w4 = width * 4
   const oneBorderMargin = 1 - borderMargin
 
-  for (let py = 0; py < height; py++) {
+  for (let py = startRow; py < endRow; py++) {
     const uvY = py / height
     const cy = uvY - 0.5
     const cy2 = cy * cy
@@ -88,7 +99,6 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       let bi00: number, bi10: number, bi01: number, bi11: number
       let ry0: number, ry1: number, cx0: number, cx1: number
 
-      // Red channel — coords clamped to [0, max], so floor via |0 is safe
       bx = Math.min(maxX, Math.max(0, pcX + vcX * rgbShiftAmount * maxX))
       by = Math.min(maxY, Math.max(0, pcY + vcY * rgbShiftAmount * maxY))
       bx0 = bx | 0
@@ -109,7 +119,6 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       bi11 = ry1 + cx1
       const r = (source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy
 
-      // Green channel — clamp pcX/pcY first (matches original texture() mutation)
       pcX = Math.min(maxX, Math.max(0, pcX))
       pcY = Math.min(maxY, Math.max(0, pcY))
       bx0 = pcX | 0
@@ -132,7 +141,6 @@ export function crt(source: Buffer, width: number, height: number, options: Part
         (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
         (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
 
-      // Blue channel — coords clamped to [0, max], floor via |0
       bx = Math.min(maxX, Math.max(0, pcX - vcX * rgbShiftAmount * maxX))
       by = Math.min(maxY, Math.max(0, pcY - vcY * rgbShiftAmount * maxY))
       bx0 = bx | 0
@@ -224,6 +232,12 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       target[idx + 3] = 255
     }
   }
+}
+
+export function crt(source: Buffer, width: number, height: number, options: Partial<CRTOptions> = {}): Buffer {
+  const opts: CRTOptions = { ...defaultCRTOptions, ...options }
+  const target = Buffer.allocUnsafe(width * height * 4)
+  crtCore(source, target, width, height, 0, height, opts)
 
   return target
 }

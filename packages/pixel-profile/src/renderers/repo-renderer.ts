@@ -1,5 +1,5 @@
 import { type AnimationOptions, renderAnimatedGif } from '../animation'
-import { buildStatsPipeline, executePipeline } from '../pipeline'
+import { buildStatsPipeline, executePipelineSmart } from '../pipeline'
 import { defaultRepoOptions, makeRepoCard, REPO_CARD, RepoTemplateOptions } from '../templates/repo-template'
 import { getThemeOptions } from '../theme'
 import { RepoData } from '../types'
@@ -50,7 +50,7 @@ export async function renderRepo(repo: RepoData, options: RepoOptions = {}): Pro
     return renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
   }
 
-  const pixels = executePipeline(renderedPixels, width, height, pipeline)
+  const pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)
 
   return await getPngBufferFromPixels(pixels, width, height)
 }

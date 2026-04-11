@@ -1,4 +1,3 @@
-import githubContributionsHandle from './github-contributions'
 import githubRepoHandle from './github-repo'
 import githubStatsHandle from './github-stats'
 import githubStatsCrtHandle from './github-stats-crt'
@@ -9,7 +8,6 @@ const app = new Hono().basePath('/api')
 
 app.route('/github-stats', githubStatsHandle)
 app.route('/github-stats-crt', githubStatsCrtHandle)
-app.route('/github-contributions', githubContributionsHandle)
 app.route('/github-repo', githubRepoHandle)
 app.route('/status', statusHandle)
 

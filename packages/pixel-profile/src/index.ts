@@ -4,7 +4,15 @@ export { fetchContributions } from './fetchers/contributions-fetcher'
 export { fetchRepo } from './fetchers/repo-fetcher'
 export { fetchStats } from './fetchers/stats-fetcher'
 export type { Pipeline, ShaderFn, ShaderPass } from './pipeline'
-export { buildContributionsPipeline, buildCrtPipeline, buildStatsPipeline, executePipeline, SHADERS } from './pipeline'
+export {
+  buildContributionsPipeline,
+  buildCrtPipeline,
+  buildStatsPipeline,
+  executePipeline,
+  executePipelineAsync,
+  executePipelineSmart,
+  SHADERS
+} from './pipeline'
 export { renderContributions } from './renderers/contributions-renderer'
 export { renderCrtStats } from './renderers/crt-renderer'
 export { renderRepo } from './renderers/repo-renderer'

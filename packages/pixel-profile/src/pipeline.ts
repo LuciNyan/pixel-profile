@@ -2,14 +2,18 @@ import { addBorder, crt, curve, pixelate } from './shaders'
 import { BUILTIN_PALETTES, orderedBayer, paletteDither, type PaletteId } from './shaders/dithering'
 import { glow } from './shaders/glow'
 import { scanline } from './shaders/scanline'
+import { dispatchCrt } from './workers/pool'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ShaderFn = (pixels: Buffer, width: number, height: number, opts?: any) => Buffer
 
 export type ShaderPass = {
   name: string
   shader: ShaderFn
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   options?: Record<string, any>
   enabled?: boolean
+  parallel?: boolean
 }
 
 export type Pipeline = ShaderPass[]
@@ -35,6 +39,46 @@ export function executePipeline(pixels: Buffer, width: number, height: number, p
   return result
 }
 
+export async function executePipelineAsync(
+  pixels: Buffer,
+  width: number,
+  height: number,
+  pipeline: Pipeline
+): Promise<Buffer> {
+  let result = pixels
+
+  for (const pass of pipeline) {
+    if (pass.enabled === false) continue
+    if (pass.parallel && pass.name === 'crt') {
+      const parallel = await dispatchCrt(result, width, height, pass.options || {})
+      if (parallel) {
+        result = parallel
+        continue
+      }
+    }
+    result = pass.shader(result, width, height, pass.options)
+  }
+
+  return result
+}
+
+function hasParallelPass(pipeline: Pipeline): boolean {
+  return pipeline.some((p) => p.parallel)
+}
+
+export async function executePipelineSmart(
+  pixels: Buffer,
+  width: number,
+  height: number,
+  pipeline: Pipeline
+): Promise<Buffer> {
+  if (hasParallelPass(pipeline)) {
+    return executePipelineAsync(pixels, width, height, pipeline)
+  }
+
+  return executePipeline(pixels, width, height, pipeline)
+}
+
 export function buildStatsPipeline(options: {
   theme: string
   screenEffect: boolean
@@ -46,7 +90,7 @@ export function buildStatsPipeline(options: {
 
   if (theme === 'crt') {
     return [
-      { name: 'crt', shader: crt },
+      { name: 'crt', shader: crt, parallel: true },
       {
         name: 'glow',
         shader: glow,
@@ -123,7 +167,7 @@ export function buildContributionsPipeline(options: {
 
   if (theme === 'crt') {
     return [
-      { name: 'crt', shader: crt },
+      { name: 'crt', shader: crt, parallel: true },
       {
         name: 'glow',
         shader: glow,
@@ -181,6 +225,7 @@ export function buildCrtPipeline(): Pipeline {
     {
       name: 'crt',
       shader: crt,
+      parallel: true,
       options: {
         curvatureX: 0.045,
         curvatureY: 0.045,

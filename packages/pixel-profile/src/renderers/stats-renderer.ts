@@ -1,5 +1,5 @@
 import { type AnimationOptions, renderAnimatedGif } from '../animation'
-import { buildStatsPipeline, executePipeline } from '../pipeline'
+import { buildStatsPipeline, executePipelineSmart } from '../pipeline'
 import { pixelate } from '../shaders'
 import { addBorder } from '../shaders/border'
 import { AVATAR_SIZE, defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/stats-template'
@@ -97,7 +97,7 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
     return renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
   }
 
-  const pixels = executePipeline(renderedPixels, width, height, pipeline)
+  const pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)
 
   return await getPngBufferFromPixels(pixels, width, height)
 }

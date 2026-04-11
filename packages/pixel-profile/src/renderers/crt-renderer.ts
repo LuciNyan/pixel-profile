@@ -1,4 +1,4 @@
-import { buildCrtPipeline, executePipeline } from '../pipeline'
+import { buildCrtPipeline, executePipelineSmart } from '../pipeline'
 import { defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/crt-template'
 import { getThemeOptions } from '../theme'
 import { GithubStats } from '../types'
@@ -44,7 +44,7 @@ export async function renderCrtStats(stats: GithubStats, options: CrtOptions = {
   )
 
   const pipeline = buildCrtPipeline()
-  let pixels = executePipeline(renderedPixels, width, height, pipeline)
+  let pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)
 
   pixels = await blendBorder(pixels, width, height, {
     targetWidth: CRT_CARD_SIZE.width,

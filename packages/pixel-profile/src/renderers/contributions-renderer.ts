@@ -1,5 +1,5 @@
 import { type AnimationOptions, renderAnimatedGif } from '../animation'
-import { buildContributionsPipeline, executePipeline } from '../pipeline'
+import { buildContributionsPipeline, executePipelineSmart } from '../pipeline'
 import {
   CONTRIBUTIONS_CARD,
   ContributionsTemplateOptions,
@@ -62,7 +62,7 @@ export async function renderContributions(
     return renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
   }
 
-  const pixels = executePipeline(renderedPixels, width, height, pipeline)
+  const pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)
 
   return await getPngBufferFromPixels(pixels, width, height)
 }

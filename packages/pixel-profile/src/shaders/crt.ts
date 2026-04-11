@@ -151,31 +151,51 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       let bloom = 0
       if (hasBloom) {
         let bloomSum = 0
-        for (let bi = 0; bi < 8; bi++) {
-          const sx = pcX + BLOOM_OFFSETS_X[bi]
-          const sy = pcY + BLOOM_OFFSETS_Y[bi]
-          if (sx >= 0 && sx <= maxX && sy >= 0 && sy <= maxY) {
-            bx0 = sx | 0
-            bx1 = Math.min(bx0 + 1, maxX)
-            by0 = sy | 0
-            by1 = Math.min(by0 + 1, maxY)
-            bsx = sx - bx0
-            bsy = sy - by0
-            bosx = 1 - bsx
-            bosy = 1 - bsy
-            bi00 = (by0 * width + bx0) * 4
-            bi10 = (by0 * width + bx1) * 4
-            bi01 = (by1 * width + bx0) * 4
-            bi11 = (by1 * width + bx1) * 4
-            const sr =
-              (source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy
-            const sg =
-              (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
-              (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
-            const sb =
-              (source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
-              (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy
-            bloomSum += (sr + sg + sb) / 3
+        const gBx0 = pcX | 0
+        const gBy0 = pcY | 0
+        const gBsx = pcX - gBx0
+        const gBsy = pcY - gBy0
+        const gBosx = 1 - gBsx
+        const gBosy = 1 - gBsy
+
+        if (gBx0 >= 1 && gBx0 <= maxX - 2 && gBy0 >= 1 && gBy0 <= maxY - 2) {
+          for (let bi = 0; bi < 8; bi++) {
+            const base = ((gBy0 + BLOOM_OFFSETS_Y[bi]) * width + gBx0 + BLOOM_OFFSETS_X[bi]) * 4
+            bloomSum +=
+              ((source[base] * gBosx + source[base + 4] * gBsx) * gBosy +
+                (source[base + w4] * gBosx + source[base + w4 + 4] * gBsx) * gBsy +
+                (source[base + 1] * gBosx + source[base + 5] * gBsx) * gBosy +
+                (source[base + w4 + 1] * gBosx + source[base + w4 + 5] * gBsx) * gBsy +
+                (source[base + 2] * gBosx + source[base + 6] * gBsx) * gBosy +
+                (source[base + w4 + 2] * gBosx + source[base + w4 + 6] * gBsx) * gBsy) /
+              3
+          }
+        } else {
+          for (let bi = 0; bi < 8; bi++) {
+            const sx = pcX + BLOOM_OFFSETS_X[bi]
+            const sy = pcY + BLOOM_OFFSETS_Y[bi]
+            if (sx >= 0 && sx <= maxX && sy >= 0 && sy <= maxY) {
+              bx0 = sx | 0
+              bx1 = Math.min(bx0 + 1, maxX)
+              by0 = sy | 0
+              by1 = Math.min(by0 + 1, maxY)
+              bsx = sx - bx0
+              bsy = sy - by0
+              bosx = 1 - bsx
+              bosy = 1 - bsy
+              bi00 = (by0 * width + bx0) * 4
+              bi10 = (by0 * width + bx1) * 4
+              bi01 = (by1 * width + bx0) * 4
+              bi11 = (by1 * width + bx1) * 4
+              bloomSum +=
+                ((source[bi00] * bosx + source[bi10] * bsx) * bosy +
+                  (source[bi01] * bosx + source[bi11] * bsx) * bsy +
+                  (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
+                  (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy +
+                  (source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
+                  (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy) /
+                3
+            }
           }
         }
         bloom = (bloomSum / 8) * bloomAmount

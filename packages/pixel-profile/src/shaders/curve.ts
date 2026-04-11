@@ -3,7 +3,7 @@ const screenCurvature = 0.1
 export function curve(source: Buffer, width: number, height: number): Buffer {
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   const w4 = width * 4
 
   for (let py = 0; py < height; py++) {

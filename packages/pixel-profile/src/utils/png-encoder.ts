@@ -28,10 +28,7 @@ function makeChunk(type: string, data: Buffer): Buffer {
   typeBytes.copy(chunk, 4)
   data.copy(chunk, 8)
 
-  const crcBuf = Buffer.alloc(4 + data.length)
-  typeBytes.copy(crcBuf, 0)
-  data.copy(crcBuf, 4)
-  chunk.writeUInt32BE(crc32(crcBuf, 0, crcBuf.length), 8 + data.length)
+  chunk.writeUInt32BE(crc32(chunk, 4, 8 + data.length), 8 + data.length)
 
   return chunk
 }
@@ -52,7 +49,7 @@ function encodeIHDR(width: number, height: number): Buffer {
 export function encodePng(pixels: Buffer, width: number, height: number): Buffer {
   const rowBytes = width * 4
   const rawSize = (rowBytes + 1) * height
-  const raw = Buffer.alloc(rawSize)
+  const raw = Buffer.allocUnsafe(rawSize)
 
   for (let y = 0; y < height; y++) {
     const srcOff = y * rowBytes

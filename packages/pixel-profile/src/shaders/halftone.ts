@@ -6,7 +6,7 @@ const mat = [
 ]
 
 export function halftone(source: Buffer, width: number, height: number): Buffer {
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {

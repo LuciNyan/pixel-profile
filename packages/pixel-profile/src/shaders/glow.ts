@@ -283,7 +283,7 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     glowLayers.push(currentLayer)
   }
 
-  const result = Buffer.alloc(size * 4)
+  const result = Buffer.allocUnsafe(size * 4)
   const [colorR, colorG, colorB] = color
 
   for (let y = 0; y < height; y++) {

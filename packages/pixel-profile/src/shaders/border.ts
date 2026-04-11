@@ -9,7 +9,7 @@ export function addBorder(
   }
 ) {
   const { enabledTransparentBorder = true, enabledCornerRemoval = true, frameWidthRatio } = options
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   target.set(source)
 
   const frameWidth = frameWidthRatio * width

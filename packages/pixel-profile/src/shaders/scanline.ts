@@ -3,7 +3,7 @@ const scanlineThickness = 3
 const scanlineBrightness = 1 - scanlineIntensity
 
 export function scanline(source: Buffer, width: number, height: number): Buffer {
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
 
   for (let y = 0; y < height; y++) {
     const rowOffset = y * width * 4

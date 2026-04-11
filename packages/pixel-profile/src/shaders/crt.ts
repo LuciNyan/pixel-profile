@@ -31,7 +31,7 @@ export function crt(source: Buffer, width: number, height: number, options: Part
   const opts: CRTOptions = { ...defaultCRTOptions, ...options }
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
 
   const curvX5 = opts.curvatureX * 5
   const curvY5 = opts.curvatureY * 5

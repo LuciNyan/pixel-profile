@@ -41,7 +41,7 @@ function pixelateDominant(
 ): Buffer {
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   const offsets = buildSampleOffsets(blockSize, antiAlias)
   const numSamples = offsets.length
 
@@ -156,7 +156,7 @@ function pixelateDominant(
 function pixelateAverage(source: Buffer, width: number, height: number, blockSize: number, antiAlias: boolean): Buffer {
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   const offsets = buildSampleOffsets(blockSize, antiAlias)
   const numSamples = offsets.length
 
@@ -229,7 +229,7 @@ function pixelateAverage(source: Buffer, width: number, height: number, blockSiz
 function pixelateCenter(source: Buffer, width: number, height: number, blockSize: number): Buffer {
   const maxX = width - 1
   const maxY = height - 1
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   const halfBlock = blockSize / 2
 
   const blocksX = Math.ceil(width / blockSize)

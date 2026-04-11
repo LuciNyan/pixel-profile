@@ -31,7 +31,7 @@ IEND_CHUNK[6] = 78 // N
 IEND_CHUNK[7] = 68 // D
 IEND_CHUNK.writeUInt32BE(crc32(IEND_CHUNK, 4, 8), 8)
 
-export function encodePng(pixels: Buffer, width: number, height: number): Buffer {
+export function encodePng(pixels: Buffer, width: number, height: number, level: number = 1): Buffer {
   const rowBytes = width * 4
   const rawSize = (rowBytes + 1) * height
   const raw = Buffer.allocUnsafe(rawSize)
@@ -43,7 +43,7 @@ export function encodePng(pixels: Buffer, width: number, height: number): Buffer
     pixels.copy(raw, dstOff + 1, srcOff, srcOff + rowBytes)
   }
 
-  const compressed = deflateSync(raw, { level: 1 })
+  const compressed = deflateSync(raw, { level })
   const compLen = compressed.length
 
   const out = Buffer.allocUnsafe(57 + compLen)

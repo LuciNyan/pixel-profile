@@ -61,6 +61,35 @@ parentPort.on('message', function(msg) {
     var th = msg.threshold, lr = msg.layerRadius;
     horizontalPassCore(src, hBlur, lum, hLum, w, h, th, lr, wt);
     verticalPassCore(hBlur, layerOut, hLum, w, h, th, lr, wt);
+  } else if (msg.type === 'glow-h-batch') {
+    var src = new Uint8Array(msg.sourceSab);
+    var lum = new Float64Array(msg.lumSab);
+    var w = msg.width, h = msg.height;
+    var sR = msg.startRow, eR = msg.endRow;
+    var th = msg.threshold, ft = msg.falloffType;
+    var ls = msg.layers;
+    for (var li = 0; li < ls.length; li++) {
+      var la = ls[li];
+      var hB = new Float32Array(la.hBlurSab);
+      var hL = new Float64Array(la.hLumSab);
+      var ffn = getFalloffFunction(ft);
+      var wt = buildWeightTable(la.radius, ffn);
+      horizontalPassCore(src, hB, lum, hL, w, h, th, la.radius, wt, sR, eR);
+    }
+  } else if (msg.type === 'glow-v-batch') {
+    var w = msg.width, h = msg.height;
+    var sR = msg.startRow, eR = msg.endRow;
+    var th = msg.threshold, ft = msg.falloffType;
+    var ls = msg.layers;
+    for (var li = 0; li < ls.length; li++) {
+      var la = ls[li];
+      var hB = new Float32Array(la.hBlurSab);
+      var hL = new Float64Array(la.hLumSab);
+      var oS = new Float32Array(la.layerOutSab);
+      var ffn = getFalloffFunction(ft);
+      var wt = buildWeightTable(la.radius, ffn);
+      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR);
+    }
   }
   parentPort.postMessage(0);
 });
@@ -210,44 +239,81 @@ export async function dispatchGlow(
   const sourceSab = new SharedArrayBuffer(byteLen)
   new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
 
-  const layerSabs: SharedArrayBuffer[] = []
-  const layerPromises: Promise<void>[] = []
+  const lumSab = new SharedArrayBuffer(size * 8)
+  const lumArr = new Float64Array(lumSab)
+  const srcLum = buildLuminanceMap(source, size)
+  lumArr.set(srcLum)
 
+  const layerConfigs: {
+    hBlurSab: SharedArrayBuffer
+    hLumSab: SharedArrayBuffer
+    layerOutSab: SharedArrayBuffer
+    radius: number
+  }[] = []
   for (let i = 0; i < layers; i++) {
-    const layerRadius = Math.floor(radius * (i + 1))
-    const layerSab = new SharedArrayBuffer(size * 4 * 4)
-    layerSabs.push(layerSab)
+    layerConfigs.push({
+      hBlurSab: new SharedArrayBuffer(size * 4 * 4),
+      hLumSab: new SharedArrayBuffer(size * 8),
+      layerOutSab: new SharedArrayBuffer(size * 4 * 4),
+      radius: Math.floor(radius * (i + 1))
+    })
+  }
 
-    const workerIdx = i % workers.length
-    const pw = workers[workerIdx]
+  const rowsPerWorker = Math.ceil(height / workers.length)
+  const layerMsgs = layerConfigs.map((lc) => ({
+    hBlurSab: lc.hBlurSab,
+    hLumSab: lc.hLumSab,
+    layerOutSab: lc.layerOutSab,
+    radius: lc.radius
+  }))
 
-    const p = new Promise<void>((resolve, reject) => {
-      pw.pending = { resolve, reject }
-      pw.worker.postMessage({
-        type: 'glow-layer',
-        sourceSab,
-        layerSab,
-        width,
-        height,
-        threshold,
-        layerRadius,
-        falloffType: falloff
+  await Promise.all(
+    workers.map((pw, i) => {
+      const startRow = i * rowsPerWorker
+      const endRow = Math.min(startRow + rowsPerWorker, height)
+      if (startRow >= height) return Promise.resolve()
+
+      return new Promise<void>((resolve, reject) => {
+        pw.pending = { resolve, reject }
+        pw.worker.postMessage({
+          type: 'glow-h-batch',
+          sourceSab,
+          lumSab,
+          layers: layerMsgs,
+          width,
+          height,
+          threshold,
+          falloffType: falloff,
+          startRow,
+          endRow
+        })
       })
     })
+  )
 
-    layerPromises.push(p)
+  await Promise.all(
+    workers.map((pw, i) => {
+      const startRow = i * rowsPerWorker
+      const endRow = Math.min(startRow + rowsPerWorker, height)
+      if (startRow >= height) return Promise.resolve()
 
-    if (i < layers - 1 && (i + 1) % workers.length === 0) {
-      await Promise.all(layerPromises)
-      layerPromises.length = 0
-    }
-  }
+      return new Promise<void>((resolve, reject) => {
+        pw.pending = { resolve, reject }
+        pw.worker.postMessage({
+          type: 'glow-v-batch',
+          layers: layerMsgs,
+          width,
+          height,
+          threshold,
+          falloffType: falloff,
+          startRow,
+          endRow
+        })
+      })
+    })
+  )
 
-  if (layerPromises.length > 0) {
-    await Promise.all(layerPromises)
-  }
-
-  const glowLayers: Float32Array[] = layerSabs.map((sab) => new Float32Array(sab))
+  const glowLayers: Float32Array[] = layerConfigs.map((lc) => new Float32Array(lc.layerOutSab))
 
   const result = Buffer.allocUnsafe(byteLen)
   const [colorR, colorG, colorB] = color

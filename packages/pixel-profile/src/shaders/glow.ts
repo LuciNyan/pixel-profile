@@ -87,7 +87,9 @@ export function horizontalPassCore(
   height: number,
   threshold: number,
   currentRadius: number,
-  weights: Float64Array
+  weights: Float64Array,
+  startRow: number = 0,
+  endRow: number = height
 ): void {
   const maxX = width - 1
   const diameter = currentRadius * 2 + 1
@@ -96,7 +98,7 @@ export function horizontalPassCore(
 
   const rowPrefix = new Int32Array(width + 1)
 
-  for (let y = 0; y < height; y++) {
+  for (let y = startRow; y < endRow; y++) {
     const rowOffset = y * width
 
     rowPrefix[0] = 0
@@ -189,7 +191,9 @@ export function verticalPassCore(
   height: number,
   threshold: number,
   currentRadius: number,
-  weights: Float64Array
+  weights: Float64Array,
+  startRow: number = 0,
+  endRow: number = height
 ): void {
   const maxY = height - 1
   const diameter = currentRadius * 2 + 1
@@ -207,7 +211,7 @@ export function verticalPassCore(
     }
   }
 
-  for (let y = 0; y < height; y++) {
+  for (let y = startRow; y < endRow; y++) {
     const lo = Math.max(0, y - currentRadius)
     const hi = Math.min(maxY, y + currentRadius)
     const loRow = lo * width

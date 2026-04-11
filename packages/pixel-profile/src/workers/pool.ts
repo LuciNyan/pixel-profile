@@ -18,8 +18,11 @@ interface PoolWorker {
   pending: { resolve: () => void; reject: (err: Error) => void } | null
 }
 
+const POOL_INIT_TIMEOUT_MS = 3000
+
 let pool: PoolWorker[] | null = null
 let poolFailed = false
+let poolReadyPromise: Promise<boolean> | null = null
 
 function buildWorkerCode(): string {
   const fns = [crtCore, curveCore, buildWeightTable, getFalloffFunction, horizontalPassCore, verticalPassCore]
@@ -155,24 +158,45 @@ parentPort.on('message', function(msg) {
   }
   parentPort.postMessage(0);
 });
+parentPort.postMessage(0);
 `
 }
 
-function ensurePool(): PoolWorker[] | null {
-  if (poolFailed) return null
-  if (pool) return pool
-
+function initPool(): { workers: PoolWorker[]; ready: Promise<boolean> } | null {
   try {
     const code = buildWorkerCode()
-    pool = Array.from({ length: POOL_SIZE }, () => {
+    const readyPromises: Array<Promise<void>> = []
+
+    const workers = Array.from({ length: POOL_SIZE }, () => {
       const w = new Worker(code, { eval: true })
       const pw: PoolWorker = { worker: w, pending: null }
+
+      let isReady = false
+      let readyResolve: () => void
+      readyPromises.push(
+        new Promise<void>((resolve) => {
+          readyResolve = resolve
+        })
+      )
+
       w.on('message', () => {
+        if (!isReady) {
+          isReady = true
+          readyResolve()
+
+          return
+        }
         const p = pw.pending
         pw.pending = null
         p?.resolve()
       })
       w.on('error', (err) => {
+        if (!isReady) {
+          isReady = true
+          readyResolve()
+
+          return
+        }
         const p = pw.pending
         pw.pending = null
         p?.reject(err)
@@ -181,12 +205,55 @@ function ensurePool(): PoolWorker[] | null {
       return pw
     })
 
-    return pool
-  } catch {
-    poolFailed = true
+    const ready = Promise.race([
+      Promise.all(readyPromises).then(() => true),
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), POOL_INIT_TIMEOUT_MS))
+    ])
 
+    return { workers, ready }
+  } catch {
     return null
   }
+}
+
+function ensurePool(): void {
+  if (poolFailed || pool || poolReadyPromise) return
+
+  const result = initPool()
+  if (!result) {
+    poolFailed = true
+
+    return
+  }
+
+  pool = result.workers
+  poolReadyPromise = result.ready.then((ok) => {
+    if (!ok) {
+      poolFailed = true
+      for (const w of pool!) {
+        try {
+          w.worker.terminate()
+        } catch {
+          /* ignore */
+        }
+      }
+      pool = null
+    }
+
+    return ok
+  })
+}
+
+async function getPool(): Promise<PoolWorker[] | null> {
+  ensurePool()
+  if (poolFailed) return null
+
+  if (poolReadyPromise) {
+    const ok = await poolReadyPromise
+    if (!ok) return null
+  }
+
+  return pool
 }
 
 export function getPoolSize(): number {
@@ -210,7 +277,7 @@ export async function dispatchCrt(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userOpts: any
 ): Promise<Buffer | null> {
-  const workers = ensurePool()
+  const workers = await getPool()
   if (!workers) return null
 
   const opts = { ...defaultCRTOptions, ...userOpts }
@@ -239,7 +306,7 @@ export async function dispatchCrt(
 }
 
 export async function dispatchCurve(source: Buffer, width: number, height: number): Promise<Buffer | null> {
-  const workers = ensurePool()
+  const workers = await getPool()
   if (!workers) return null
 
   const byteLen = width * height * 4
@@ -306,7 +373,7 @@ export async function precomputeGlowLayers(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userOpts: any
 ): Promise<PrecomputedGlowLayers | null> {
-  const workers = ensurePool()
+  const workers = await getPool()
   if (!workers) return null
 
   const opts = { ...DEFAULT_GLOW, ...userOpts }
@@ -386,7 +453,7 @@ export async function compositeGlowFromPrecomputed(
   intensity: number,
   color: [number, number, number]
 ): Promise<Buffer> {
-  const workers = ensurePool()
+  const workers = await getPool()
   const { layerMsgs, sourceSab, numLayers, width, height } = precomputed
   const byteLen = width * height * 4
 

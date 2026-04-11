@@ -24,7 +24,8 @@ function crc32(buf: Buffer, start: number, end: number): number {
 
 const IEND_CHUNK = Buffer.alloc(12)
 IEND_CHUNK.writeUInt32BE(0, 0)
-IDAT_TYPE.copy(IEND_CHUNK, 4) // placeholder, overwrite with IEND type
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+IDAT_TYPE.copy(IEND_CHUNK as any, 4)
 IEND_CHUNK[4] = 73 // I
 IEND_CHUNK[5] = 69 // E
 IEND_CHUNK[6] = 78 // N
@@ -40,18 +41,22 @@ export function encodePng(pixels: Buffer, width: number, height: number, level: 
     const srcOff = y * rowBytes
     const dstOff = y * (rowBytes + 1)
     raw[dstOff] = 0
-    pixels.copy(raw, dstOff + 1, srcOff, srcOff + rowBytes)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pixels.copy(raw as any, dstOff + 1, srcOff, srcOff + rowBytes)
   }
 
-  const compressed = deflateSync(raw, { level })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const compressed = deflateSync(raw as any, { level })
   const compLen = compressed.length
 
   const out = Buffer.allocUnsafe(57 + compLen)
 
-  PNG_SIGNATURE.copy(out, 0)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  PNG_SIGNATURE.copy(out as any, 0)
 
   out.writeUInt32BE(13, 8)
-  IHDR_TYPE.copy(out, 12)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IHDR_TYPE.copy(out as any, 12)
   out.writeUInt32BE(width, 16)
   out.writeUInt32BE(height, 20)
   out[24] = 8
@@ -63,11 +68,14 @@ export function encodePng(pixels: Buffer, width: number, height: number, level: 
 
   const idatStart = 33
   out.writeUInt32BE(compLen, idatStart)
-  IDAT_TYPE.copy(out, idatStart + 4)
-  compressed.copy(out, idatStart + 8)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IDAT_TYPE.copy(out as any, idatStart + 4)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  compressed.copy(out as any, idatStart + 8)
   out.writeUInt32BE(crc32(out, idatStart + 4, idatStart + 8 + compLen), idatStart + 8 + compLen)
 
-  IEND_CHUNK.copy(out, 45 + compLen)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  IEND_CHUNK.copy(out as any, 45 + compLen)
 
   return out
 }

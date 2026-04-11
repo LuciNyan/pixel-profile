@@ -28,7 +28,7 @@ function buildPalette(frames: Buffer[], width: number, height: number): number[]
   }
 
   const colors: number[][] = []
-  const sorted = [...colorCounts.entries()].sort((a, b) => b[1] - a[1])
+  const sorted = Array.from(colorCounts.entries()).sort((a, b) => b[1] - a[1])
   const limit = Math.min(256, sorted.length)
   for (let i = 0; i < limit; i++) {
     const key = sorted[i][0]

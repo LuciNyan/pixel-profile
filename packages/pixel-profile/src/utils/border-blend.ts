@@ -19,7 +19,8 @@ async function getBorderData(targetWidth: number, targetHeight: number) {
 
   const borderPng = await Jimp.read(Buffer.from(IMG_BORDER.split(',')[1], 'base64'))
   borderPng.resize(targetWidth, targetHeight)
-  const borderPixels = Buffer.from(borderPng.bitmap.data)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const borderPixels = Buffer.from(borderPng.bitmap.data as any)
 
   const pixelCount = targetWidth * targetHeight
   const alpha = new Float64Array(pixelCount)

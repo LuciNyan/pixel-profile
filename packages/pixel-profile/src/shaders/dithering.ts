@@ -412,6 +412,152 @@ function buildDitherEntry(rRaw: number, gRaw: number, bRaw: number): DitherEntry
   return { hueDiff, lightDiff, satDiff, combos }
 }
 
+export type PaletteId = 'gameboy' | 'nokia' | 'cga' | 'grayscale' | 'sepia' | 'neon'
+
+export const BUILTIN_PALETTES: Record<PaletteId, number[][]> = {
+  gameboy: [
+    [15, 56, 15],
+    [48, 98, 48],
+    [139, 172, 15],
+    [155, 188, 15]
+  ],
+  nokia: [
+    [67, 82, 61],
+    [199, 240, 216]
+  ],
+  grayscale: [
+    [0, 0, 0],
+    [85, 85, 85],
+    [170, 170, 170],
+    [255, 255, 255]
+  ],
+  sepia: [
+    [43, 23, 0],
+    [110, 76, 30],
+    [176, 128, 80],
+    [232, 208, 160]
+  ],
+  neon: [
+    [0, 0, 0],
+    [255, 0, 102],
+    [0, 255, 204],
+    [255, 255, 0],
+    [102, 0, 255]
+  ],
+  cga: [
+    [0, 0, 0],
+    [0, 0, 170],
+    [0, 170, 0],
+    [0, 170, 170],
+    [170, 0, 0],
+    [170, 0, 170],
+    [170, 85, 0],
+    [170, 170, 170],
+    [85, 85, 85],
+    [85, 85, 255],
+    [85, 255, 85],
+    [85, 255, 255],
+    [255, 85, 85],
+    [255, 85, 255],
+    [255, 255, 85],
+    [255, 255, 255]
+  ]
+}
+
+export function paletteDither(source: Buffer, width: number, height: number, paletteColors: number[][]): Buffer {
+  const target = Buffer.allocUnsafe(width * height * 4)
+  const palLen = paletteColors.length
+
+  if (palLen < 2) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    source.copy(target as any)
+
+    return target
+  }
+
+  const palR = new Uint8Array(palLen)
+  const palG = new Uint8Array(palLen)
+  const palB = new Uint8Array(palLen)
+  for (let i = 0; i < palLen; i++) {
+    palR[i] = paletteColors[i][0]
+    palG[i] = paletteColors[i][1]
+    palB[i] = paletteColors[i][2]
+  }
+
+  const cache = new Map<number, number>()
+
+  function findTwoClosest(r: number, g: number, b: number): number {
+    const key = (r << 16) | (g << 8) | b
+    const cached = cache.get(key)
+    if (cached !== undefined) return cached
+
+    let minDist = Infinity
+    let secondDist = Infinity
+    let closest = 0
+    let second = 0
+
+    for (let i = 0; i < palLen; i++) {
+      const dr = r - palR[i]
+      const dg = g - palG[i]
+      const db = b - palB[i]
+      const dist = dr * dr + dg * dg + db * db
+      if (dist < minDist) {
+        secondDist = minDist
+        second = closest
+        minDist = dist
+        closest = i
+      } else if (dist < secondDist) {
+        secondDist = dist
+        second = i
+      }
+    }
+
+    const totalDist = minDist + secondDist
+    const factor = totalDist > 0 ? minDist / totalDist : 0
+    const factorQ = (factor * 63 + 0.5) | 0
+
+    const packed = (closest & 0xff) | ((second & 0xff) << 8) | ((factorQ & 0xff) << 16)
+    cache.set(key, packed)
+
+    return packed
+  }
+
+  for (let y = 0; y < height; y++) {
+    let prevR = -1
+    let prevG = -1
+    let prevB = -1
+    let packed = 0
+
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const r = source[idx]
+      const g = source[idx + 1]
+      const b = source[idx + 2]
+
+      if (r !== prevR || g !== prevG || b !== prevB) {
+        prevR = r
+        prevG = g
+        prevB = b
+        packed = findTwoClosest(r, g, b)
+      }
+
+      const closest = packed & 0xff
+      const second = (packed >> 8) & 0xff
+      const factorQ = (packed >> 16) & 0xff
+
+      const threshold = ditherTable[(x & 7) + ((y & 7) << 3)]
+      const pick = factorQ > threshold ? second : closest
+
+      target[idx] = palR[pick]
+      target[idx + 1] = palG[pick]
+      target[idx + 2] = palB[pick]
+      target[idx + 3] = source[idx + 3]
+    }
+  }
+
+  return target
+}
+
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
   const target = Buffer.allocUnsafe(width * height * 4)
 

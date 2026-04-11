@@ -61,7 +61,8 @@ function fillBlockBands(
         target[idx + 3] = blockColors[bi + 3]
       }
     } else {
-      target.copy(target, py * rowLen, bandRowStart, bandRowStart + rowLen)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      target.copy(target as any, py * rowLen, bandRowStart, bandRowStart + rowLen)
     }
   }
 }

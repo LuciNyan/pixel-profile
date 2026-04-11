@@ -188,7 +188,8 @@ function lzwEncode(indexed: Uint8Array, minCodeSize: number): Buffer {
   for (let i = 0; i < rawBytes; i += 255) {
     const chunkLen = Math.min(255, rawBytes - i)
     result[rPos++] = chunkLen
-    outBytes.copy(result, rPos, i, i + chunkLen)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    outBytes.copy(result as any, rPos, i, i + chunkLen)
     rPos += chunkLen
   }
 
@@ -273,5 +274,6 @@ export function encodeGif(frames: GifFrame[], width: number, height: number): Bu
   // GIF Trailer
   chunks.push(Buffer.from([0x3b]))
 
-  return Buffer.concat(chunks)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return Buffer.concat(chunks as any)
 }

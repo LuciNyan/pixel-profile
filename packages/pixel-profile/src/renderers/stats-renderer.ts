@@ -24,6 +24,7 @@ type Options = {
   pixelateAvatar?: boolean
   avatarBorder?: boolean
   dithering?: boolean
+  ditheringPalette?: string
   animation?: AnimationOptions | boolean
 }
 
@@ -52,7 +53,8 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
     isFastMode = true,
     avatarBorder,
     theme = '',
-    dithering = false
+    dithering = false,
+    ditheringPalette
   } = options
 
   const applyAvatarBorder = avatarBorder !== undefined ? avatarBorder : theme !== ''
@@ -87,7 +89,7 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
     () => makeGithubStats({ ...templateStats, name: username }, templateOptions)
   )
 
-  const pipeline = buildStatsPipeline({ theme, screenEffect, isFastMode, dithering })
+  const pipeline = buildStatsPipeline({ theme, screenEffect, isFastMode, dithering, ditheringPalette })
 
   if (options.animation) {
     const animOpts: AnimationOptions = typeof options.animation === 'boolean' ? {} : options.animation

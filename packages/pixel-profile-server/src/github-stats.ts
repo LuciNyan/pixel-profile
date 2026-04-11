@@ -21,7 +21,8 @@ githubStats.get('/', async (c) => {
     username,
     theme,
     avatar_border,
-    dithering
+    dithering,
+    dithering_palette
   } = req.query()
 
   const isAnimated = parseBoolean(animation)
@@ -69,6 +70,7 @@ githubStats.get('/', async (c) => {
       screenEffect: parseBoolean(screen_effect),
       avatarBorder: parseBoolean(avatar_border),
       dithering: parseBoolean(dithering),
+      ditheringPalette: parseString(dithering_palette),
       animation: animationOpts
     }
 

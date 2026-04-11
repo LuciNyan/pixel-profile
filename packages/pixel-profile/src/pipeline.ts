@@ -1,5 +1,5 @@
 import { addBorder, crt, curve, pixelate } from './shaders'
-import { orderedBayer } from './shaders/dithering'
+import { BUILTIN_PALETTES, orderedBayer, paletteDither, type PaletteId } from './shaders/dithering'
 import { glow } from './shaders/glow'
 import { scanline } from './shaders/scanline'
 
@@ -40,8 +40,9 @@ export function buildStatsPipeline(options: {
   screenEffect: boolean
   isFastMode: boolean
   dithering: boolean
+  ditheringPalette?: string
 }): Pipeline {
-  const { theme, screenEffect, isFastMode, dithering } = options
+  const { theme, screenEffect, isFastMode, dithering, ditheringPalette } = options
 
   if (theme === 'crt') {
     return [
@@ -62,12 +63,21 @@ export function buildStatsPipeline(options: {
 
   const pipeline: Pipeline = []
 
-  if (dithering) {
+  if (ditheringPalette) {
+    const palette = resolvePalette(ditheringPalette)
+    if (palette) {
+      pipeline.push({
+        name: 'paletteDither',
+        shader: paletteDither,
+        options: palette
+      })
+    }
+  } else if (dithering) {
     pipeline.push({ name: 'orderedBayer', shader: orderedBayer })
   }
 
   if (screenEffect) {
-    if (!dithering) {
+    if (!dithering && !ditheringPalette) {
       pipeline.push({ name: 'scanline', shader: scanline })
     }
     if (!isFastMode) {
@@ -87,6 +97,19 @@ export function buildStatsPipeline(options: {
   }
 
   return pipeline
+}
+
+function resolvePalette(spec: string): number[][] | null {
+  if (spec in BUILTIN_PALETTES) {
+    return BUILTIN_PALETTES[spec as PaletteId]
+  }
+
+  const hexColors = spec.split(',').map((s) => s.trim().replace(/^#/, ''))
+  if (hexColors.length < 2 || hexColors.some((h) => !/^[0-9a-fA-F]{6}$/.test(h))) {
+    return null
+  }
+
+  return hexColors.map((h) => [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)])
 }
 
 export function buildCrtPipeline(): Pipeline {

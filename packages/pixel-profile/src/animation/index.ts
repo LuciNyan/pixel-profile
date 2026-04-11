@@ -104,7 +104,8 @@ function scanlineWithOffset(source: Buffer, width: number, height: number, offse
         target[idx + 3] = source[idx + 3]
       }
     } else {
-      source.copy(target, rowOffset, rowOffset, rowOffset + rowBytes)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      source.copy(target as any, rowOffset, rowOffset, rowOffset + rowBytes)
     }
   }
 

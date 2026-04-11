@@ -1,5 +1,4 @@
-import { crt } from '../shaders'
-import { glow } from '../shaders/glow'
+import { buildCrtPipeline, executePipeline } from '../pipeline'
 import { defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/crt-template'
 import { getThemeOptions } from '../theme'
 import { GithubStats } from '../types'
@@ -44,27 +43,8 @@ export async function renderCrtStats(stats: GithubStats, options: CrtOptions = {
     () => makeGithubStats({ ...templateStats, name: username }, templateOptions)
   )
 
-  let pixels = renderedPixels
-
-  pixels = crt(pixels, width, height, {
-    curvatureX: 0.045,
-    curvatureY: 0.045,
-    cornerSize: 0.05,
-    vignetteDarkness: 0.05,
-    scanLineStrength: 0.15,
-    scanLineCount: 240,
-    rgbShift: 0.5,
-    bloomAmount: 0.25,
-    noiseIntensity: 0.05,
-    borderSize: 0
-  })
-  pixels = glow(pixels, width, height, {
-    radius: 5,
-    intensity: 0.17,
-    color: [1, 1, 1],
-    layers: 1,
-    falloff: 'exponential'
-  })
+  const pipeline = buildCrtPipeline()
+  let pixels = executePipeline(renderedPixels, width, height, pipeline)
 
   pixels = await blendBorder(pixels, width, height, {
     targetWidth: CRT_CARD_SIZE.width,

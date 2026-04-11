@@ -1,5 +1,4 @@
-import { coordsToIndex, render } from '../renderer'
-import { mix3, multiply3, type Vec3 } from '../utils/math'
+import type { Vec3 } from '../utils/math'
 
 interface GlowOptions {
   radius: number
@@ -50,18 +49,49 @@ function getFalloffFunction(type: string): (dist: number, radiusSquared: number)
   }
 }
 
+function buildWeightTable(
+  currentRadius: number,
+  falloffFn: (dist: number, radiusSquared: number) => number
+): Float64Array {
+  const radiusSquared = currentRadius * currentRadius * 2
+  const weights = new Float64Array(currentRadius * 2 + 1)
+
+  for (let i = -currentRadius; i <= currentRadius; i++) {
+    weights[i + currentRadius] = falloffFn(i * i, radiusSquared)
+  }
+
+  return weights
+}
+
+function buildLuminanceMap(input: Buffer | Float32Array, size: number): Float64Array {
+  const lum = new Float64Array(size)
+
+  for (let i = 0; i < size; i++) {
+    const idx = i * 4
+    lum[i] = (input[idx] * 0.2126 + input[idx + 1] * 0.7152 + input[idx + 2] * 0.0722) / 255
+  }
+
+  return lum
+}
+
 export function glow(source: Buffer, width: number, height: number, userOptions: Partial<GlowOptions> = {}): Buffer {
   const options = { ...defaultOptions, ...userOptions }
   const { radius, intensity, color, layers, falloff, adaptiveThreshold, threshold: _threshold } = options
   const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
   const falloffFn = getFalloffFunction(falloff)
 
-  function horizontalPass(input: Buffer | Float32Array, output: Float32Array, currentRadius: number) {
-    const radiusSquared = currentRadius * currentRadius * 2
-
+  function horizontalPass(
+    input: Buffer | Float32Array,
+    output: Float32Array,
+    luminance: Float64Array,
+    currentRadius: number,
+    weights: Float64Array
+  ) {
     for (let y = 0; y < height; y++) {
+      const rowOffset = y * width
+
       for (let x = 0; x < width; x++) {
-        const centerIdx = (y * width + x) * 4
+        const centerIdx = (rowOffset + x) * 4
         let sumR = 0
         let sumG = 0
         let sumB = 0
@@ -69,20 +99,14 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
         for (let i = -currentRadius; i <= currentRadius; i++) {
           const sampleX = Math.min(Math.max(x + i, 0), width - 1)
-          const sampleIdx = (y * width + sampleX) * 4
+          const sampleIdx = (rowOffset + sampleX) * 4
 
-          const r = input[sampleIdx]
-          const g = input[sampleIdx + 1]
-          const b = input[sampleIdx + 2]
-          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+          if (luminance[rowOffset + sampleX] > threshold) {
+            const weight = weights[i + currentRadius]
 
-          if (luminance > threshold) {
-            const dist = i * i
-            const weight = falloffFn(dist, radiusSquared)
-
-            sumR += r * weight
-            sumG += g * weight
-            sumB += b * weight
+            sumR += input[sampleIdx] * weight
+            sumG += input[sampleIdx + 1] * weight
+            sumB += input[sampleIdx + 2] * weight
             weightSum += weight
           }
         }
@@ -102,9 +126,13 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     }
   }
 
-  function verticalPass(input: Float32Array, output: Float32Array, currentRadius: number) {
-    const radiusSquared = currentRadius * currentRadius * 2
-
+  function verticalPass(
+    input: Float32Array,
+    output: Float32Array,
+    luminance: Float64Array,
+    currentRadius: number,
+    weights: Float64Array
+  ) {
     for (let x = 0; x < width; x++) {
       for (let y = 0; y < height; y++) {
         const centerIdx = (y * width + x) * 4
@@ -117,18 +145,12 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
           const sampleY = Math.min(Math.max(y + i, 0), height - 1)
           const sampleIdx = (sampleY * width + x) * 4
 
-          const r = input[sampleIdx]
-          const g = input[sampleIdx + 1]
-          const b = input[sampleIdx + 2]
-          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+          if (luminance[sampleY * width + x] > threshold) {
+            const weight = weights[i + currentRadius]
 
-          if (luminance > threshold) {
-            const dist = i * i
-            const weight = falloffFn(dist, radiusSquared)
-
-            sumR += r * weight
-            sumG += g * weight
-            sumB += b * weight
+            sumR += input[sampleIdx] * weight
+            sumG += input[sampleIdx + 1] * weight
+            sumB += input[sampleIdx + 2] * weight
             weightSum += weight
           }
         }
@@ -149,45 +171,55 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
   }
 
   const size = width * height
+  const sourceLuminance = buildLuminanceMap(source, size)
   const horizontalBlur = new Float32Array(size * 4)
-
   const glowLayers: Float32Array[] = []
 
   for (let i = 0; i < layers; i++) {
     const currentRadius = Math.floor(radius * (i + 1))
     const currentLayer = new Float32Array(size * 4)
+    const weights = buildWeightTable(currentRadius, falloffFn)
 
-    horizontalPass(source, horizontalBlur, currentRadius)
-    verticalPass(horizontalBlur, currentLayer, currentRadius)
+    horizontalPass(source, horizontalBlur, sourceLuminance, currentRadius, weights)
+
+    const hBlurLuminance = buildLuminanceMap(horizontalBlur, size)
+    verticalPass(horizontalBlur, currentLayer, hBlurLuminance, currentRadius, weights)
 
     glowLayers.push(currentLayer)
   }
 
-  return render(
-    source,
-    width,
-    height,
-    (uv, texture2D) => {
-      const originalColor = texture2D(uv)
-      let finalColor: Vec3 = [originalColor[0], originalColor[1], originalColor[2]]
+  const result = Buffer.alloc(size * 4)
+  const [colorR, colorG, colorB] = color
+
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width
+
+    for (let x = 0; x < width; x++) {
+      const idx = (rowOffset + x) * 4
+      let finalR = source[idx]
+      let finalG = source[idx + 1]
+      let finalB = source[idx + 2]
 
       for (let i = 0; i < layers; i++) {
         const currentIntensity = intensity / (i + 1)
+        const oneMinusT = 1 - currentIntensity
         const layerBuffer = glowLayers[i]
 
-        const glowColor = [
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4],
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4 + 1],
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4 + 2]
-        ] as Vec3
+        const tintedR = layerBuffer[idx] * colorR
+        const tintedG = layerBuffer[idx + 1] * colorG
+        const tintedB = layerBuffer[idx + 2] * colorB
 
-        const tintedGlow = multiply3(glowColor, color)
-
-        finalColor = mix3(finalColor, tintedGlow, currentIntensity)
+        finalR = finalR * oneMinusT + tintedR * currentIntensity
+        finalG = finalG * oneMinusT + tintedG * currentIntensity
+        finalB = finalB * oneMinusT + tintedB * currentIntensity
       }
 
-      return [finalColor[0], finalColor[1], finalColor[2], 255]
-    },
-    { textureFilter: 'NEAREST' }
-  )
+      result[idx] = finalR
+      result[idx + 1] = finalG
+      result[idx + 2] = finalB
+      result[idx + 3] = 255
+    }
+  }
+
+  return result
 }

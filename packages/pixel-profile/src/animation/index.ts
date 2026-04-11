@@ -1,0 +1,138 @@
+import { executePipeline, type Pipeline } from '../pipeline'
+import { encodeGif, type GifFrame } from './gif-encoder'
+
+export type AnimationOptions = {
+  frameCount?: number
+  frameDelay?: number
+  effect?: 'crt-flicker' | 'glow-pulse' | 'scanline-scroll'
+}
+
+const defaultAnimationOptions: Required<AnimationOptions> = {
+  frameCount: 8,
+  frameDelay: 100,
+  effect: 'glow-pulse'
+}
+
+/**
+ * Build a set of pipelines that vary per frame to create animation.
+ */
+function buildAnimatedPipelines(effect: string, frameCount: number, basePipeline: Pipeline): Pipeline[] {
+  const pipelines: Pipeline[] = []
+
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / frameCount
+
+    switch (effect) {
+      case 'crt-flicker': {
+        const noiseIntensity = 0.03 + 0.04 * Math.sin(t * Math.PI * 2)
+        const scanLineStrength = 0.1 + 0.1 * Math.sin(t * Math.PI * 2 + 1)
+        const pipeline: Pipeline = basePipeline.map((pass) => {
+          if (pass.name === 'crt') {
+            return {
+              ...pass,
+              options: {
+                ...pass.options,
+                noiseIntensity,
+                scanLineStrength
+              }
+            }
+          }
+
+          return pass
+        })
+        pipelines.push(pipeline)
+        break
+      }
+
+      case 'glow-pulse': {
+        const intensity = 0.1 + 0.15 * Math.sin(t * Math.PI * 2)
+        const pipeline: Pipeline = basePipeline.map((pass) => {
+          if (pass.name === 'glow') {
+            return {
+              ...pass,
+              options: {
+                ...pass.options,
+                intensity
+              }
+            }
+          }
+
+          return pass
+        })
+        pipelines.push(pipeline)
+        break
+      }
+
+      case 'scanline-scroll': {
+        const pipeline: Pipeline = []
+        for (const pass of basePipeline) {
+          pipeline.push(pass)
+        }
+        const scrollOffset = Math.floor(t * 6)
+        pipeline.push({
+          name: 'scanline-animated',
+          shader: (source: Buffer, width: number, height: number) => {
+            return scanlineWithOffset(source, width, height, scrollOffset)
+          }
+        })
+        pipelines.push(pipeline)
+        break
+      }
+
+      default:
+        pipelines.push(basePipeline)
+    }
+  }
+
+  return pipelines
+}
+
+function scanlineWithOffset(source: Buffer, width: number, height: number, offset: number): Buffer {
+  const target = Buffer.alloc(width * height * 4)
+  const thickness = 3
+  const brightness = 0.85
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      if ((y + offset) % thickness === 0) {
+        target[idx] = source[idx] * brightness
+        target[idx + 1] = source[idx + 1] * brightness
+        target[idx + 2] = source[idx + 2] * brightness
+        target[idx + 3] = source[idx + 3]
+      } else {
+        target[idx] = source[idx]
+        target[idx + 1] = source[idx + 1]
+        target[idx + 2] = source[idx + 2]
+        target[idx + 3] = source[idx + 3]
+      }
+    }
+  }
+
+  return target
+}
+
+/**
+ * Render an animated GIF from base pixels and a shader pipeline.
+ */
+export function renderAnimatedGif(
+  basePixels: Buffer,
+  width: number,
+  height: number,
+  basePipeline: Pipeline,
+  userOptions: AnimationOptions = {}
+): Buffer {
+  const options = { ...defaultAnimationOptions, ...userOptions }
+  const { frameCount, frameDelay, effect } = options
+
+  const animatedPipelines = buildAnimatedPipelines(effect, frameCount, basePipeline)
+
+  const frames: GifFrame[] = animatedPipelines.map((pipeline) => ({
+    pixels: executePipeline(basePixels, width, height, pipeline),
+    delay: frameDelay
+  }))
+
+  return encodeGif(frames, width, height)
+}
+
+export { encodeGif, type GifFrame } from './gif-encoder'

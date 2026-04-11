@@ -1,26 +1,13 @@
-import { render } from '../renderer'
-import type { Vec2 } from '../utils'
-import { add2, clamp, dot2, length2, subtract2 } from '../utils'
-
 interface CRTOptions {
-  // Curvature (0.0 to 0.5, higher = more curved)
   curvatureX: number
   curvatureY: number
-  // Corner size (0.0 to 0.3)
   cornerSize: number
-  // Vignette darkness (0.0 to 1.0)
   vignetteDarkness: number
-  // Scan line strength (0.0 to 1.0)
   scanLineStrength: number
-  // Scan line count (integer)
   scanLineCount: number
-  // RGB separation amount (0.0 to 5.0)
   rgbShift: number
-  // Bloom amount (0.0 to 0.5)
   bloomAmount: number
-  // Noise intensity (0.0 to 0.3)
   noiseIntensity: number
-  // Border size as fraction of screen (0.0 to 0.1)
   borderSize: number
 }
 
@@ -37,126 +24,147 @@ const defaultCRTOptions: CRTOptions = {
   borderSize: 0.03
 }
 
-function randomNoise(coords: Vec2): number {
-  const x = Math.sin(dot2(coords, [12.9898, 78.233])) * 43758.5453
+const BLOOM_OFFSETS = [
+  [-1, -1],
+  [0, -1],
+  [1, -1],
+  [-1, 0],
+  [1, 0],
+  [-1, 1],
+  [0, 1],
+  [1, 1]
+] as const
 
-  return (x - Math.floor(x)) * 2.0 - 1.0
+function sampleBilinear(
+  source: Buffer,
+  width: number,
+  maxX: number,
+  maxY: number,
+  fx: number,
+  fy: number
+): [number, number, number, number] {
+  const x = Math.min(maxX, Math.max(0, fx))
+  const y = Math.min(maxY, Math.max(0, fy))
+  const x0 = Math.min(Math.max(Math.floor(x), 0), maxX)
+  const x1 = Math.min(x0 + 1, maxX)
+  const y0 = Math.min(Math.max(Math.floor(y), 0), maxY)
+  const y1 = Math.min(y0 + 1, maxY)
+  const sx = x - x0
+  const sy = y - y0
+  const osx = 1 - sx
+  const osy = 1 - sy
+
+  const i00 = (y0 * width + x0) * 4
+  const i10 = (y0 * width + x1) * 4
+  const i01 = (y1 * width + x0) * 4
+  const i11 = (y1 * width + x1) * 4
+
+  return [
+    (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy,
+    (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy,
+    (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy,
+    (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
+  ]
 }
 
 export function crt(source: Buffer, width: number, height: number, options: Partial<CRTOptions> = {}): Buffer {
   const opts: CRTOptions = { ...defaultCRTOptions, ...options }
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.alloc(width * height * 4)
 
-  return render(source, width, height, (coords, texture) => {
-    const maxX = width - 1
-    const maxY = height - 1
+  const curvX5 = opts.curvatureX * 5
+  const curvY5 = opts.curvatureY * 5
+  const borderMargin = opts.borderSize
+  const borderDenom = 1 - 2 * borderMargin
+  const rgbShiftAmount = opts.rgbShift * 0.01
+  const hasBloom = opts.bloomAmount > 0
 
-    const uv: Vec2 = [coords[0] / width, coords[1] / height]
+  for (let py = 0; py < height; py++) {
+    const uvY = py / height
 
-    function distortCoordinates(coords: Vec2): Vec2 {
-      const centered: Vec2 = subtract2(coords, [0.5, 0.5])
+    for (let px = 0; px < width; px++) {
+      const uvX = px / width
+      const idx = (py * width + px) * 4
 
-      const distSquared = dot2(centered, centered)
+      const cx = uvX - 0.5
+      const cy = uvY - 0.5
+      const distSq = cx * cx + cy * cy
+      const distX = cx * (1 + distSq * curvX5) + 0.5
+      const distY = cy * (1 + distSq * curvY5) + 0.5
 
-      const curveFactor: Vec2 = [
-        1.0 + distSquared * (opts.curvatureX * 5.0),
-        1.0 + distSquared * (opts.curvatureY * 5.0)
-      ]
-
-      const distorted: Vec2 = [centered[0] * curveFactor[0], centered[1] * curveFactor[1]]
-
-      return add2(distorted, [0.5, 0.5])
-    }
-
-    const distortedCoords = distortCoordinates(uv)
-
-    const borderMargin = opts.borderSize
-    const inBounds =
-      distortedCoords[0] >= borderMargin &&
-      distortedCoords[0] <= 1.0 - borderMargin &&
-      distortedCoords[1] >= borderMargin &&
-      distortedCoords[1] <= 1.0 - borderMargin
-
-    if (!inBounds) {
-      return [0, 0, 0, 255]
-    }
-
-    const rescaledCoords: Vec2 = [
-      (distortedCoords[0] - borderMargin) / (1.0 - 2.0 * borderMargin),
-      (distortedCoords[1] - borderMargin) / (1.0 - 2.0 * borderMargin)
-    ]
-
-    const pixelCoords: Vec2 = [rescaledCoords[0] * maxX, rescaledCoords[1] * maxY]
-
-    const vignetteCoords: Vec2 = subtract2(rescaledCoords, [0.5, 0.5])
-    const distFromCenter = length2(vignetteCoords)
-    const cornerDistance = Math.min(Math.abs(vignetteCoords[0]) + Math.abs(vignetteCoords[1]) * opts.cornerSize, 1.0)
-
-    const vignette = clamp(
-      (1.0 - distFromCenter * 1.5) * (1.0 - cornerDistance * 0.5),
-      1.0 - opts.vignetteDarkness,
-      1.0
-    )
-
-    const rgbShiftAmount = opts.rgbShift * 0.01
-    const shiftDir = vignetteCoords
-
-    let r = 0
-    let g = 0
-    let b = 0
-
-    const redCoords: Vec2 = [
-      pixelCoords[0] + shiftDir[0] * rgbShiftAmount * maxX,
-      pixelCoords[1] + shiftDir[1] * rgbShiftAmount * maxY
-    ]
-    const redSample = texture(redCoords)
-    r = redSample[0]
-
-    const greenSample = texture(pixelCoords)
-    g = greenSample[1]
-
-    const blueCoords: Vec2 = [
-      pixelCoords[0] - shiftDir[0] * rgbShiftAmount * maxX,
-      pixelCoords[1] - shiftDir[1] * rgbShiftAmount * maxY
-    ]
-    const blueSample = texture(blueCoords)
-    b = blueSample[2]
-
-    const scanLineY = Math.floor(rescaledCoords[1] * opts.scanLineCount) % 2
-    const scanLine = 1.0 - scanLineY * opts.scanLineStrength
-
-    const noise = 1.0 + randomNoise(uv) * opts.noiseIntensity
-
-    let bloom = 0
-    if (opts.bloomAmount > 0) {
-      const sampleOffsets = [
-        [-1, -1],
-        [0, -1],
-        [1, -1],
-        [-1, 0],
-        [1, 0],
-        [-1, 1],
-        [0, 1],
-        [1, 1]
-      ]
-      let bloomSum = 0
-
-      for (const offset of sampleOffsets) {
-        const sampleCoord: Vec2 = [pixelCoords[0] + offset[0], pixelCoords[1] + offset[1]]
-
-        if (sampleCoord[0] >= 0 && sampleCoord[0] <= maxX && sampleCoord[1] >= 0 && sampleCoord[1] <= maxY) {
-          const sample = texture(sampleCoord)
-          bloomSum += (sample[0] + sample[1] + sample[2]) / 3
-        }
+      if (distX < borderMargin || distX > 1 - borderMargin || distY < borderMargin || distY > 1 - borderMargin) {
+        target[idx] = 0
+        target[idx + 1] = 0
+        target[idx + 2] = 0
+        target[idx + 3] = 255
+        continue
       }
 
-      bloom = (bloomSum / sampleOffsets.length) * opts.bloomAmount
-    }
+      const rsX = (distX - borderMargin) / borderDenom
+      const rsY = (distY - borderMargin) / borderDenom
+      let pcX = rsX * maxX
+      let pcY = rsY * maxY
 
-    return [
-      clamp(r * vignette * scanLine * noise + bloom, 0, 255),
-      clamp(g * vignette * scanLine * noise + bloom, 0, 255),
-      clamp(b * vignette * scanLine * noise + bloom, 0, 255),
-      255
-    ]
-  })
+      const vcX = rsX - 0.5
+      const vcY = rsY - 0.5
+      const distFromCenter = Math.sqrt(vcX * vcX + vcY * vcY)
+      const cornerDist = Math.min(Math.abs(vcX) + Math.abs(vcY) * opts.cornerSize, 1)
+      let vignette = (1 - distFromCenter * 1.5) * (1 - cornerDist * 0.5)
+      vignette = Math.min(1, Math.max(1 - opts.vignetteDarkness, vignette))
+
+      const redSample = sampleBilinear(
+        source,
+        width,
+        maxX,
+        maxY,
+        pcX + vcX * rgbShiftAmount * maxX,
+        pcY + vcY * rgbShiftAmount * maxY
+      )
+      const r = redSample[0]
+
+      // Green channel sample clamps pcX/pcY (matches original texture() mutation)
+      pcX = Math.min(maxX, Math.max(0, pcX))
+      pcY = Math.min(maxY, Math.max(0, pcY))
+      const greenSample = sampleBilinear(source, width, maxX, maxY, pcX, pcY)
+      const g = greenSample[1]
+
+      const blueSample = sampleBilinear(
+        source,
+        width,
+        maxX,
+        maxY,
+        pcX - vcX * rgbShiftAmount * maxX,
+        pcY - vcY * rgbShiftAmount * maxY
+      )
+      const b = blueSample[2]
+
+      const scanLineY = Math.floor(rsY * opts.scanLineCount) % 2
+      const scanLine = 1 - scanLineY * opts.scanLineStrength
+
+      const noiseSeed = Math.sin(uvX * 12.9898 + uvY * 78.233) * 43758.5453
+      const noise = 1 + ((noiseSeed - Math.floor(noiseSeed)) * 2 - 1) * opts.noiseIntensity
+
+      let bloom = 0
+      if (hasBloom) {
+        let bloomSum = 0
+        for (let bi = 0; bi < 8; bi++) {
+          const sx = pcX + BLOOM_OFFSETS[bi][0]
+          const sy = pcY + BLOOM_OFFSETS[bi][1]
+          if (sx >= 0 && sx <= maxX && sy >= 0 && sy <= maxY) {
+            const s = sampleBilinear(source, width, maxX, maxY, sx, sy)
+            bloomSum += (s[0] + s[1] + s[2]) / 3
+          }
+        }
+        bloom = (bloomSum / 8) * opts.bloomAmount
+      }
+
+      target[idx] = Math.min(255, Math.max(0, r * vignette * scanLine * noise + bloom))
+      target[idx + 1] = Math.min(255, Math.max(0, g * vignette * scanLine * noise + bloom))
+      target[idx + 2] = Math.min(255, Math.max(0, b * vignette * scanLine * noise + bloom))
+      target[idx + 3] = 255
+    }
+  }
+
+  return target
 }

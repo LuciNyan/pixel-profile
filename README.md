@@ -311,6 +311,7 @@ pnpm start
 ### Roadmap
 - [x] GitHub stats card
 - [x] CRT-style stats card
+- [x] Animated GIF output (crt-flicker, glow-pulse, scanline-scroll)
 
 ## Author
 

@@ -128,7 +128,8 @@ export function renderAnimatedGif(
   const animatedPipelines = buildAnimatedPipelines(effect, frameCount, basePipeline)
 
   const frames: GifFrame[] = animatedPipelines.map((pipeline) => ({
-    pixels: executePipeline(basePixels, width, height, pipeline),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pixels: executePipeline(Buffer.from(basePixels as any), width, height, pipeline),
     delay: frameDelay
   }))
 

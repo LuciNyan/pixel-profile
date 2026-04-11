@@ -465,14 +465,10 @@ export const BUILTIN_PALETTES: Record<PaletteId, number[][]> = {
 }
 
 export function paletteDither(source: Buffer, width: number, height: number, paletteColors: number[][]): Buffer {
-  const target = Buffer.allocUnsafe(width * height * 4)
   const palLen = paletteColors.length
 
   if (palLen < 2) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    source.copy(target as any)
-
-    return target
+    return source
   }
 
   const palR = new Uint8Array(palLen)
@@ -548,19 +544,16 @@ export function paletteDither(source: Buffer, width: number, height: number, pal
       const threshold = ditherTable[(x & 7) + ((y & 7) << 3)]
       const pick = factorQ > threshold ? second : closest
 
-      target[idx] = palR[pick]
-      target[idx + 1] = palG[pick]
-      target[idx + 2] = palB[pick]
-      target[idx + 3] = source[idx + 3]
+      source[idx] = palR[pick]
+      source[idx + 1] = palG[pick]
+      source[idx + 2] = palB[pick]
     }
   }
 
-  return target
+  return source
 }
 
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
-  const target = Buffer.allocUnsafe(width * height * 4)
-
   for (let y = 0; y < height; y++) {
     let prevR = -1
     let prevG = -1
@@ -596,12 +589,11 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
 
       const limit = ditherLimits[(x & 7) + ((y & 7) << 3)]
       const ci = ((hueDiff < limit ? 0 : 4) + (lightDiff < limit ? 0 : 2) + (satDiff < limit ? 0 : 1)) * 3
-      target[idx] = combos[ci]
-      target[idx + 1] = combos[ci + 1]
-      target[idx + 2] = combos[ci + 2]
-      target[idx + 3] = source[idx + 3]
+      source[idx] = combos[ci]
+      source[idx + 1] = combos[ci + 1]
+      source[idx + 2] = combos[ci + 2]
     }
   }
 
-  return target
+  return source
 }

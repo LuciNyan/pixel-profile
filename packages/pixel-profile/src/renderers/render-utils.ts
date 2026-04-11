@@ -28,9 +28,17 @@ export function formatStatsData(stats: GithubStats, avatar: string): TemplateSta
   }
 }
 
-/**
- * Render JSX element to pixels with font fallback support
- */
+const SATORI_FONTS = [{ name: 'PressStart2P', data: fontBuffer, weight: 400 as const, style: 'normal' as const }]
+const RESVG_OPTS = { fitTo: { mode: 'width' as const, value: 0 }, font: { loadSystemFonts: false } }
+
+function renderSvgToPixels(svg: string, width: number): Buffer {
+  const opts = { ...RESVG_OPTS, fitTo: { ...RESVG_OPTS.fitTo, value: width } }
+  const pngData = new Resvg(svg, opts).render()
+  const px = pngData.pixels
+
+  return Buffer.from(px.buffer, px.byteOffset, px.byteLength)
+}
+
 export async function renderToPixels(
   element: JSX.Element,
   width: number,
@@ -42,14 +50,7 @@ export async function renderToPixels(
   let svg = await satori(element, {
     width,
     height,
-    fonts: [
-      {
-        name: 'PressStart2P',
-        data: fontBuffer,
-        weight: 400,
-        style: 'normal'
-      }
-    ],
+    fonts: SATORI_FONTS,
     loadAdditionalAsset: async () => {
       isMissingFont = true
 
@@ -58,33 +59,10 @@ export async function renderToPixels(
   })
 
   if (isMissingFont && fallbackRender) {
-    svg = await satori(fallbackRender(), {
-      width,
-      height,
-      fonts: [
-        {
-          name: 'PressStart2P',
-          data: fontBuffer,
-          weight: 400,
-          style: 'normal'
-        }
-      ]
-    })
+    svg = await satori(fallbackRender(), { width, height, fonts: SATORI_FONTS })
   }
 
-  const opts = {
-    fitTo: {
-      mode: 'width',
-      value: width
-    },
-    font: {
-      loadSystemFonts: false
-    }
-  } as const
-
-  const pngData = new Resvg(svg, opts).render()
-  const px = pngData.pixels
-  const pixels = Buffer.from(px.buffer, px.byteOffset, px.byteLength)
+  const pixels = renderSvgToPixels(svg, width)
 
   return { pixels, width, height }
 }

@@ -1,6 +1,7 @@
 import { RGBA } from '../renderer'
 import { isBase64PNG } from './is'
 import { Vec3 } from './math'
+import { encodePng, encodePngBase64 } from './png-encoder'
 import axios from 'axios'
 import Jimp from 'jimp'
 
@@ -22,28 +23,12 @@ export async function getPixelsFromPngBuffer(png: Buffer): Promise<{
   }
 }
 
-export async function getBase64FromPixels(pixels: Buffer, width: number, height: number): Promise<string> {
-  return new Promise((resolve) => {
-    // eslint-disable-next-line no-new
-    new Jimp(width, height, (_, image) => {
-      image.bitmap.data = pixels
-      image.getBase64('image/png', (_, str) => {
-        resolve(str)
-      })
-    })
-  })
+export function getBase64FromPixels(pixels: Buffer, width: number, height: number): string {
+  return encodePngBase64(pixels, width, height)
 }
 
-export function getPngBufferFromPixels(pixelsBuffer: Buffer, width: number, height: number): Promise<Buffer> {
-  return new Promise((resolve) => {
-    // eslint-disable-next-line no-new
-    new Jimp(width, height, function (_, image) {
-      image.bitmap.data = pixelsBuffer
-      image.getBuffer('image/png', function (_, buffer) {
-        resolve(buffer)
-      })
-    })
-  })
+export function getPngBufferFromPixels(pixelsBuffer: Buffer, width: number, height: number): Buffer {
+  return encodePng(pixelsBuffer, width, height)
 }
 
 export function getPngBufferFromBase64(base64: string): Buffer {

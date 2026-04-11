@@ -23,7 +23,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       const tx = (uvX + ccX * temp) * maxX
       const ty = (uvY + ccY * temp) * maxY
 
-      const vignette = Math.pow(uvX * oneMinusUvY * uvY * (1 - uvX) * 15, 0.25)
+      const vignette = Math.sqrt(Math.sqrt(uvX * oneMinusUvY * uvY * (1 - uvX) * 15))
 
       // Inline bilinear sample
       const bx = Math.min(maxX, Math.max(0, tx))

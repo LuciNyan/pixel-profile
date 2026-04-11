@@ -52,38 +52,90 @@ function pixelateDominant(
 
   const blockColors = new Float64Array(blocksX * blocksY * 4)
 
+  const MAX_DISTINCT = 16
+  const sampleR = new Float64Array(MAX_DISTINCT)
+  const sampleG = new Float64Array(MAX_DISTINCT)
+  const sampleB = new Float64Array(MAX_DISTINCT)
+  const sampleA = new Float64Array(MAX_DISTINCT)
+  const sampleCount = new Uint8Array(MAX_DISTINCT)
+
   for (let by = 0; by < blocksY; by++) {
     const blockY = by * blockSize
     for (let bx = 0; bx < blocksX; bx++) {
       const blockX = bx * blockSize
 
-      const colorCount = new Map<string, { color: [number, number, number, number]; count: number }>()
+      let numDistinct = 0
       let maxCount = 0
-      let dominantColor: [number, number, number, number] | null = null
+      let domR = 0
+      let domG = 0
+      let domB = 0
+      let domA = 0
 
       for (let s = 0; s < numSamples; s++) {
-        const color = sampleBilinear(source, width, maxX, maxY, blockX + offsets[s][0], blockY + offsets[s][1])
-        const key = `${color[0]},${color[1]},${color[2]},${color[3]}`
+        const fx = blockX + offsets[s][0]
+        const fy = blockY + offsets[s][1]
 
-        if (s === 0) dominantColor = color
+        const cx = Math.min(maxX, Math.max(0, fx))
+        const cy = Math.min(maxY, Math.max(0, fy))
+        const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+        const x1 = Math.min(x0 + 1, maxX)
+        const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+        const y1 = Math.min(y0 + 1, maxY)
+        const sx = cx - x0
+        const sy = cy - y0
+        const osx = 1 - sx
+        const osy = 1 - sy
+        const i00 = (y0 * width + x0) * 4
+        const i10 = (y0 * width + x1) * 4
+        const i01 = (y1 * width + x0) * 4
+        const i11 = (y1 * width + x1) * 4
+        const r = (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+        const g =
+          (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+        const b =
+          (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+        const a =
+          (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
 
-        const entry = colorCount.get(key)
-        if (entry) {
-          entry.count++
-          if (entry.count > maxCount) {
-            maxCount = entry.count
-            dominantColor = entry.color
+        if (s === 0) {
+          domR = r
+          domG = g
+          domB = b
+          domA = a
+        }
+
+        let found = false
+        for (let c = 0; c < numDistinct; c++) {
+          if (sampleR[c] === r && sampleG[c] === g && sampleB[c] === b && sampleA[c] === a) {
+            sampleCount[c]++
+            if (sampleCount[c] > maxCount) {
+              maxCount = sampleCount[c]
+              domR = r
+              domG = g
+              domB = b
+              domA = a
+            }
+            found = true
+            break
           }
-        } else {
-          colorCount.set(key, { color, count: 1 })
+        }
+        if (!found) {
+          sampleR[numDistinct] = r
+          sampleG[numDistinct] = g
+          sampleB[numDistinct] = b
+          sampleA[numDistinct] = a
+          sampleCount[numDistinct] = 1
+          numDistinct++
         }
       }
 
       const bi = (by * blocksX + bx) * 4
-      blockColors[bi] = dominantColor![0]
-      blockColors[bi + 1] = dominantColor![1]
-      blockColors[bi + 2] = dominantColor![2]
-      blockColors[bi + 3] = dominantColor![3]
+      blockColors[bi] = domR
+      blockColors[bi + 1] = domG
+      blockColors[bi + 2] = domB
+      blockColors[bi + 3] = domA
+
+      for (let c = 0; c < numDistinct; c++) sampleCount[c] = 0
     }
   }
 
@@ -125,11 +177,31 @@ function pixelateAverage(source: Buffer, width: number, height: number, blockSiz
       let sumA = 0
 
       for (let s = 0; s < numSamples; s++) {
-        const color = sampleBilinear(source, width, maxX, maxY, blockX + offsets[s][0], blockY + offsets[s][1])
-        sumR += color[0]
-        sumG += color[1]
-        sumB += color[2]
-        sumA += color[3]
+        const fx = blockX + offsets[s][0]
+        const fy = blockY + offsets[s][1]
+
+        const cx = Math.min(maxX, Math.max(0, fx))
+        const cy = Math.min(maxY, Math.max(0, fy))
+        const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+        const x1 = Math.min(x0 + 1, maxX)
+        const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+        const y1 = Math.min(y0 + 1, maxY)
+        const sx = cx - x0
+        const sy = cy - y0
+        const osx = 1 - sx
+        const osy = 1 - sy
+        const i00 = (y0 * width + x0) * 4
+        const i10 = (y0 * width + x1) * 4
+        const i01 = (y1 * width + x0) * 4
+        const i11 = (y1 * width + x1) * 4
+
+        sumR += (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+        sumG +=
+          (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+        sumB +=
+          (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+        sumA +=
+          (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
       }
 
       const bi = (by * blocksX + bx) * 4

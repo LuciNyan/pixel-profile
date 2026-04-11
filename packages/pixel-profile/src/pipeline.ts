@@ -2,7 +2,7 @@ import { addBorder, crt, curve, pixelate } from './shaders'
 import { BUILTIN_PALETTES, orderedBayer, paletteDither, type PaletteId } from './shaders/dithering'
 import { glow } from './shaders/glow'
 import { scanline } from './shaders/scanline'
-import { dispatchCrt } from './workers/pool'
+import { dispatchCrt, dispatchGlow } from './workers/pool'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ShaderFn = (pixels: Buffer, width: number, height: number, opts?: any) => Buffer
@@ -49,11 +49,19 @@ export async function executePipelineAsync(
 
   for (const pass of pipeline) {
     if (pass.enabled === false) continue
-    if (pass.parallel && pass.name === 'crt') {
-      const parallel = await dispatchCrt(result, width, height, pass.options || {})
-      if (parallel) {
-        result = parallel
-        continue
+    if (pass.parallel) {
+      if (pass.name === 'crt') {
+        const parallel = await dispatchCrt(result, width, height, pass.options || {})
+        if (parallel) {
+          result = parallel
+          continue
+        }
+      } else if (pass.name === 'glow') {
+        const parallel = await dispatchGlow(result, width, height, pass.options || {})
+        if (parallel) {
+          result = parallel
+          continue
+        }
       }
     }
     result = pass.shader(result, width, height, pass.options)
@@ -94,6 +102,7 @@ export function buildStatsPipeline(options: {
       {
         name: 'glow',
         shader: glow,
+        parallel: true,
         options: {
           radius: 5,
           intensity: 0.17,
@@ -128,6 +137,7 @@ export function buildStatsPipeline(options: {
       pipeline.push({
         name: 'glow',
         shader: glow,
+        parallel: true,
         options: {
           radius: 3,
           intensity: 0.3,
@@ -171,6 +181,7 @@ export function buildContributionsPipeline(options: {
       {
         name: 'glow',
         shader: glow,
+        parallel: true,
         options: {
           radius: 5,
           intensity: 0.17,
@@ -205,6 +216,7 @@ export function buildContributionsPipeline(options: {
       pipeline.push({
         name: 'glow',
         shader: glow,
+        parallel: true,
         options: {
           radius: 3,
           intensity: 0.3,
@@ -242,6 +254,7 @@ export function buildCrtPipeline(): Pipeline {
     {
       name: 'glow',
       shader: glow,
+      parallel: true,
       options: {
         radius: 5,
         intensity: 0.17,

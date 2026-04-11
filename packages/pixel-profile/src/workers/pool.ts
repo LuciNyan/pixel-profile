@@ -1,4 +1,12 @@
 import { crtCore, defaultCRTOptions } from '../shaders/crt'
+import {
+  buildLuminanceMap,
+  buildWeightTable,
+  calculateAdaptiveThreshold,
+  getFalloffFunction,
+  horizontalPassCore,
+  verticalPassCore
+} from '../shaders/glow'
 import os from 'node:os'
 import { Worker } from 'node:worker_threads'
 
@@ -13,18 +21,34 @@ let pool: PoolWorker[] | null = null
 let poolFailed = false
 
 function buildWorkerCode(): string {
-  const fnBody = crtCore.toString()
+  const fns = [crtCore, buildLuminanceMap, buildWeightTable, getFalloffFunction, horizontalPassCore, verticalPassCore]
+  const fnDefs = fns.map((fn) => `var ${fn.name} = ${fn.toString()};`).join('\n')
 
   return `
 'use strict';
-const { parentPort } = require('worker_threads');
+var { parentPort } = require('worker_threads');
 
-const crtCore = ${fnBody};
+${fnDefs}
 
 parentPort.on('message', function(msg) {
-  var src = new Uint8Array(msg.sourceSab);
-  var tgt = new Uint8Array(msg.targetSab);
-  crtCore(src, tgt, msg.width, msg.height, msg.startRow, msg.endRow, msg.opts);
+  if (msg.type === 'crt') {
+    var src = new Uint8Array(msg.sourceSab);
+    var tgt = new Uint8Array(msg.targetSab);
+    crtCore(src, tgt, msg.width, msg.height, msg.startRow, msg.endRow, msg.opts);
+  } else if (msg.type === 'glow-layer') {
+    var src = new Uint8Array(msg.sourceSab);
+    var layerOut = new Float32Array(msg.layerSab);
+    var sz = msg.width * msg.height;
+    var lum = buildLuminanceMap(src, sz);
+    var ffn = getFalloffFunction(msg.falloffType);
+    var wt = buildWeightTable(msg.layerRadius, ffn);
+    var hBlur = new Float32Array(sz * 4);
+    var hLum = new Float64Array(sz);
+    var w = msg.width, h = msg.height;
+    var th = msg.threshold, lr = msg.layerRadius;
+    horizontalPassCore(src, hBlur, lum, hLum, w, h, th, lr, wt);
+    verticalPassCore(hBlur, layerOut, hLum, w, h, th, lr, wt);
+  }
   parentPort.postMessage(0);
 });
 `
@@ -91,7 +115,7 @@ export async function dispatchCrt(
 
     return new Promise<void>((resolve, reject) => {
       pw.pending = { resolve, reject }
-      pw.worker.postMessage({ sourceSab, targetSab, width, height, startRow, endRow, opts })
+      pw.worker.postMessage({ type: 'crt', sourceSab, targetSab, width, height, startRow, endRow, opts })
     })
   })
 
@@ -100,6 +124,123 @@ export async function dispatchCrt(
   const result = Buffer.allocUnsafe(byteLen)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Buffer.from(targetSab as any).copy(result as any)
+
+  return result
+}
+
+export async function dispatchGlow(
+  source: Buffer,
+  width: number,
+  height: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userOpts: any
+): Promise<Buffer | null> {
+  const workers = ensurePool()
+  if (!workers) return null
+
+  const defaultGlow = {
+    radius: 1,
+    intensity: 0.7,
+    threshold: 0.8,
+    color: [1, 1, 1] as [number, number, number],
+    layers: 2,
+    falloff: 'gaussian',
+    adaptiveThreshold: true
+  }
+  const opts = { ...defaultGlow, ...userOpts }
+  const { radius, intensity, color, layers, falloff, adaptiveThreshold, threshold: _threshold } = opts
+
+  const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
+
+  const byteLen = width * height * 4
+  const size = width * height
+  const sourceSab = new SharedArrayBuffer(byteLen)
+  new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+
+  const layerSabs: SharedArrayBuffer[] = []
+  const layerPromises: Promise<void>[] = []
+
+  for (let i = 0; i < layers; i++) {
+    const layerRadius = Math.floor(radius * (i + 1))
+    const layerSab = new SharedArrayBuffer(size * 4 * 4)
+    layerSabs.push(layerSab)
+
+    const workerIdx = i % workers.length
+    const pw = workers[workerIdx]
+
+    const p = new Promise<void>((resolve, reject) => {
+      pw.pending = { resolve, reject }
+      pw.worker.postMessage({
+        type: 'glow-layer',
+        sourceSab,
+        layerSab,
+        width,
+        height,
+        threshold,
+        layerRadius,
+        falloffType: falloff
+      })
+    })
+
+    layerPromises.push(p)
+
+    if (i < layers - 1 && (i + 1) % workers.length === 0) {
+      await Promise.all(layerPromises)
+      layerPromises.length = 0
+    }
+  }
+
+  if (layerPromises.length > 0) {
+    await Promise.all(layerPromises)
+  }
+
+  const glowLayers: Float32Array[] = layerSabs.map((sab) => new Float32Array(sab))
+
+  const result = Buffer.allocUnsafe(byteLen)
+  const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
+
+  const layerIntensities = new Float64Array(layers)
+  const layerOneMinusT = new Float64Array(layers)
+  for (let li = 0; li < layers; li++) {
+    layerIntensities[li] = intensity / (li + 1)
+    layerOneMinusT[li] = 1 - layerIntensities[li]
+  }
+
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width
+    for (let x = 0; x < width; x++) {
+      const idx = (rowOffset + x) * 4
+      let finalR = source[idx]
+      let finalG = source[idx + 1]
+      let finalB = source[idx + 2]
+
+      if (isWhite) {
+        for (let li = 0; li < layers; li++) {
+          const ci = layerIntensities[li]
+          const oi = layerOneMinusT[li]
+          const lb = glowLayers[li]
+          finalR = finalR * oi + lb[idx] * ci
+          finalG = finalG * oi + lb[idx + 1] * ci
+          finalB = finalB * oi + lb[idx + 2] * ci
+        }
+      } else {
+        for (let li = 0; li < layers; li++) {
+          const ci = layerIntensities[li]
+          const oi = layerOneMinusT[li]
+          const lb = glowLayers[li]
+          finalR = finalR * oi + lb[idx] * colorR * ci
+          finalG = finalG * oi + lb[idx + 1] * colorG * ci
+          finalB = finalB * oi + lb[idx + 2] * colorB * ci
+        }
+      }
+
+      result[idx] = finalR
+      result[idx + 1] = finalG
+      result[idx + 2] = finalB
+      result[idx + 3] = 255
+    }
+  }
 
   return result
 }

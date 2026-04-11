@@ -262,6 +262,8 @@ const PALETTE_256: Vec3[] = [
 const BIAS_256 = 0
 const lightnessSteps = 4
 const saturationSteps = 4
+const invLightnessSteps = 1 / lightnessSteps
+const invSaturationSteps = 1 / saturationSteps
 
 /* eslint-disable prettier/prettier */
 const ditherTable = new Uint8Array([
@@ -276,14 +278,19 @@ const ditherTable = new Uint8Array([
 ])
 /* eslint-enable prettier/prettier */
 
+const ditherLimits = new Float64Array(64)
+for (let i = 0; i < 64; i++) {
+  ditherLimits[i] = (ditherTable[i] + 1) / 64 + BIAS_256
+}
+
 function hueDistance(h1: number, h2: number): number {
   const diff = Math.abs(h1 - h2)
 
   return diff < 0.5 ? diff : 1 - diff
 }
 
-const lightnessStep = (l: number) => Math.round(l * lightnessSteps) / lightnessSteps
-const saturationStep = (s: number) => Math.round(s * saturationSteps) / saturationSteps
+const lightnessStep = (l: number) => Math.round(l * lightnessSteps) * invLightnessSteps
+const saturationStep = (s: number) => Math.round(s * saturationSteps) * invSaturationSteps
 
 const closestColorsCache = new Map<number, [Vec3, Vec3]>()
 
@@ -362,8 +369,7 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
         h /= 6
       }
 
-      const ditherIndex = (x & 7) + ((y & 7) << 3)
-      const limit = (ditherTable[ditherIndex] + 1) / 64 + BIAS_256
+      const limit = ditherLimits[(x & 7) + ((y & 7) << 3)]
 
       const [closest, secondClosest] = closestColors(h)
       const hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])

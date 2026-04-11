@@ -88,24 +88,23 @@ function buildAnimatedPipelines(effect: string, frameCount: number, basePipeline
 }
 
 function scanlineWithOffset(source: Buffer, width: number, height: number, offset: number): Buffer {
-  const target = Buffer.alloc(width * height * 4)
+  const target = Buffer.allocUnsafe(width * height * 4)
   const thickness = 3
   const brightness = 0.85
+  const rowBytes = width * 4
 
   for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 4
-      if ((y + offset) % thickness === 0) {
+    const rowOffset = y * rowBytes
+    if ((y + offset) % thickness === 0) {
+      for (let x = 0; x < width; x++) {
+        const idx = rowOffset + x * 4
         target[idx] = source[idx] * brightness
         target[idx + 1] = source[idx + 1] * brightness
         target[idx + 2] = source[idx + 2] * brightness
         target[idx + 3] = source[idx + 3]
-      } else {
-        target[idx] = source[idx]
-        target[idx + 1] = source[idx + 1]
-        target[idx + 2] = source[idx + 2]
-        target[idx + 3] = source[idx + 3]
       }
+    } else {
+      source.copy(target, rowOffset, rowOffset, rowOffset + rowBytes)
     }
   }
 

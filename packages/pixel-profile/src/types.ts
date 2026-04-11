@@ -28,3 +28,23 @@ export type TemplateStats = {
   contributions: string
   rank: Rank['level']
 }
+
+export type ContributionDay = {
+  contributionCount: number
+  date: string
+  color: string
+}
+
+export type ContributionWeek = {
+  contributionDays: ContributionDay[]
+}
+
+export type ContributionCalendar = {
+  totalContributions: number
+  weeks: ContributionWeek[]
+}
+
+export type ContributionsData = {
+  username: string
+  calendar: ContributionCalendar
+}

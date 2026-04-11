@@ -112,6 +112,70 @@ function resolvePalette(spec: string): number[][] | null {
   return hexColors.map((h) => [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)])
 }
 
+export function buildContributionsPipeline(options: {
+  theme: string
+  screenEffect: boolean
+  isFastMode: boolean
+  dithering: boolean
+  ditheringPalette?: string
+}): Pipeline {
+  const { theme, screenEffect, isFastMode, dithering, ditheringPalette } = options
+
+  if (theme === 'crt') {
+    return [
+      { name: 'crt', shader: crt },
+      {
+        name: 'glow',
+        shader: glow,
+        options: {
+          radius: 5,
+          intensity: 0.17,
+          color: [1, 1, 1],
+          layers: 5,
+          falloff: 'exponential'
+        }
+      }
+    ]
+  }
+
+  const pipeline: Pipeline = []
+
+  if (ditheringPalette) {
+    const palette = resolvePalette(ditheringPalette)
+    if (palette) {
+      pipeline.push({
+        name: 'paletteDither',
+        shader: paletteDither,
+        options: palette
+      })
+    }
+  } else if (dithering) {
+    pipeline.push({ name: 'orderedBayer', shader: orderedBayer })
+  }
+
+  if (screenEffect) {
+    if (!dithering && !ditheringPalette) {
+      pipeline.push({ name: 'scanline', shader: scanline })
+    }
+    if (!isFastMode) {
+      pipeline.push({
+        name: 'glow',
+        shader: glow,
+        options: {
+          radius: 3,
+          intensity: 0.3,
+          color: [1, 1, 1],
+          layers: 2,
+          falloff: 'exponential'
+        }
+      })
+    }
+    pipeline.push({ name: 'curve', shader: curve })
+  }
+
+  return pipeline
+}
+
 export function buildCrtPipeline(): Pipeline {
   return [
     {

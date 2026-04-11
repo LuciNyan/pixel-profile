@@ -1,6 +1,8 @@
 import { deflateSync } from 'zlib'
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+const IHDR_TYPE = Buffer.from('IHDR', 'ascii')
+const IDAT_TYPE = Buffer.from('IDAT', 'ascii')
 
 const crcTable = new Uint32Array(256)
 for (let n = 0; n < 256; n++) {
@@ -20,31 +22,14 @@ function crc32(buf: Buffer, start: number, end: number): number {
   return (crc ^ 0xffffffff) >>> 0
 }
 
-function makeChunk(type: string, data: Buffer): Buffer {
-  const typeBytes = Buffer.from(type, 'ascii')
-  const chunk = Buffer.alloc(4 + 4 + data.length + 4)
-
-  chunk.writeUInt32BE(data.length, 0)
-  typeBytes.copy(chunk, 4)
-  data.copy(chunk, 8)
-
-  chunk.writeUInt32BE(crc32(chunk, 4, 8 + data.length), 8 + data.length)
-
-  return chunk
-}
-
-function encodeIHDR(width: number, height: number): Buffer {
-  const buf = Buffer.alloc(13)
-  buf.writeUInt32BE(width, 0)
-  buf.writeUInt32BE(height, 4)
-  buf[8] = 8 // bit depth
-  buf[9] = 6 // color type: RGBA
-  buf[10] = 0 // compression
-  buf[11] = 0 // filter
-  buf[12] = 0 // interlace
-
-  return buf
-}
+const IEND_CHUNK = Buffer.alloc(12)
+IEND_CHUNK.writeUInt32BE(0, 0)
+IDAT_TYPE.copy(IEND_CHUNK, 4) // placeholder, overwrite with IEND type
+IEND_CHUNK[4] = 73 // I
+IEND_CHUNK[5] = 69 // E
+IEND_CHUNK[6] = 78 // N
+IEND_CHUNK[7] = 68 // D
+IEND_CHUNK.writeUInt32BE(crc32(IEND_CHUNK, 4, 8), 8)
 
 export function encodePng(pixels: Buffer, width: number, height: number): Buffer {
   const rowBytes = width * 4
@@ -59,12 +44,32 @@ export function encodePng(pixels: Buffer, width: number, height: number): Buffer
   }
 
   const compressed = deflateSync(raw, { level: 1 })
+  const compLen = compressed.length
 
-  const ihdr = makeChunk('IHDR', encodeIHDR(width, height))
-  const idat = makeChunk('IDAT', compressed)
-  const iend = makeChunk('IEND', Buffer.alloc(0))
+  const out = Buffer.allocUnsafe(57 + compLen)
 
-  return Buffer.concat([PNG_SIGNATURE, ihdr, idat, iend])
+  PNG_SIGNATURE.copy(out, 0)
+
+  out.writeUInt32BE(13, 8)
+  IHDR_TYPE.copy(out, 12)
+  out.writeUInt32BE(width, 16)
+  out.writeUInt32BE(height, 20)
+  out[24] = 8
+  out[25] = 6
+  out[26] = 0
+  out[27] = 0
+  out[28] = 0
+  out.writeUInt32BE(crc32(out, 12, 29), 29)
+
+  const idatStart = 33
+  out.writeUInt32BE(compLen, idatStart)
+  IDAT_TYPE.copy(out, idatStart + 4)
+  compressed.copy(out, idatStart + 8)
+  out.writeUInt32BE(crc32(out, idatStart + 4, idatStart + 8 + compLen), idatStart + 8 + compLen)
+
+  IEND_CHUNK.copy(out, 45 + compLen)
+
+  return out
 }
 
 export function encodePngBase64(pixels: Buffer, width: number, height: number): string {

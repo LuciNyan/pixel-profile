@@ -22,15 +22,7 @@ let pool: PoolWorker[] | null = null
 let poolFailed = false
 
 function buildWorkerCode(): string {
-  const fns = [
-    crtCore,
-    curveCore,
-    buildLuminanceMap,
-    buildWeightTable,
-    getFalloffFunction,
-    horizontalPassCore,
-    verticalPassCore
-  ]
+  const fns = [crtCore, curveCore, buildWeightTable, getFalloffFunction, horizontalPassCore, verticalPassCore]
   const fnDefs = fns.map((fn) => `var ${fn.name} = ${fn.toString()};`).join('\n')
 
   return `
@@ -48,19 +40,6 @@ parentPort.on('message', function(msg) {
     var src = new Uint8Array(msg.sourceSab);
     var tgt = new Uint8Array(msg.targetSab);
     curveCore(src, tgt, msg.width, msg.height, msg.startRow, msg.endRow);
-  } else if (msg.type === 'glow-layer') {
-    var src = new Uint8Array(msg.sourceSab);
-    var layerOut = new Float32Array(msg.layerSab);
-    var sz = msg.width * msg.height;
-    var lum = buildLuminanceMap(src, sz);
-    var ffn = getFalloffFunction(msg.falloffType);
-    var wt = buildWeightTable(msg.layerRadius, ffn);
-    var hBlur = new Float32Array(sz * 4);
-    var hLum = new Float64Array(sz);
-    var w = msg.width, h = msg.height;
-    var th = msg.threshold, lr = msg.layerRadius;
-    horizontalPassCore(src, hBlur, lum, hLum, w, h, th, lr, wt);
-    verticalPassCore(hBlur, layerOut, hLum, w, h, th, lr, wt);
   } else if (msg.type === 'glow-h-batch') {
     var src = new Uint8Array(msg.sourceSab);
     var lum = new Float64Array(msg.lumSab);
@@ -76,19 +55,51 @@ parentPort.on('message', function(msg) {
       var wt = buildWeightTable(la.radius, ffn);
       horizontalPassCore(src, hB, lum, hL, w, h, th, la.radius, wt, sR, eR);
     }
-  } else if (msg.type === 'glow-v-batch') {
+  } else if (msg.type === 'glow-vc-batch') {
     var w = msg.width, h = msg.height;
     var sR = msg.startRow, eR = msg.endRow;
     var th = msg.threshold, ft = msg.falloffType;
-    var ls = msg.layers;
-    for (var li = 0; li < ls.length; li++) {
+    var ls = msg.layers, nL = ls.length;
+    var layerOuts = new Array(nL);
+    for (var li = 0; li < nL; li++) {
       var la = ls[li];
       var hB = new Float32Array(la.hBlurSab);
       var hL = new Float64Array(la.hLumSab);
       var oS = new Float32Array(la.layerOutSab);
+      layerOuts[li] = oS;
       var ffn = getFalloffFunction(ft);
       var wt = buildWeightTable(la.radius, ffn);
       verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR);
+    }
+    var src = new Uint8Array(msg.sourceSab);
+    var res = new Uint8Array(msg.resultSab);
+    var cI = msg.colorIsWhite;
+    var cR = msg.colorR, cG = msg.colorG, cB = msg.colorB;
+    var lI = msg.layerIntensities;
+    var lO = msg.layerOneMinusT;
+    for (var y = sR; y < eR; y++) {
+      var rOff = y * w;
+      for (var x = 0; x < w; x++) {
+        var idx = (rOff + x) * 4;
+        var fR = src[idx], fG = src[idx+1], fB = src[idx+2];
+        if (cI) {
+          for (var j = 0; j < nL; j++) {
+            var ci = lI[j], oi = lO[j], lb = layerOuts[j];
+            fR = fR*oi + lb[idx]*ci;
+            fG = fG*oi + lb[idx+1]*ci;
+            fB = fB*oi + lb[idx+2]*ci;
+          }
+        } else {
+          for (var j = 0; j < nL; j++) {
+            var ci = lI[j], oi = lO[j], lb = layerOuts[j];
+            fR = fR*oi + lb[idx]*cR*ci;
+            fG = fG*oi + lb[idx+1]*cG*ci;
+            fB = fB*oi + lb[idx+2]*cB*ci;
+          }
+        }
+        res[idx] = fR; res[idx+1] = fG;
+        res[idx+2] = fB; res[idx+3] = 255;
+      }
     }
   }
   parentPort.postMessage(0);
@@ -291,6 +302,17 @@ export async function dispatchGlow(
     })
   )
 
+  const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
+  const layerIntensities: number[] = []
+  const layerOneMinusT: number[] = []
+  for (let li = 0; li < layers; li++) {
+    layerIntensities.push(intensity / (li + 1))
+    layerOneMinusT.push(1 - intensity / (li + 1))
+  }
+
+  const resultSab = new SharedArrayBuffer(byteLen)
+
   await Promise.all(
     workers.map((pw, i) => {
       const startRow = i * rowsPerWorker
@@ -300,66 +322,30 @@ export async function dispatchGlow(
       return new Promise<void>((resolve, reject) => {
         pw.pending = { resolve, reject }
         pw.worker.postMessage({
-          type: 'glow-v-batch',
+          type: 'glow-vc-batch',
           layers: layerMsgs,
+          sourceSab,
+          resultSab,
           width,
           height,
           threshold,
           falloffType: falloff,
           startRow,
-          endRow
+          endRow,
+          colorIsWhite: isWhite,
+          colorR,
+          colorG,
+          colorB,
+          layerIntensities,
+          layerOneMinusT
         })
       })
     })
   )
 
-  const glowLayers: Float32Array[] = layerConfigs.map((lc) => new Float32Array(lc.layerOutSab))
-
   const result = Buffer.allocUnsafe(byteLen)
-  const [colorR, colorG, colorB] = color
-  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
-
-  const layerIntensities = new Float64Array(layers)
-  const layerOneMinusT = new Float64Array(layers)
-  for (let li = 0; li < layers; li++) {
-    layerIntensities[li] = intensity / (li + 1)
-    layerOneMinusT[li] = 1 - layerIntensities[li]
-  }
-
-  for (let y = 0; y < height; y++) {
-    const rowOffset = y * width
-    for (let x = 0; x < width; x++) {
-      const idx = (rowOffset + x) * 4
-      let finalR = source[idx]
-      let finalG = source[idx + 1]
-      let finalB = source[idx + 2]
-
-      if (isWhite) {
-        for (let li = 0; li < layers; li++) {
-          const ci = layerIntensities[li]
-          const oi = layerOneMinusT[li]
-          const lb = glowLayers[li]
-          finalR = finalR * oi + lb[idx] * ci
-          finalG = finalG * oi + lb[idx + 1] * ci
-          finalB = finalB * oi + lb[idx + 2] * ci
-        }
-      } else {
-        for (let li = 0; li < layers; li++) {
-          const ci = layerIntensities[li]
-          const oi = layerOneMinusT[li]
-          const lb = glowLayers[li]
-          finalR = finalR * oi + lb[idx] * colorR * ci
-          finalG = finalG * oi + lb[idx + 1] * colorG * ci
-          finalB = finalB * oi + lb[idx + 2] * colorB * ci
-        }
-      }
-
-      result[idx] = finalR
-      result[idx + 1] = finalG
-      result[idx + 2] = finalB
-      result[idx + 3] = 255
-    }
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Buffer.from(resultSab as any).copy(result as any)
 
   return result
 }

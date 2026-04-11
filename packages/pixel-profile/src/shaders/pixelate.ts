@@ -1,5 +1,3 @@
-import type { RGBA } from '../renderer'
-import { render } from '../renderer'
 import { sampleBilinear } from '../utils/bilinear'
 
 export type PixelateOptions = {
@@ -17,45 +15,58 @@ export function pixelate(source: Buffer, width: number, height: number, options:
     return pixelateCenter(source, width, height, blockSize)
   }
 
+  if (samplingMode === 'dominant') {
+    return pixelateDominant(source, width, height, blockSize, antiAlias)
+  }
+
+  return pixelateAverage(source, width, height, blockSize, antiAlias)
+}
+
+function buildSampleOffsets(blockSize: number, antiAlias: boolean): [number, number][] {
   const samplePoints = antiAlias ? 4 : 1
-  const sampleOffsets: [number, number][] = []
+  const offsets: [number, number][] = []
   for (let i = 0; i < samplePoints; i++) {
     for (let j = 0; j < samplePoints; j++) {
-      sampleOffsets.push([(i + 0.5) * (blockSize / samplePoints), (j + 0.5) * (blockSize / samplePoints)])
+      offsets.push([(i + 0.5) * (blockSize / samplePoints), (j + 0.5) * (blockSize / samplePoints)])
     }
   }
 
-  return render(source, width, height, (coords, texture) => {
-    const x = Math.floor(coords[0] / blockSize)
-    const y = Math.floor(coords[1] / blockSize)
-    const blockX = x * blockSize
-    const blockY = y * blockSize
+  return offsets
+}
 
-    const samples: RGBA[] = []
-    samples.length = sampleOffsets.length
-    for (let i = 0; i < sampleOffsets.length; i++) {
-      const [offsetX, offsetY] = sampleOffsets[i]
-      samples[i] = texture([blockX + offsetX, blockY + offsetY])
-    }
+function pixelateDominant(
+  source: Buffer,
+  width: number,
+  height: number,
+  blockSize: number,
+  antiAlias: boolean
+): Buffer {
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.alloc(width * height * 4)
+  const offsets = buildSampleOffsets(blockSize, antiAlias)
+  const numSamples = offsets.length
 
-    if (samplingMode === 'average') {
-      const sum: RGBA = [0, 0, 0, 0]
-      for (const color of samples) {
-        sum[0] += color[0]
-        sum[1] += color[1]
-        sum[2] += color[2]
-        sum[3] += color[3]
-      }
-      const count = samples.length
+  const blocksX = Math.ceil(width / blockSize)
+  const blocksY = Math.ceil(height / blockSize)
 
-      return [sum[0] / count, sum[1] / count, sum[2] / count, sum[3] / count] as RGBA
-    } else {
-      const colorCount = new Map<string, { color: RGBA; count: number }>()
+  const blockColors = new Float64Array(blocksX * blocksY * 4)
+
+  for (let by = 0; by < blocksY; by++) {
+    const blockY = by * blockSize
+    for (let bx = 0; bx < blocksX; bx++) {
+      const blockX = bx * blockSize
+
+      const colorCount = new Map<string, { color: [number, number, number, number]; count: number }>()
       let maxCount = 0
-      let dominantColor = samples[0]
+      let dominantColor: [number, number, number, number] | null = null
 
-      for (const color of samples) {
-        const key = color.join(',')
+      for (let s = 0; s < numSamples; s++) {
+        const color = sampleBilinear(source, width, maxX, maxY, blockX + offsets[s][0], blockY + offsets[s][1])
+        const key = `${color[0]},${color[1]},${color[2]},${color[3]}`
+
+        if (s === 0) dominantColor = color
+
         const entry = colorCount.get(key)
         if (entry) {
           entry.count++
@@ -68,9 +79,81 @@ export function pixelate(source: Buffer, width: number, height: number, options:
         }
       }
 
-      return dominantColor
+      const bi = (by * blocksX + bx) * 4
+      blockColors[bi] = dominantColor![0]
+      blockColors[bi + 1] = dominantColor![1]
+      blockColors[bi + 2] = dominantColor![2]
+      blockColors[bi + 3] = dominantColor![3]
     }
-  })
+  }
+
+  for (let py = 0; py < height; py++) {
+    const bky = Math.floor(py / blockSize)
+    for (let px = 0; px < width; px++) {
+      const bkx = Math.floor(px / blockSize)
+      const bi = (bky * blocksX + bkx) * 4
+      const idx = (py * width + px) * 4
+      target[idx] = blockColors[bi]
+      target[idx + 1] = blockColors[bi + 1]
+      target[idx + 2] = blockColors[bi + 2]
+      target[idx + 3] = blockColors[bi + 3]
+    }
+  }
+
+  return target
+}
+
+function pixelateAverage(source: Buffer, width: number, height: number, blockSize: number, antiAlias: boolean): Buffer {
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.alloc(width * height * 4)
+  const offsets = buildSampleOffsets(blockSize, antiAlias)
+  const numSamples = offsets.length
+
+  const blocksX = Math.ceil(width / blockSize)
+  const blocksY = Math.ceil(height / blockSize)
+
+  const blockColors = new Float64Array(blocksX * blocksY * 4)
+
+  for (let by = 0; by < blocksY; by++) {
+    const blockY = by * blockSize
+    for (let bx = 0; bx < blocksX; bx++) {
+      const blockX = bx * blockSize
+      let sumR = 0
+      let sumG = 0
+      let sumB = 0
+      let sumA = 0
+
+      for (let s = 0; s < numSamples; s++) {
+        const color = sampleBilinear(source, width, maxX, maxY, blockX + offsets[s][0], blockY + offsets[s][1])
+        sumR += color[0]
+        sumG += color[1]
+        sumB += color[2]
+        sumA += color[3]
+      }
+
+      const bi = (by * blocksX + bx) * 4
+      blockColors[bi] = sumR / numSamples
+      blockColors[bi + 1] = sumG / numSamples
+      blockColors[bi + 2] = sumB / numSamples
+      blockColors[bi + 3] = sumA / numSamples
+    }
+  }
+
+  for (let py = 0; py < height; py++) {
+    const bky = Math.floor(py / blockSize)
+    for (let px = 0; px < width; px++) {
+      const bkx = Math.floor(px / blockSize)
+      const bi = (bky * blocksX + bkx) * 4
+      const idx = (py * width + px) * 4
+      target[idx] = blockColors[bi]
+      target[idx + 1] = blockColors[bi + 1]
+      target[idx + 2] = blockColors[bi + 2]
+      target[idx + 3] = blockColors[bi + 3]
+    }
+  }
+
+  return target
 }
 
 function pixelateCenter(source: Buffer, width: number, height: number, blockSize: number): Buffer {

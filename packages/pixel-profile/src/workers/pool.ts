@@ -174,11 +174,8 @@ export async function dispatchCrt(
 
   await Promise.all(promises)
 
-  const result = Buffer.allocUnsafe(byteLen)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Buffer.from(targetSab as any).copy(result as any)
-
-  return result
+  return Buffer.from(targetSab as any) as Buffer
 }
 
 export async function dispatchCurve(source: Buffer, width: number, height: number): Promise<Buffer | null> {
@@ -214,11 +211,8 @@ export async function dispatchCurve(source: Buffer, width: number, height: numbe
 
   await Promise.all(promises)
 
-  const result = Buffer.allocUnsafe(byteLen)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Buffer.from(targetSab as any).copy(result as any)
-
-  return result
+  return Buffer.from(targetSab as any) as Buffer
 }
 
 export async function dispatchGlow(
@@ -343,11 +337,8 @@ export async function dispatchGlow(
     })
   )
 
-  const result = Buffer.allocUnsafe(byteLen)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Buffer.from(resultSab as any).copy(result as any)
-
-  return result
+  return Buffer.from(resultSab as any) as Buffer
 }
 
 export function shutdownPool(): void {

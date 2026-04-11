@@ -1,5 +1,3 @@
-import { render, RGBA } from '../renderer'
-
 const dotSize = 4
 const dotDensity = 1
 const mat = [
@@ -11,23 +9,35 @@ const mat = [
 const ditherRange = 0
 
 export function halftone(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (pixelCoords, texture) => {
-    const gridCoords = [Math.floor(pixelCoords[0] / dotSize), Math.floor(pixelCoords[1] / dotSize)]
+  const target = Buffer.alloc(width * height * 4)
 
-    const samplerColor = texture(pixelCoords)
-    const grayValue = (samplerColor[0] + samplerColor[1] + samplerColor[2]) / (3 * 255)
-    const ditherValue = (Math.random() - 0.5) * ditherRange
-    const adjustedGrayValue = Math.min(Math.max(grayValue + ditherValue, 0), 1)
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
 
-    const relativeCoords = [pixelCoords[0] - gridCoords[0] * dotSize, pixelCoords[1] - gridCoords[1] * dotSize]
+      const grayValue = (source[idx] + source[idx + 1] + source[idx + 2]) / (3 * 255)
+      const ditherValue = (Math.random() - 0.5) * ditherRange
+      const adjustedGrayValue = Math.min(Math.max(grayValue + ditherValue, 0), 1)
 
-    const intensity = mat[relativeCoords[0]][relativeCoords[1]]
+      const relX = x - Math.floor(x / dotSize) * dotSize
+      const relY = y - Math.floor(y / dotSize) * dotSize
 
-    const dotRadius = dotDensity * (1 - adjustedGrayValue)
-    const isInDot = intensity < dotRadius
+      const intensity = mat[relX][relY]
+      const dotRadius = dotDensity * (1 - adjustedGrayValue)
 
-    const finalColor: RGBA = isInDot ? [7, 85, 59, 255] : [206, 212, 106, 255]
+      if (intensity < dotRadius) {
+        target[idx] = 7
+        target[idx + 1] = 85
+        target[idx + 2] = 59
+        target[idx + 3] = 255
+      } else {
+        target[idx] = 206
+        target[idx + 1] = 212
+        target[idx + 2] = 106
+        target[idx + 3] = 255
+      }
+    }
+  }
 
-    return finalColor
-  })
+  return target
 }

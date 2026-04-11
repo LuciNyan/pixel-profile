@@ -1,28 +1,5 @@
-import { render, TEXTURE_FILTER } from '../renderer'
-import { hslToRgb, rgbToHsl } from '../utils'
 import { Vec3 } from '../utils/math'
 
-// const PALETTE_16: Vec3[] = [
-//   [0.1498, 0.7753, 0.8255],
-//   [0.1024, 0.9387, 0.6804],
-//   [0.0699, 0.6976, 0.598],
-//   [0.9567, 0.2212, 0.4431],
-//   [0.8718, 0.2321, 0.2196],
-//   [0.3833, 0.3623, 0.2706],
-//   [0.2965, 0.3277, 0.4608],
-//   [0.175, 0.5405, 0.5647],
-//   [0.5355, 0.5341, 0.6549],
-//   [0.5996, 0.368, 0.5098],
-//   [0.6795, 0.134, 0.3804],
-//   [0.5333, 0.1643, 0.5824],
-//   [0.0764, 0.2791, 0.8314],
-//   [0, 0.8324, 0.649],
-//   [0.9194, 0.4819, 0.3784],
-//   [0.9423, 0.7605, 0.6725]
-// ]
-// const BIAS_16 = 0.11
-
-// WINDOWS 95 - 256 COLOURS PALETTE
 const PALETTE_256: Vec3[] = [
   [0, 0, 0],
   [0, 1, 0.251],
@@ -338,40 +315,85 @@ function closestColors(hue: number): [Vec3, Vec3] {
   return result
 }
 
-function dither(pos: [number, number], color: Vec3): Vec3 {
-  const index = (pos[0] & 7) + ((pos[1] & 7) << 3)
-  const limit = (ditherTable[index] + 1) / 64 + BIAS_256
+function hue2rgb(p: number, q: number, t: number): number {
+  if (t < 0) t += 1
+  if (t > 1) t -= 1
+  if (t < 1 / 6) return p + (q - p) * 6 * t
+  if (t < 1 / 2) return q
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
 
-  const [closest, secondClosest] = closestColors(color[0])
-  const hueDiff = hueDistance(color[0], closest[0]) / hueDistance(secondClosest[0], closest[0])
-
-  const l1 = lightnessStep(Math.max(color[2] - 0.125, 0))
-  const l2 = lightnessStep(Math.min(color[2] + 0.124, 1))
-  const lightnessDiff = (color[2] - l1) / (l2 - l1)
-
-  const resultColor: Vec3 = hueDiff < limit ? [...closest] : [...secondClosest]
-  resultColor[2] = lightnessDiff < limit ? l1 : l2
-
-  const s1 = saturationStep(Math.max(color[1] - 0.125, 0))
-  const s2 = saturationStep(Math.min(color[1] + 0.124, 1))
-  const saturationDiff = (color[1] - s1) / (s2 - s1)
-
-  resultColor[1] = saturationDiff < limit ? s1 : s2
-
-  return hslToRgb(resultColor)
+  return p
 }
 
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
-  return render(
-    source,
-    width,
-    height,
-    (pixelCoords, texture) => {
-      const color = texture(pixelCoords)
-      const ditheredColor = dither(pixelCoords, rgbToHsl(color))
+  const target = Buffer.alloc(width * height * 4)
 
-      return [...ditheredColor, color[3]]
-    },
-    { textureFilter: TEXTURE_FILTER.NEAREST }
-  )
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+
+      const r = source[idx] / 255
+      const g = source[idx + 1] / 255
+      const b = source[idx + 2] / 255
+      const a = source[idx + 3]
+
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+
+      let h = 0
+      let s = 0
+
+      const l = (max + min) / 2
+
+      if (max !== min) {
+        const d = max - min
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0)
+            break
+          case g:
+            h = (b - r) / d + 2
+            break
+          case b:
+            h = (r - g) / d + 4
+            break
+        }
+        h /= 6
+      }
+
+      const ditherIndex = (x & 7) + ((y & 7) << 3)
+      const limit = (ditherTable[ditherIndex] + 1) / 64 + BIAS_256
+
+      const [closest, secondClosest] = closestColors(h)
+      const hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
+
+      const l1 = lightnessStep(Math.max(l - 0.125, 0))
+      const l2 = lightnessStep(Math.min(l + 0.124, 1))
+      const lightnessDiff = (l - l1) / (l2 - l1)
+
+      const resultH = hueDiff < limit ? closest[0] : secondClosest[0]
+      const resultL = lightnessDiff < limit ? l1 : l2
+
+      const s1 = saturationStep(Math.max(s - 0.125, 0))
+      const s2 = saturationStep(Math.min(s + 0.124, 1))
+      const saturationDiff = (s - s1) / (s2 - s1)
+      const resultS = saturationDiff < limit ? s1 : s2
+
+      if (resultS === 0) {
+        target[idx] = resultL * 255
+        target[idx + 1] = resultL * 255
+        target[idx + 2] = resultL * 255
+      } else {
+        const q2 = resultL < 0.5 ? resultL * (1 + resultS) : resultL + resultS - resultL * resultS
+        const p2 = 2 * resultL - q2
+        target[idx] = hue2rgb(p2, q2, resultH + 1 / 3) * 255
+        target[idx + 1] = hue2rgb(p2, q2, resultH) * 255
+        target[idx + 2] = hue2rgb(p2, q2, resultH - 1 / 3) * 255
+      }
+      target[idx + 3] = a
+    }
+  }
+
+  return target
 }

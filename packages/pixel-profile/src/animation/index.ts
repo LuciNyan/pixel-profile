@@ -1,4 +1,4 @@
-import { executePipeline, type Pipeline } from '../pipeline'
+import { executePipelineSmart, type Pipeline } from '../pipeline'
 import { encodeGif, type GifFrame } from './gif-encoder'
 
 export type AnimationOptions = {
@@ -115,23 +115,24 @@ function scanlineWithOffset(source: Buffer, width: number, height: number, offse
 /**
  * Render an animated GIF from base pixels and a shader pipeline.
  */
-export function renderAnimatedGif(
+export async function renderAnimatedGif(
   basePixels: Buffer,
   width: number,
   height: number,
   basePipeline: Pipeline,
   userOptions: AnimationOptions = {}
-): Buffer {
+): Promise<Buffer> {
   const options = { ...defaultAnimationOptions, ...userOptions }
   const { frameCount, frameDelay, effect } = options
 
   const animatedPipelines = buildAnimatedPipelines(effect, frameCount, basePipeline)
 
-  const frames: GifFrame[] = animatedPipelines.map((pipeline) => ({
+  const frames: GifFrame[] = []
+  for (const pipeline of animatedPipelines) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    pixels: executePipeline(Buffer.from(basePixels as any), width, height, pipeline),
-    delay: frameDelay
-  }))
+    const pixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, pipeline)
+    frames.push({ pixels, delay: frameDelay })
+  }
 
   return encodeGif(frames, width, height)
 }

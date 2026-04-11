@@ -94,7 +94,7 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
   if (options.animation) {
     const animOpts: AnimationOptions = typeof options.animation === 'boolean' ? {} : options.animation
 
-    return renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
+    return await renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
   }
 
   const pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)

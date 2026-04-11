@@ -16,11 +16,11 @@ function rgbToKey16(r: number, g: number, b: number): number {
 }
 
 /**
- * Color quantization: reduce RGBA pixels to at most 256 colors.
- * Uses a Uint32Array[65536] for O(1) color counting instead of Map.
- * Returns flat Uint8Array[768] palette (R,G,B × 256).
+ * Color quantization using typed arrays only (no object allocation).
+ * Finds top 256 colors by count, then precomputes a full 65536-entry
+ * LUT so every indexFrame call is pure O(1) per pixel.
  */
-function buildPalette(frames: Buffer[], width: number, height: number): Uint8Array {
+function buildPaletteAndLUT(frames: Buffer[], width: number, height: number): { palette: Uint8Array; lut: Uint8Array } {
   const counts = new Uint32Array(65536)
   const pixelCount = width * height
 
@@ -31,49 +31,54 @@ function buildPalette(frames: Buffer[], width: number, height: number): Uint8Arr
     }
   }
 
-  const entries: { key16: number; count: number }[] = []
+  let numColors = 0
+  const keys = new Uint16Array(65536)
+  const cnts = new Uint32Array(65536)
   for (let k = 0; k < 65536; k++) {
-    if (counts[k] > 0) entries.push({ key16: k, count: counts[k] })
+    if (counts[k] > 0) {
+      keys[numColors] = k
+      cnts[numColors] = counts[k]
+      numColors++
+    }
   }
-  entries.sort((a, b) => b.count - a.count)
+
+  const limit = Math.min(256, numColors)
+  if (numColors > limit) {
+    quickSelect(keys, cnts, 0, numColors - 1, limit)
+  }
 
   const palette = new Uint8Array(768)
-  const limit = Math.min(256, entries.length)
+  const palR = new Uint8Array(256)
+  const palG = new Uint8Array(256)
+  const palB = new Uint8Array(256)
   for (let i = 0; i < limit; i++) {
-    const k = entries[i].key16
-    const pi = i * 3
-    palette[pi] = ((k >> 11) & 0x1f) << 3
-    palette[pi + 1] = ((k >> 5) & 0x3f) << 2
-    palette[pi + 2] = (k & 0x1f) << 3
+    const k = keys[i]
+    const r = ((k >> 11) & 0x1f) << 3
+    const g = ((k >> 5) & 0x3f) << 2
+    const b = (k & 0x1f) << 3
+    palette[i * 3] = r
+    palette[i * 3 + 1] = g
+    palette[i * 3 + 2] = b
+    palR[i] = r
+    palG[i] = g
+    palB[i] = b
   }
 
-  return palette
-}
-
-/**
- * Map RGBA pixels to palette indices using lazy Uint16Array LUT.
- * Uses 0xFFFF sentinel for "not yet computed". On first access for a
- * given quantized color, performs O(256) nearest-color search and caches.
- * Subsequent accesses are O(1) array index lookups.
- */
-function indexFrame(pixels: Buffer, pixelCount: number, palette: Uint8Array, lut: Uint16Array): Uint8Array {
-  const indexed = new Uint8Array(pixelCount)
-
-  for (let i = 0; i < pixelCount; i++) {
-    const pi = i * 4
-    const key = rgbToKey16(pixels[pi], pixels[pi + 1], pixels[pi + 2])
-    let idx = lut[key]
-    if (idx === 0xffff) {
-      const r = pixels[pi]
-      const g = pixels[pi + 1]
-      const b = pixels[pi + 2]
+  const lut = new Uint8Array(65536)
+  for (let i = 0; i < numColors; i++) {
+    const k = keys[i]
+    if (i < limit) {
+      lut[k] = i
+    } else {
+      const r = ((k >> 11) & 0x1f) << 3
+      const g = ((k >> 5) & 0x3f) << 2
+      const b = (k & 0x1f) << 3
       let bestDist = Infinity
       let bestIdx = 0
-      for (let c = 0; c < 256; c++) {
-        const ci = c * 3
-        const dr = palette[ci] - r
-        const dg = palette[ci + 1] - g
-        const db = palette[ci + 2] - b
+      for (let c = 0; c < limit; c++) {
+        const dr = palR[c] - r
+        const dg = palG[c] - g
+        const db = palB[c] - b
         const dist = dr * dr + dg * dg + db * db
         if (dist < bestDist) {
           bestDist = dist
@@ -81,10 +86,57 @@ function indexFrame(pixels: Buffer, pixelCount: number, palette: Uint8Array, lut
           if (dist === 0) break
         }
       }
-      lut[key] = bestIdx
-      idx = bestIdx
+      lut[k] = bestIdx
     }
-    indexed[i] = idx
+  }
+
+  return { palette, lut }
+}
+
+function quickSelect(keys: Uint16Array, cnts: Uint32Array, lo: number, hi: number, k: number): void {
+  while (lo < hi) {
+    const pivotIdx = lo + ((hi - lo) >> 1)
+    const pivotVal = cnts[pivotIdx]
+    let tk = keys[pivotIdx]
+    keys[pivotIdx] = keys[hi]
+    keys[hi] = tk
+    let tc = cnts[pivotIdx]
+    cnts[pivotIdx] = cnts[hi]
+    cnts[hi] = tc
+    let store = lo
+    for (let i = lo; i < hi; i++) {
+      if (cnts[i] > pivotVal) {
+        tk = keys[i]
+        keys[i] = keys[store]
+        keys[store] = tk
+        tc = cnts[i]
+        cnts[i] = cnts[store]
+        cnts[store] = tc
+        store++
+      }
+    }
+    tk = keys[store]
+    keys[store] = keys[hi]
+    keys[hi] = tk
+    tc = cnts[store]
+    cnts[store] = cnts[hi]
+    cnts[hi] = tc
+    if (store === k) return
+    if (store < k) lo = store + 1
+    else hi = store - 1
+  }
+}
+
+/**
+ * Map RGBA pixels to palette indices using precomputed Uint8Array LUT.
+ * Every possible 16-bit color key already maps to its nearest palette index.
+ */
+function indexFrame(pixels: Buffer, pixelCount: number, lut: Uint8Array): Uint8Array {
+  const indexed = new Uint8Array(pixelCount)
+
+  for (let i = 0; i < pixelCount; i++) {
+    const pi = i * 4
+    indexed[i] = lut[rgbToKey16(pixels[pi], pixels[pi + 1], pixels[pi + 2])]
   }
 
   return indexed
@@ -218,9 +270,7 @@ export function encodeGif(frames: GifFrame[], width: number, height: number): Bu
   const pixelCount = width * height
   const frameBuffers = frames.map((f) => f.pixels)
 
-  const palette = buildPalette(frameBuffers, width, height)
-  const colorLUT = new Uint16Array(65536)
-  colorLUT.fill(0xffff)
+  const { palette, lut } = buildPaletteAndLUT(frameBuffers, width, height)
 
   const chunks: Buffer[] = []
 
@@ -246,7 +296,7 @@ export function encodeGif(frames: GifFrame[], width: number, height: number): Bu
   chunks.push(NETSCAPE_EXT)
 
   for (const frame of frames) {
-    const indexed = indexFrame(frame.pixels, pixelCount, palette, colorLUT)
+    const indexed = indexFrame(frame.pixels, pixelCount, lut)
 
     const delayCs = Math.round(frame.delay / 10)
     const gce = Buffer.allocUnsafe(8)

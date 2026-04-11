@@ -88,6 +88,9 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     weights: Float64Array
   ) {
     const maxX = width - 1
+    const diameter = currentRadius * 2 + 1
+    let totalWeight = 0
+    for (let w = 0; w < diameter; w++) totalWeight += weights[w]
 
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width
@@ -102,11 +105,32 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
         const lo = Math.max(0, x - currentRadius)
         const hi = Math.min(maxX, x + currentRadius)
-        if (rowPrefix[hi + 1] - rowPrefix[lo] === 0) {
+        const brightCount = rowPrefix[hi + 1] - rowPrefix[lo]
+
+        if (brightCount === 0) {
           output[centerIdx] = input[centerIdx]
           output[centerIdx + 1] = input[centerIdx + 1]
           output[centerIdx + 2] = input[centerIdx + 2]
           output[centerIdx + 3] = input[centerIdx + 3]
+          continue
+        }
+
+        if (x >= currentRadius && x <= maxX - currentRadius && brightCount === diameter) {
+          let sumR = 0
+          let sumG = 0
+          let sumB = 0
+          let si = (rowOffset + x - currentRadius) * 4
+          for (let i = 0; i < diameter; i++) {
+            const wt = weights[i]
+            sumR += input[si] * wt
+            sumG += input[si + 1] * wt
+            sumB += input[si + 2] * wt
+            si += 4
+          }
+          output[centerIdx] = sumR / totalWeight
+          output[centerIdx + 1] = sumG / totalWeight
+          output[centerIdx + 2] = sumB / totalWeight
+          output[centerIdx + 3] = 255
           continue
         }
 
@@ -152,6 +176,10 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     weights: Float64Array
   ) {
     const maxY = height - 1
+    const diameter = currentRadius * 2 + 1
+    let totalWeight = 0
+    for (let w = 0; w < diameter; w++) totalWeight += weights[w]
+    const w4 = width * 4
 
     for (let y = 0; y < height; y++) {
       const currRow = (y + 1) * width
@@ -169,12 +197,32 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
       for (let x = 0; x < width; x++) {
         const centerIdx = (y * width + x) * 4
+        const brightCount = colPrefix[hiRow + x] - colPrefix[loRow + x]
 
-        if (colPrefix[hiRow + x] - colPrefix[loRow + x] === 0) {
+        if (brightCount === 0) {
           output[centerIdx] = input[centerIdx]
           output[centerIdx + 1] = input[centerIdx + 1]
           output[centerIdx + 2] = input[centerIdx + 2]
           output[centerIdx + 3] = input[centerIdx + 3]
+          continue
+        }
+
+        if (y >= currentRadius && y <= maxY - currentRadius && brightCount === diameter) {
+          let sumR = 0
+          let sumG = 0
+          let sumB = 0
+          let si = ((y - currentRadius) * width + x) * 4
+          for (let i = 0; i < diameter; i++) {
+            const wt = weights[i]
+            sumR += input[si] * wt
+            sumG += input[si + 1] * wt
+            sumB += input[si + 2] * wt
+            si += w4
+          }
+          output[centerIdx] = sumR / totalWeight
+          output[centerIdx + 1] = sumG / totalWeight
+          output[centerIdx + 2] = sumB / totalWeight
+          output[centerIdx + 3] = 255
           continue
         }
 
@@ -215,6 +263,7 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
   const size = width * height
   const sourceLuminance = buildLuminanceMap(source, size)
   const horizontalBlur = new Float32Array(size * 4)
+  const hBlurLuminance = new Float64Array(size)
   const glowLayers: Float32Array[] = []
 
   for (let i = 0; i < layers; i++) {
@@ -224,7 +273,11 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
     horizontalPass(source, horizontalBlur, sourceLuminance, currentRadius, weights)
 
-    const hBlurLuminance = buildLuminanceMap(horizontalBlur, size)
+    for (let j = 0; j < size; j++) {
+      const idx = j * 4
+      hBlurLuminance[j] =
+        (horizontalBlur[idx] * 0.2126 + horizontalBlur[idx + 1] * 0.7152 + horizontalBlur[idx + 2] * 0.0722) / 255
+    }
     verticalPass(horizontalBlur, currentLayer, hBlurLuminance, currentRadius, weights)
 
     glowLayers.push(currentLayer)

@@ -258,6 +258,8 @@ async function renderCrtFlickerOptimized(
 
   const color: [number, number, number] = glowPass.options?.color ?? [1, 1, 1]
   const intensity = glowPass.options?.intensity ?? 0.17
+  const glowOnBase = await compositeGlowFromPrecomputed(precomputed, intensity, color)
+  const byteLen = width * height * 4
 
   const frames: GifFrame[] = []
   for (let i = 0; i < frameCount; i++) {
@@ -276,35 +278,26 @@ async function renderCrtFlickerOptimized(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const crtPixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, frameCrtPipeline)
 
-    const glowResult = await compositeGlowFromPrecomputed(precomputed, intensity, color)
-    const merged = blendCrtWithGlow(crtPixels, glowResult, baseCrt, width, height)
+    const merged = Buffer.allocUnsafe(byteLen)
+    for (let j = 0; j < byteLen; j += 4) {
+      let r = glowOnBase[j] + crtPixels[j] - baseCrt[j]
+      let g = glowOnBase[j + 1] + crtPixels[j + 1] - baseCrt[j + 1]
+      let b = glowOnBase[j + 2] + crtPixels[j + 2] - baseCrt[j + 2]
+      if (r < 0) r = 0
+      else if (r > 255) r = 255
+      if (g < 0) g = 0
+      else if (g > 255) g = 255
+      if (b < 0) b = 0
+      else if (b > 255) b = 255
+      merged[j] = r
+      merged[j + 1] = g
+      merged[j + 2] = b
+      merged[j + 3] = 255
+    }
     frames.push({ pixels: merged, delay: frameDelay })
   }
 
   return encodeGif(frames, width, height)
-}
-
-function blendCrtWithGlow(
-  frameCrt: Buffer,
-  glowOnBase: Buffer,
-  baseCrt: Buffer,
-  width: number,
-  height: number
-): Buffer {
-  const size = width * height * 4
-  const result = Buffer.allocUnsafe(size)
-
-  for (let i = 0; i < size; i += 4) {
-    const diffR = frameCrt[i] - baseCrt[i]
-    const diffG = frameCrt[i + 1] - baseCrt[i + 1]
-    const diffB = frameCrt[i + 2] - baseCrt[i + 2]
-    result[i] = Math.max(0, Math.min(255, glowOnBase[i] + diffR))
-    result[i + 1] = Math.max(0, Math.min(255, glowOnBase[i + 1] + diffG))
-    result[i + 2] = Math.max(0, Math.min(255, glowOnBase[i + 2] + diffB))
-    result[i + 3] = 255
-  }
-
-  return result
 }
 
 export { encodeGif, type GifFrame } from './gif-encoder'

@@ -1,5 +1,4 @@
 import { IMG_BORDER } from '../theme/images/border-frame'
-import { getPixelsFromPngBuffer } from './converter'
 import Jimp from 'jimp'
 
 export interface BorderOptions {
@@ -25,8 +24,7 @@ export async function blendBorder(
 
   const borderPng = await Jimp.read(Buffer.from(IMG_BORDER.split(',')[1], 'base64'))
   borderPng.resize(targetWidth, targetHeight)
-  const borderBuffer = await borderPng.getBufferAsync(Jimp.MIME_PNG)
-  const { pixels: borderPixels } = await getPixelsFromPngBuffer(borderBuffer)
+  const borderPixels = Buffer.from(borderPng.bitmap.data)
 
   const blendedPixels = Buffer.alloc(pixels.length)
 

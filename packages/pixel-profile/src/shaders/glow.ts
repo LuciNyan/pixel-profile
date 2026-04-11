@@ -84,6 +84,7 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     input: Buffer | Float32Array,
     output: Float32Array,
     luminance: Float64Array,
+    outLuminance: Float64Array,
     currentRadius: number,
     weights: Float64Array
   ) {
@@ -112,6 +113,7 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
           output[centerIdx + 1] = input[centerIdx + 1]
           output[centerIdx + 2] = input[centerIdx + 2]
           output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
           continue
         }
 
@@ -131,6 +133,8 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
           output[centerIdx + 1] = sumG / totalWeight
           output[centerIdx + 2] = sumB / totalWeight
           output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
           continue
         }
 
@@ -158,11 +162,14 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
           output[centerIdx + 1] = sumG / weightSum
           output[centerIdx + 2] = sumB / weightSum
           output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
         } else {
           output[centerIdx] = input[centerIdx]
           output[centerIdx + 1] = input[centerIdx + 1]
           output[centerIdx + 2] = input[centerIdx + 2]
           output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
         }
       }
     }
@@ -271,13 +278,7 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     const currentLayer = new Float32Array(size * 4)
     const weights = buildWeightTable(currentRadius, falloffFn)
 
-    horizontalPass(source, horizontalBlur, sourceLuminance, currentRadius, weights)
-
-    for (let j = 0; j < size; j++) {
-      const idx = j * 4
-      hBlurLuminance[j] =
-        (horizontalBlur[idx] * 0.2126 + horizontalBlur[idx + 1] * 0.7152 + horizontalBlur[idx + 2] * 0.0722) / 255
-    }
+    horizontalPass(source, horizontalBlur, sourceLuminance, hBlurLuminance, currentRadius, weights)
     verticalPass(horizontalBlur, currentLayer, hBlurLuminance, currentRadius, weights)
 
     glowLayers.push(currentLayer)
@@ -285,6 +286,14 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
   const result = Buffer.allocUnsafe(size * 4)
   const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
+
+  const layerIntensities = new Float64Array(layers)
+  const layerOneMinusT = new Float64Array(layers)
+  for (let li = 0; li < layers; li++) {
+    layerIntensities[li] = intensity / (li + 1)
+    layerOneMinusT[li] = 1 - layerIntensities[li]
+  }
 
   for (let y = 0; y < height; y++) {
     const rowOffset = y * width
@@ -295,18 +304,24 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
       let finalG = source[idx + 1]
       let finalB = source[idx + 2]
 
-      for (let i = 0; i < layers; i++) {
-        const currentIntensity = intensity / (i + 1)
-        const oneMinusT = 1 - currentIntensity
-        const layerBuffer = glowLayers[i]
-
-        const tintedR = layerBuffer[idx] * colorR
-        const tintedG = layerBuffer[idx + 1] * colorG
-        const tintedB = layerBuffer[idx + 2] * colorB
-
-        finalR = finalR * oneMinusT + tintedR * currentIntensity
-        finalG = finalG * oneMinusT + tintedG * currentIntensity
-        finalB = finalB * oneMinusT + tintedB * currentIntensity
+      if (isWhite) {
+        for (let i = 0; i < layers; i++) {
+          const ci = layerIntensities[i]
+          const oi = layerOneMinusT[i]
+          const lb = glowLayers[i]
+          finalR = finalR * oi + lb[idx] * ci
+          finalG = finalG * oi + lb[idx + 1] * ci
+          finalB = finalB * oi + lb[idx + 2] * ci
+        }
+      } else {
+        for (let i = 0; i < layers; i++) {
+          const ci = layerIntensities[i]
+          const oi = layerOneMinusT[i]
+          const lb = glowLayers[i]
+          finalR = finalR * oi + lb[idx] * colorR * ci
+          finalG = finalG * oi + lb[idx + 1] * colorG * ci
+          finalB = finalB * oi + lb[idx + 2] * colorB * ci
+        }
       }
 
       result[idx] = finalR

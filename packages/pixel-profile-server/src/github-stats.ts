@@ -1,12 +1,14 @@
 import { CONSTANTS, parseArray, parseBoolean, parseString } from './utils'
 import { Hono } from 'hono'
-import { clamp, fetchStats, renderStats } from 'pixel-profile'
+import { type AnimationOptions, clamp, fetchStats, renderStats } from 'pixel-profile'
 
 const githubStats = new Hono()
 
 githubStats.get('/', async (c) => {
   const { req, res, body } = c
   const {
+    animation,
+    animation_effect,
     background,
     cache_seconds = `${CONSTANTS.CARD_CACHE_SECONDS}`,
     color,
@@ -22,7 +24,8 @@ githubStats.get('/', async (c) => {
     dithering
   } = req.query()
 
-  res.headers.set('Content-Type', 'image/png')
+  const isAnimated = parseBoolean(animation)
+  res.headers.set('Content-Type', isAnimated ? 'image/gif' : 'image/png')
 
   try {
     const showStats = parseArray(show)
@@ -46,6 +49,16 @@ githubStats.get('/', async (c) => {
       `max-age=${cacheSeconds / 2}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`
     )
 
+    let animationOpts: AnimationOptions | boolean | undefined
+    if (isAnimated) {
+      const effect = parseString(animation_effect)
+      if (effect === 'crt-flicker' || effect === 'glow-pulse' || effect === 'scanline-scroll') {
+        animationOpts = { effect }
+      } else {
+        animationOpts = true
+      }
+    }
+
     const options = {
       background: parseString(background),
       color: parseString(color),
@@ -55,7 +68,8 @@ githubStats.get('/', async (c) => {
       theme: parseString(theme),
       screenEffect: parseBoolean(screen_effect),
       avatarBorder: parseBoolean(avatar_border),
-      dithering: parseBoolean(dithering)
+      dithering: parseBoolean(dithering),
+      animation: animationOpts
     }
 
     const result = await renderStats(stats, options)

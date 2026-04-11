@@ -1,4 +1,5 @@
-import { executePipelineSmart, type Pipeline } from '../pipeline'
+import { executePipelineAsync, executePipelineSmart, type Pipeline } from '../pipeline'
+import { compositeGlowFromPrecomputed, precomputeGlowLayers } from '../workers/pool'
 import { encodeGif, type GifFrame } from './gif-encoder'
 
 export type AnimationOptions = {
@@ -125,12 +126,63 @@ export async function renderAnimatedGif(
   const options = { ...defaultAnimationOptions, ...userOptions }
   const { frameCount, frameDelay, effect } = options
 
+  if (effect === 'glow-pulse') {
+    return renderGlowPulseOptimized(basePixels, width, height, basePipeline, frameCount, frameDelay)
+  }
+
   const animatedPipelines = buildAnimatedPipelines(effect, frameCount, basePipeline)
 
   const frames: GifFrame[] = []
   for (const pipeline of animatedPipelines) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, pipeline)
+    frames.push({ pixels, delay: frameDelay })
+  }
+
+  return encodeGif(frames, width, height)
+}
+
+async function renderGlowPulseOptimized(
+  basePixels: Buffer,
+  width: number,
+  height: number,
+  basePipeline: Pipeline,
+  frameCount: number,
+  frameDelay: number
+): Promise<Buffer> {
+  const preGlowPipeline = basePipeline.filter((p) => p.name !== 'glow')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const preGlowPixels = await executePipelineAsync(Buffer.from(basePixels as any), width, height, preGlowPipeline)
+
+  const glowPass = basePipeline.find((p) => p.name === 'glow')
+  if (!glowPass) {
+    const frames: GifFrame[] = []
+    for (let i = 0; i < frameCount; i++) {
+      frames.push({ pixels: preGlowPixels, delay: frameDelay })
+    }
+
+    return encodeGif(frames, width, height)
+  }
+
+  const precomputed = await precomputeGlowLayers(preGlowPixels, width, height, glowPass.options || {})
+  if (!precomputed) {
+    const animatedPipelines = buildAnimatedPipelines('glow-pulse', frameCount, basePipeline)
+    const frames: GifFrame[] = []
+    for (const pipeline of animatedPipelines) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, pipeline)
+      frames.push({ pixels, delay: frameDelay })
+    }
+
+    return encodeGif(frames, width, height)
+  }
+
+  const color: [number, number, number] = glowPass.options?.color ?? [1, 1, 1]
+  const frames: GifFrame[] = []
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / frameCount
+    const intensity = 0.1 + 0.15 * Math.sin(t * Math.PI * 2)
+    const pixels = await compositeGlowFromPrecomputed(precomputed, intensity, color)
     frames.push({ pixels, delay: frameDelay })
   }
 

@@ -55,6 +55,57 @@ parentPort.on('message', function(msg) {
       var wt = buildWeightTable(la.radius, ffn);
       horizontalPassCore(src, hB, lum, hL, w, h, th, la.radius, wt, sR, eR);
     }
+  } else if (msg.type === 'glow-v-only') {
+    var w = msg.width, h = msg.height;
+    var sR = msg.startRow, eR = msg.endRow;
+    var th = msg.threshold, ft = msg.falloffType;
+    var ls = msg.layers;
+    for (var li = 0; li < ls.length; li++) {
+      var la = ls[li];
+      var hB = new Float32Array(la.hBlurSab);
+      var hL = new Float64Array(la.hLumSab);
+      var oS = new Float32Array(la.layerOutSab);
+      var ffn = getFalloffFunction(ft);
+      var wt = buildWeightTable(la.radius, ffn);
+      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR);
+    }
+  } else if (msg.type === 'glow-composite') {
+    var src = new Uint8Array(msg.sourceSab);
+    var res = new Uint8Array(msg.resultSab);
+    var w = msg.width, h = msg.height;
+    var sR = msg.startRow, eR = msg.endRow;
+    var ls = msg.layers, nL = ls.length;
+    var layerOuts = new Array(nL);
+    for (var li = 0; li < nL; li++) {
+      layerOuts[li] = new Float32Array(ls[li].layerOutSab);
+    }
+    var cI = msg.colorIsWhite;
+    var cR = msg.colorR, cG = msg.colorG, cB = msg.colorB;
+    var lI = msg.layerIntensities, lO = msg.layerOneMinusT;
+    for (var y = sR; y < eR; y++) {
+      var rOff = y * w;
+      for (var x = 0; x < w; x++) {
+        var idx = (rOff + x) * 4;
+        var fR = src[idx], fG = src[idx+1], fB = src[idx+2];
+        if (cI) {
+          for (var j = 0; j < nL; j++) {
+            var ci = lI[j], oi = lO[j], lb = layerOuts[j];
+            fR = fR*oi + lb[idx]*ci;
+            fG = fG*oi + lb[idx+1]*ci;
+            fB = fB*oi + lb[idx+2]*ci;
+          }
+        } else {
+          for (var j = 0; j < nL; j++) {
+            var ci = lI[j], oi = lO[j], lb = layerOuts[j];
+            fR = fR*oi + lb[idx]*cR*ci;
+            fG = fG*oi + lb[idx+1]*cG*ci;
+            fB = fB*oi + lb[idx+2]*cB*ci;
+          }
+        }
+        res[idx] = fR; res[idx+1] = fG;
+        res[idx+2] = fB; res[idx+3] = 255;
+      }
+    }
   } else if (msg.type === 'glow-vc-batch') {
     var w = msg.width, h = msg.height;
     var sR = msg.startRow, eR = msg.endRow;
@@ -223,28 +274,43 @@ export async function dispatchCurve(source: Buffer, width: number, height: numbe
   return Buffer.from(targetSab as any) as Buffer
 }
 
-export async function dispatchGlow(
+const DEFAULT_GLOW = {
+  radius: 1,
+  intensity: 0.7,
+  threshold: 0.8,
+  color: [1, 1, 1] as [number, number, number],
+  layers: 2,
+  falloff: 'gaussian',
+  adaptiveThreshold: true
+}
+
+export interface PrecomputedGlowLayers {
+  layerMsgs: {
+    hBlurSab: SharedArrayBuffer
+    hLumSab: SharedArrayBuffer
+    layerOutSab: SharedArrayBuffer
+    radius: number
+  }[]
+  sourceSab: SharedArrayBuffer
+  threshold: number
+  falloff: string
+  numLayers: number
+  width: number
+  height: number
+}
+
+export async function precomputeGlowLayers(
   source: Buffer,
   width: number,
   height: number,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userOpts: any
-): Promise<Buffer | null> {
+): Promise<PrecomputedGlowLayers | null> {
   const workers = ensurePool()
   if (!workers) return null
 
-  const defaultGlow = {
-    radius: 1,
-    intensity: 0.7,
-    threshold: 0.8,
-    color: [1, 1, 1] as [number, number, number],
-    layers: 2,
-    falloff: 'gaussian',
-    adaptiveThreshold: true
-  }
-  const opts = { ...defaultGlow, ...userOpts }
-  const { radius, intensity, color, layers, falloff, adaptiveThreshold, threshold: _threshold } = opts
-
+  const opts = { ...DEFAULT_GLOW, ...userOpts }
+  const { radius, layers, falloff, adaptiveThreshold, threshold: _threshold } = opts
   const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
 
   const byteLen = width * height * 4
@@ -252,18 +318,11 @@ export async function dispatchGlow(
   const sourceSab = toSharedSource(source, byteLen)
 
   const lumSab = new SharedArrayBuffer(size * 8)
-  const lumArr = new Float64Array(lumSab)
-  const srcLum = buildLuminanceMap(source, size)
-  lumArr.set(srcLum)
+  new Float64Array(lumSab).set(buildLuminanceMap(source, size))
 
-  const layerConfigs: {
-    hBlurSab: SharedArrayBuffer
-    hLumSab: SharedArrayBuffer
-    layerOutSab: SharedArrayBuffer
-    radius: number
-  }[] = []
+  const layerMsgs: PrecomputedGlowLayers['layerMsgs'] = []
   for (let i = 0; i < layers; i++) {
-    layerConfigs.push({
+    layerMsgs.push({
       hBlurSab: new SharedArrayBuffer(size * 4 * 4),
       hLumSab: new SharedArrayBuffer(size * 8),
       layerOutSab: new SharedArrayBuffer(size * 4 * 4),
@@ -272,12 +331,6 @@ export async function dispatchGlow(
   }
 
   const rowsPerWorker = Math.ceil(height / workers.length)
-  const layerMsgs = layerConfigs.map((lc) => ({
-    hBlurSab: lc.hBlurSab,
-    hLumSab: lc.hLumSab,
-    layerOutSab: lc.layerOutSab,
-    radius: lc.radius
-  }))
 
   await Promise.all(
     workers.map((pw, i) => {
@@ -303,17 +356,6 @@ export async function dispatchGlow(
     })
   )
 
-  const [colorR, colorG, colorB] = color
-  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
-  const layerIntensities: number[] = []
-  const layerOneMinusT: number[] = []
-  for (let li = 0; li < layers; li++) {
-    layerIntensities.push(intensity / (li + 1))
-    layerOneMinusT.push(1 - intensity / (li + 1))
-  }
-
-  const resultSab = new SharedArrayBuffer(byteLen)
-
   await Promise.all(
     workers.map((pw, i) => {
       const startRow = i * rowsPerWorker
@@ -323,29 +365,123 @@ export async function dispatchGlow(
       return new Promise<void>((resolve, reject) => {
         pw.pending = { resolve, reject }
         pw.worker.postMessage({
-          type: 'glow-vc-batch',
+          type: 'glow-v-only',
           layers: layerMsgs,
-          sourceSab,
-          resultSab,
           width,
           height,
           threshold,
           falloffType: falloff,
           startRow,
-          endRow,
-          colorIsWhite: isWhite,
-          colorR,
-          colorG,
-          colorB,
-          layerIntensities,
-          layerOneMinusT
+          endRow
         })
       })
     })
   )
 
+  return { layerMsgs, sourceSab, threshold, falloff, numLayers: layers, width, height }
+}
+
+export async function compositeGlowFromPrecomputed(
+  precomputed: PrecomputedGlowLayers,
+  intensity: number,
+  color: [number, number, number]
+): Promise<Buffer> {
+  const workers = ensurePool()
+  const { layerMsgs, sourceSab, numLayers, width, height } = precomputed
+  const byteLen = width * height * 4
+
+  const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
+  const layerIntensities: number[] = []
+  const layerOneMinusT: number[] = []
+  for (let li = 0; li < numLayers; li++) {
+    layerIntensities.push(intensity / (li + 1))
+    layerOneMinusT.push(1 - intensity / (li + 1))
+  }
+
+  if (workers) {
+    const resultSab = new SharedArrayBuffer(byteLen)
+    const rowsPerWorker = Math.ceil(height / workers.length)
+
+    await Promise.all(
+      workers.map((pw, i) => {
+        const startRow = i * rowsPerWorker
+        const endRow = Math.min(startRow + rowsPerWorker, height)
+        if (startRow >= height) return Promise.resolve()
+
+        return new Promise<void>((resolve, reject) => {
+          pw.pending = { resolve, reject }
+          pw.worker.postMessage({
+            type: 'glow-composite',
+            layers: layerMsgs,
+            sourceSab,
+            resultSab,
+            width,
+            height,
+            startRow,
+            endRow,
+            colorIsWhite: isWhite,
+            colorR,
+            colorG,
+            colorB,
+            layerIntensities,
+            layerOneMinusT
+          })
+        })
+      })
+    )
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return Buffer.from(resultSab as any) as Buffer
+  }
+
+  const source = Buffer.from(sourceSab)
+  const result = Buffer.allocUnsafe(byteLen)
+  const glowLayers: Float32Array[] = layerMsgs.map((lm) => new Float32Array(lm.layerOutSab))
+
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width
+    for (let x = 0; x < width; x++) {
+      const idx = (rowOffset + x) * 4
+      let fR = source[idx]
+      let fG = source[idx + 1]
+      let fB = source[idx + 2]
+      for (let li = 0; li < numLayers; li++) {
+        const ci = layerIntensities[li]
+        const oi = layerOneMinusT[li]
+        const lb = glowLayers[li]
+        if (isWhite) {
+          fR = fR * oi + lb[idx] * ci
+          fG = fG * oi + lb[idx + 1] * ci
+          fB = fB * oi + lb[idx + 2] * ci
+        } else {
+          fR = fR * oi + lb[idx] * colorR * ci
+          fG = fG * oi + lb[idx + 1] * colorG * ci
+          fB = fB * oi + lb[idx + 2] * colorB * ci
+        }
+      }
+      result[idx] = fR
+      result[idx + 1] = fG
+      result[idx + 2] = fB
+      result[idx + 3] = 255
+    }
+  }
+
+  return result
+}
+
+export async function dispatchGlow(
+  source: Buffer,
+  width: number,
+  height: number,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return Buffer.from(resultSab as any) as Buffer
+  userOpts: any
+): Promise<Buffer | null> {
+  const opts = { ...DEFAULT_GLOW, ...userOpts }
+  const precomputed = await precomputeGlowLayers(source, width, height, userOpts)
+  if (!precomputed) return null
+
+  return compositeGlowFromPrecomputed(precomputed, opts.intensity, opts.color)
 }
 
 export function shutdownPool(): void {

@@ -336,54 +336,79 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
   const target = Buffer.alloc(width * height * 4)
 
   for (let y = 0; y < height; y++) {
+    let prevR = -1
+    let prevG = -1
+    let prevB = -1
+    let h = 0
+    let s = 0
+    let l = 0
+    let closest: Vec3 = [-2, 0, 0]
+    let secondClosest: Vec3 = [-2, 0, 0]
+    let hueDiff = 0
+    let l1 = 0
+    let l2 = 0
+    let lightnessDiff = 0
+    let s1 = 0
+    let s2 = 0
+    let saturationDiff = 0
+
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4
 
-      const r = source[idx] / 255
-      const g = source[idx + 1] / 255
-      const b = source[idx + 2] / 255
+      const rRaw = source[idx]
+      const gRaw = source[idx + 1]
+      const bRaw = source[idx + 2]
       const a = source[idx + 3]
 
-      const max = Math.max(r, g, b)
-      const min = Math.min(r, g, b)
+      if (rRaw !== prevR || gRaw !== prevG || bRaw !== prevB) {
+        prevR = rRaw
+        prevG = gRaw
+        prevB = bRaw
 
-      let h = 0
-      let s = 0
+        const r = rRaw / 255
+        const g = gRaw / 255
+        const b = bRaw / 255
 
-      const l = (max + min) / 2
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
 
-      if (max !== min) {
-        const d = max - min
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-        switch (max) {
-          case r:
-            h = (g - b) / d + (g < b ? 6 : 0)
-            break
-          case g:
-            h = (b - r) / d + 2
-            break
-          case b:
-            h = (r - g) / d + 4
-            break
+        h = 0
+        s = 0
+        l = (max + min) / 2
+
+        if (max !== min) {
+          const d = max - min
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+          switch (max) {
+            case r:
+              h = (g - b) / d + (g < b ? 6 : 0)
+              break
+            case g:
+              h = (b - r) / d + 2
+              break
+            case b:
+              h = (r - g) / d + 4
+              break
+          }
+          h /= 6
         }
-        h /= 6
+
+        ;[closest, secondClosest] = closestColors(h)
+        hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
+
+        l1 = lightnessStep(Math.max(l - 0.125, 0))
+        l2 = lightnessStep(Math.min(l + 0.124, 1))
+        lightnessDiff = (l - l1) / (l2 - l1)
+
+        s1 = saturationStep(Math.max(s - 0.125, 0))
+        s2 = saturationStep(Math.min(s + 0.124, 1))
+        saturationDiff = (s - s1) / (s2 - s1)
       }
 
       const limit = ditherLimits[(x & 7) + ((y & 7) << 3)]
 
-      const [closest, secondClosest] = closestColors(h)
-      const hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
-
-      const l1 = lightnessStep(Math.max(l - 0.125, 0))
-      const l2 = lightnessStep(Math.min(l + 0.124, 1))
-      const lightnessDiff = (l - l1) / (l2 - l1)
-
       const resultH = hueDiff < limit ? closest[0] : secondClosest[0]
       const resultL = lightnessDiff < limit ? l1 : l2
-
-      const s1 = saturationStep(Math.max(s - 0.125, 0))
-      const s2 = saturationStep(Math.min(s + 0.124, 1))
-      const saturationDiff = (s - s1) / (s2 - s1)
       const resultS = saturationDiff < limit ? s1 : s2
 
       if (resultS === 0) {

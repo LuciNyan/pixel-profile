@@ -21,17 +21,14 @@ const defaultOptions: GlowOptions = {
 }
 
 function calculateAdaptiveThreshold(source: Buffer, width: number, height: number): number {
-  let totalLuminance = 0
+  let totalWeightedSum = 0
   const size = width * height
 
   for (let i = 0; i < size * 4; i += 4) {
-    const r = source[i]
-    const g = source[i + 1]
-    const b = source[i + 2]
-    totalLuminance += (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+    totalWeightedSum += source[i] * 0.2126 + source[i + 1] * 0.7152 + source[i + 2] * 0.0722
   }
 
-  const avgLuminance = totalLuminance / size
+  const avgLuminance = totalWeightedSum / (size * 255)
 
   return Math.max(0.6, Math.min(0.9, avgLuminance + 0.3))
 }

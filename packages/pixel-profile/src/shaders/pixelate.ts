@@ -1,5 +1,3 @@
-import { sampleBilinear } from '../utils/bilinear'
-
 export type PixelateOptions = {
   blockSize: number
   samplingMode?: 'center' | 'average' | 'dominant'
@@ -239,15 +237,33 @@ function pixelateCenter(source: Buffer, width: number, height: number, blockSize
 
   const blockColors = new Float64Array(blocksX * blocksY * 4)
   for (let by = 0; by < blocksY; by++) {
-    const centerY = by * blockSize + halfBlock
+    const fy = by * blockSize + halfBlock
     for (let bx = 0; bx < blocksX; bx++) {
-      const centerX = bx * blockSize + halfBlock
-      const color = sampleBilinear(source, width, maxX, maxY, centerX, centerY)
+      const fx = bx * blockSize + halfBlock
+
+      const cx = Math.min(maxX, Math.max(0, fx))
+      const cy = Math.min(maxY, Math.max(0, fy))
+      const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+      const x1 = Math.min(x0 + 1, maxX)
+      const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+      const y1 = Math.min(y0 + 1, maxY)
+      const sx = cx - x0
+      const sy = cy - y0
+      const osx = 1 - sx
+      const osy = 1 - sy
+      const i00 = (y0 * width + x0) * 4
+      const i10 = (y0 * width + x1) * 4
+      const i01 = (y1 * width + x0) * 4
+      const i11 = (y1 * width + x1) * 4
+
       const bi = (by * blocksX + bx) * 4
-      blockColors[bi] = color[0]
-      blockColors[bi + 1] = color[1]
-      blockColors[bi + 2] = color[2]
-      blockColors[bi + 3] = color[3]
+      blockColors[bi] = (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+      blockColors[bi + 1] =
+        (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+      blockColors[bi + 2] =
+        (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+      blockColors[bi + 3] =
+        (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
     }
   }
 

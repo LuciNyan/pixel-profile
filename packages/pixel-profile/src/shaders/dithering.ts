@@ -332,6 +332,86 @@ function hue2rgb(p: number, q: number, t: number): number {
   return p
 }
 
+interface DitherEntry {
+  hueDiff: number
+  lightDiff: number
+  satDiff: number
+  combos: Uint8Array
+}
+
+const ditherRgbCache = new Map<number, DitherEntry>()
+
+function buildDitherEntry(rRaw: number, gRaw: number, bRaw: number): DitherEntry {
+  const r = rRaw / 255
+  const g = gRaw / 255
+  const b = bRaw / 255
+
+  const cmax = Math.max(r, g, b)
+  const cmin = Math.min(r, g, b)
+
+  let h = 0
+  let s = 0
+  const l = (cmax + cmin) / 2
+
+  if (cmax !== cmin) {
+    const d = cmax - cmin
+    s = l > 0.5 ? d / (2 - cmax - cmin) : d / (cmax + cmin)
+    switch (cmax) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
+      case g:
+        h = (b - r) / d + 2
+        break
+      case b:
+        h = (r - g) / d + 4
+        break
+    }
+    h /= 6
+  }
+
+  const [closest, secondClosest] = closestColors(h)
+  const hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
+
+  const l1 = lightnessStep(Math.max(l - 0.125, 0))
+  const l2 = lightnessStep(Math.min(l + 0.124, 1))
+  const lightDiff = (l - l1) / (l2 - l1)
+
+  const s1 = saturationStep(Math.max(s - 0.125, 0))
+  const s2 = saturationStep(Math.min(s + 0.124, 1))
+  const satDiff = (s - s1) / (s2 - s1)
+
+  const hueOpts = [closest[0], secondClosest[0]]
+  const lightOpts = [l1, l2]
+  const satOpts = [s1, s2]
+
+  const combos = new Uint8Array(24)
+  for (let dh = 0; dh < 2; dh++) {
+    const rH = hueOpts[dh]
+    for (let dl = 0; dl < 2; dl++) {
+      const rL = lightOpts[dl]
+      for (let ds = 0; ds < 2; ds++) {
+        const rS = satOpts[ds]
+        const ci = (dh * 4 + dl * 2 + ds) * 3
+        if (rS === 0) {
+          const v = rL * 255
+          combos[ci] = v
+          combos[ci + 1] = v
+          combos[ci + 2] = v
+        } else {
+          const q2 = rL < 0.5 ? rL * (1 + rS) : rL + rS - rL * rS
+          const p2 = 2 * rL - q2
+          combos[ci] = hue2rgb(p2, q2, rH + 1 / 3) * 255
+          combos[ci + 1] = hue2rgb(p2, q2, rH) * 255
+          combos[ci + 2] = hue2rgb(p2, q2, rH - 1 / 3) * 255
+        }
+      }
+    }
+  }
+
+  return { hueDiff, lightDiff, satDiff, combos }
+}
+
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
   const target = Buffer.allocUnsafe(width * height * 4)
 
@@ -339,18 +419,10 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
     let prevR = -1
     let prevG = -1
     let prevB = -1
-    let h = 0
-    let s = 0
-    let l = 0
-    let closest: Vec3 = [-2, 0, 0]
-    let secondClosest: Vec3 = [-2, 0, 0]
     let hueDiff = 0
-    let l1 = 0
-    let l2 = 0
-    let lightnessDiff = 0
-    let s1 = 0
-    let s2 = 0
-    let saturationDiff = 0
+    let lightDiff = 0
+    let satDiff = 0
+    let combos: Uint8Array = null!
 
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4
@@ -358,71 +430,30 @@ export function orderedBayer(source: Buffer, width: number, height: number): Buf
       const rRaw = source[idx]
       const gRaw = source[idx + 1]
       const bRaw = source[idx + 2]
-      const a = source[idx + 3]
 
       if (rRaw !== prevR || gRaw !== prevG || bRaw !== prevB) {
         prevR = rRaw
         prevG = gRaw
         prevB = bRaw
 
-        const r = rRaw / 255
-        const g = gRaw / 255
-        const b = bRaw / 255
-
-        const max = Math.max(r, g, b)
-        const min = Math.min(r, g, b)
-
-        h = 0
-        s = 0
-        l = (max + min) / 2
-
-        if (max !== min) {
-          const d = max - min
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-          switch (max) {
-            case r:
-              h = (g - b) / d + (g < b ? 6 : 0)
-              break
-            case g:
-              h = (b - r) / d + 2
-              break
-            case b:
-              h = (r - g) / d + 4
-              break
-          }
-          h /= 6
+        const key = (rRaw << 16) | (gRaw << 8) | bRaw
+        let entry = ditherRgbCache.get(key)
+        if (!entry) {
+          entry = buildDitherEntry(rRaw, gRaw, bRaw)
+          ditherRgbCache.set(key, entry)
         }
-
-        ;[closest, secondClosest] = closestColors(h)
-        hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
-
-        l1 = lightnessStep(Math.max(l - 0.125, 0))
-        l2 = lightnessStep(Math.min(l + 0.124, 1))
-        lightnessDiff = (l - l1) / (l2 - l1)
-
-        s1 = saturationStep(Math.max(s - 0.125, 0))
-        s2 = saturationStep(Math.min(s + 0.124, 1))
-        saturationDiff = (s - s1) / (s2 - s1)
+        hueDiff = entry.hueDiff
+        lightDiff = entry.lightDiff
+        satDiff = entry.satDiff
+        combos = entry.combos
       }
 
       const limit = ditherLimits[(x & 7) + ((y & 7) << 3)]
-
-      const resultH = hueDiff < limit ? closest[0] : secondClosest[0]
-      const resultL = lightnessDiff < limit ? l1 : l2
-      const resultS = saturationDiff < limit ? s1 : s2
-
-      if (resultS === 0) {
-        target[idx] = resultL * 255
-        target[idx + 1] = resultL * 255
-        target[idx + 2] = resultL * 255
-      } else {
-        const q2 = resultL < 0.5 ? resultL * (1 + resultS) : resultL + resultS - resultL * resultS
-        const p2 = 2 * resultL - q2
-        target[idx] = hue2rgb(p2, q2, resultH + 1 / 3) * 255
-        target[idx + 1] = hue2rgb(p2, q2, resultH) * 255
-        target[idx + 2] = hue2rgb(p2, q2, resultH - 1 / 3) * 255
-      }
-      target[idx + 3] = a
+      const ci = ((hueDiff < limit ? 0 : 4) + (lightDiff < limit ? 0 : 2) + (satDiff < limit ? 0 : 1)) * 3
+      target[idx] = combos[ci]
+      target[idx + 1] = combos[ci + 1]
+      target[idx + 2] = combos[ci + 2]
+      target[idx + 3] = source[idx + 3]
     }
   }
 

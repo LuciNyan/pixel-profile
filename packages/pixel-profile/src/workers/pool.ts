@@ -142,6 +142,16 @@ export function getPoolSize(): number {
   return POOL_SIZE
 }
 
+function toSharedSource(source: Buffer, byteLen: number): SharedArrayBuffer {
+  if (source.buffer instanceof SharedArrayBuffer && source.byteOffset === 0 && source.byteLength >= byteLen) {
+    return source.buffer
+  }
+  const sab = new SharedArrayBuffer(byteLen)
+  new Uint8Array(sab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+
+  return sab
+}
+
 export async function dispatchCrt(
   source: Buffer,
   width: number,
@@ -154,8 +164,7 @@ export async function dispatchCrt(
 
   const opts = { ...defaultCRTOptions, ...userOpts }
   const byteLen = width * height * 4
-  const sourceSab = new SharedArrayBuffer(byteLen)
-  new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+  const sourceSab = toSharedSource(source, byteLen)
 
   const targetSab = new SharedArrayBuffer(byteLen)
 
@@ -183,8 +192,7 @@ export async function dispatchCurve(source: Buffer, width: number, height: numbe
   if (!workers) return null
 
   const byteLen = width * height * 4
-  const sourceSab = new SharedArrayBuffer(byteLen)
-  new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+  const sourceSab = toSharedSource(source, byteLen)
 
   const targetSab = new SharedArrayBuffer(byteLen)
 
@@ -241,8 +249,7 @@ export async function dispatchGlow(
 
   const byteLen = width * height * 4
   const size = width * height
-  const sourceSab = new SharedArrayBuffer(byteLen)
-  new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+  const sourceSab = toSharedSource(source, byteLen)
 
   const lumSab = new SharedArrayBuffer(size * 8)
   const lumArr = new Float64Array(lumSab)

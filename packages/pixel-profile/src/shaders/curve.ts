@@ -35,10 +35,14 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       const bsy = by - by0
       const bosx = 1 - bsx
       const bosy = 1 - bsy
-      const bi00 = (by0 * width + bx0) * 4
-      const bi10 = (by0 * width + bx1) * 4
-      const bi01 = (by1 * width + bx0) * 4
-      const bi11 = (by1 * width + bx1) * 4
+      const ry0 = by0 * w4
+      const ry1 = by1 * w4
+      const cx0 = bx0 << 2
+      const cx1 = bx1 << 2
+      const bi00 = ry0 + cx0
+      const bi10 = ry0 + cx1
+      const bi01 = ry1 + cx0
+      const bi11 = ry1 + cx1
 
       target[idx] =
         ((source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy) *

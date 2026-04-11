@@ -86,6 +86,7 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       let bx: number, by: number, bx0: number, bx1: number, by0: number, by1: number
       let bsx: number, bsy: number, bosx: number, bosy: number
       let bi00: number, bi10: number, bi01: number, bi11: number
+      let ry0: number, ry1: number, cx0: number, cx1: number
 
       // Red channel — coords clamped to [0, max], so floor via |0 is safe
       bx = Math.min(maxX, Math.max(0, pcX + vcX * rgbShiftAmount * maxX))
@@ -98,10 +99,14 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       bsy = by - by0
       bosx = 1 - bsx
       bosy = 1 - bsy
-      bi00 = (by0 * width + bx0) * 4
-      bi10 = (by0 * width + bx1) * 4
-      bi01 = (by1 * width + bx0) * 4
-      bi11 = (by1 * width + bx1) * 4
+      ry0 = by0 * w4
+      ry1 = by1 * w4
+      cx0 = bx0 << 2
+      cx1 = bx1 << 2
+      bi00 = ry0 + cx0
+      bi10 = ry0 + cx1
+      bi01 = ry1 + cx0
+      bi11 = ry1 + cx1
       const r = (source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy
 
       // Green channel — clamp pcX/pcY first (matches original texture() mutation)
@@ -115,10 +120,14 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       bsy = pcY - by0
       bosx = 1 - bsx
       bosy = 1 - bsy
-      bi00 = (by0 * width + bx0) * 4
-      bi10 = (by0 * width + bx1) * 4
-      bi01 = (by1 * width + bx0) * 4
-      bi11 = (by1 * width + bx1) * 4
+      ry0 = by0 * w4
+      ry1 = by1 * w4
+      cx0 = bx0 << 2
+      cx1 = bx1 << 2
+      bi00 = ry0 + cx0
+      bi10 = ry0 + cx1
+      bi01 = ry1 + cx0
+      bi11 = ry1 + cx1
       const g =
         (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
         (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
@@ -134,10 +143,14 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       bsy = by - by0
       bosx = 1 - bsx
       bosy = 1 - bsy
-      bi00 = (by0 * width + bx0) * 4
-      bi10 = (by0 * width + bx1) * 4
-      bi01 = (by1 * width + bx0) * 4
-      bi11 = (by1 * width + bx1) * 4
+      ry0 = by0 * w4
+      ry1 = by1 * w4
+      cx0 = bx0 << 2
+      cx1 = bx1 << 2
+      bi00 = ry0 + cx0
+      bi10 = ry0 + cx1
+      bi01 = ry1 + cx0
+      bi11 = ry1 + cx1
       const b =
         (source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
         (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy
@@ -183,10 +196,14 @@ export function crt(source: Buffer, width: number, height: number, options: Part
               bsy = sy - by0
               bosx = 1 - bsx
               bosy = 1 - bsy
-              bi00 = (by0 * width + bx0) * 4
-              bi10 = (by0 * width + bx1) * 4
-              bi01 = (by1 * width + bx0) * 4
-              bi11 = (by1 * width + bx1) * 4
+              ry0 = by0 * w4
+              ry1 = by1 * w4
+              cx0 = bx0 << 2
+              cx1 = bx1 << 2
+              bi00 = ry0 + cx0
+              bi10 = ry0 + cx1
+              bi01 = ry1 + cx0
+              bi11 = ry1 + cx1
               bloomSum +=
                 ((source[bi00] * bosx + source[bi10] * bsx) * bosy +
                   (source[bi01] * bosx + source[bi11] * bsx) * bsy +

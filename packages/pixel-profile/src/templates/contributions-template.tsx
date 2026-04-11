@@ -1,5 +1,6 @@
 import { ContributionCalendar } from '../types'
 import { filterNotEmpty } from '../utils/filter'
+import { encodePngBase64 } from '../utils/png-encoder'
 
 export type ContributionsTemplateOptions = {
   color: string
@@ -25,6 +26,14 @@ const CELL_UNIT = CELL_SIZE + CELL_GAP
 
 const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', '']
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const GRID_PALETTE: number[][] = [
+  [255, 255, 255, 20],
+  [14, 68, 41, 255],
+  [0, 109, 50, 255],
+  [38, 166, 65, 255],
+  [57, 211, 83, 255]
+]
 
 const PIXEL_GREEN_PALETTE: Record<number, string> = {
   0: 'rgba(255,255,255,0.08)',
@@ -63,6 +72,35 @@ function getMonthPositions(weeks: ContributionCalendar['weeks']): Array<{ label:
   return positions
 }
 
+function renderGridImage(weeks: ContributionCalendar['weeks'], maxCount: number): string {
+  const cols = weeks.length
+  const imgW = cols * CELL_UNIT - CELL_GAP
+  const imgH = 7 * CELL_UNIT - CELL_GAP
+  const pixels = Buffer.alloc(imgW * imgH * 4, 0)
+
+  for (let w = 0; w < cols; w++) {
+    const days = weeks[w].contributionDays
+    const cellX = w * CELL_UNIT
+    for (let d = 0; d < days.length; d++) {
+      const cellY = d * CELL_UNIT
+      const level = getContributionLevel(days[d].contributionCount, maxCount)
+      const [r, g, b, a] = GRID_PALETTE[level]
+
+      for (let py = cellY; py < cellY + CELL_SIZE && py < imgH; py++) {
+        for (let px = cellX; px < cellX + CELL_SIZE && px < imgW; px++) {
+          const idx = (py * imgW + px) * 4
+          pixels[idx] = r
+          pixels[idx + 1] = g
+          pixels[idx + 2] = b
+          pixels[idx + 3] = a
+        }
+      }
+    }
+  }
+
+  return encodePngBase64(pixels, imgW, imgH)
+}
+
 export function makeContributionsCard(
   username: string,
   calendar: ContributionCalendar,
@@ -74,6 +112,7 @@ export function makeContributionsCard(
   const maxCount = Math.max(...weeks.flatMap((w) => w.contributionDays.map((d) => d.contributionCount)), 1)
 
   const monthPositions = getMonthPositions(weeks)
+  const gridDataUri = renderGridImage(weeks, maxCount)
 
   const dayLabelWidth = 50
   const gridWidth = weeks.length * CELL_UNIT - CELL_GAP
@@ -193,41 +232,14 @@ export function makeContributionsCard(
               ))}
             </div>
 
-            {/* Contribution grid */}
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: CELL_GAP
-              }}
-            >
-              {weeks.map((week, wi) => (
-                <div
-                  key={wi}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: CELL_GAP
-                  }}
-                >
-                  {week.contributionDays.map((day, di) => {
-                    const level = getContributionLevel(day.contributionCount, maxCount)
-
-                    return (
-                      <div
-                        key={di}
-                        style={{
-                          width: CELL_SIZE,
-                          height: CELL_SIZE,
-                          backgroundColor: PIXEL_GREEN_PALETTE[level],
-                          borderRadius: 2
-                        }}
-                      />
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
+            {/* Pre-rendered grid image */}
+            <img
+              src={gridDataUri}
+              alt=''
+              width={gridWidth}
+              height={gridHeight}
+              style={{ width: gridWidth, height: gridHeight }}
+            />
           </div>
 
           {/* Legend */}

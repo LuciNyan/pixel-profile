@@ -1,5 +1,3 @@
-import { sampleBilinear } from '../utils/bilinear'
-
 interface CRTOptions {
   curvatureX: number
   curvatureY: number
@@ -26,16 +24,8 @@ const defaultCRTOptions: CRTOptions = {
   borderSize: 0.03
 }
 
-const BLOOM_OFFSETS = [
-  [-1, -1],
-  [0, -1],
-  [1, -1],
-  [-1, 0],
-  [1, 0],
-  [-1, 1],
-  [0, 1],
-  [1, 1]
-] as const
+const BLOOM_OFFSETS_X = [-1, 0, 1, -1, 1, -1, 0, 1]
+const BLOOM_OFFSETS_Y = [-1, -1, -1, 0, 0, 1, 1, 1]
 
 export function crt(source: Buffer, width: number, height: number, options: Partial<CRTOptions> = {}): Buffer {
   const opts: CRTOptions = { ...defaultCRTOptions, ...options }
@@ -49,21 +39,31 @@ export function crt(source: Buffer, width: number, height: number, options: Part
   const borderDenom = 1 - 2 * borderMargin
   const rgbShiftAmount = opts.rgbShift * 0.01
   const hasBloom = opts.bloomAmount > 0
+  const bloomAmount = opts.bloomAmount
+  const scanLineCount = opts.scanLineCount
+  const scanLineStrength = opts.scanLineStrength
+  const noiseIntensity = opts.noiseIntensity
+  const vignetteDarkness = opts.vignetteDarkness
+  const cornerSize = opts.cornerSize
+  const w4 = width * 4
+  const oneBorderMargin = 1 - borderMargin
 
   for (let py = 0; py < height; py++) {
     const uvY = py / height
+    const cy = uvY - 0.5
+    const cy2 = cy * cy
+    const rowBase = py * w4
 
     for (let px = 0; px < width; px++) {
       const uvX = px / width
-      const idx = (py * width + px) * 4
+      const idx = rowBase + px * 4
 
       const cx = uvX - 0.5
-      const cy = uvY - 0.5
-      const distSq = cx * cx + cy * cy
+      const distSq = cx * cx + cy2
       const distX = cx * (1 + distSq * curvX5) + 0.5
       const distY = cy * (1 + distSq * curvY5) + 0.5
 
-      if (distX < borderMargin || distX > 1 - borderMargin || distY < borderMargin || distY > 1 - borderMargin) {
+      if (distX < borderMargin || distX > oneBorderMargin || distY < borderMargin || distY > oneBorderMargin) {
         target[idx] = 0
         target[idx + 1] = 0
         target[idx + 2] = 0
@@ -79,54 +79,106 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       const vcX = rsX - 0.5
       const vcY = rsY - 0.5
       const distFromCenter = Math.sqrt(vcX * vcX + vcY * vcY)
-      const cornerDist = Math.min(Math.abs(vcX) + Math.abs(vcY) * opts.cornerSize, 1)
+      const cornerDist = Math.min(Math.abs(vcX) + Math.abs(vcY) * cornerSize, 1)
       let vignette = (1 - distFromCenter * 1.5) * (1 - cornerDist * 0.5)
-      vignette = Math.min(1, Math.max(1 - opts.vignetteDarkness, vignette))
+      vignette = Math.min(1, Math.max(1 - vignetteDarkness, vignette))
 
-      const redSample = sampleBilinear(
-        source,
-        width,
-        maxX,
-        maxY,
-        pcX + vcX * rgbShiftAmount * maxX,
-        pcY + vcY * rgbShiftAmount * maxY
-      )
-      const r = redSample[0]
+      // Red channel — inline bilinear sample
+      let bx: number, by: number, bx0: number, bx1: number, by0: number, by1: number
+      let bsx: number, bsy: number, bosx: number, bosy: number
+      let bi00: number, bi10: number, bi01: number, bi11: number
 
-      // Green channel sample clamps pcX/pcY (matches original texture() mutation)
+      bx = Math.min(maxX, Math.max(0, pcX + vcX * rgbShiftAmount * maxX))
+      by = Math.min(maxY, Math.max(0, pcY + vcY * rgbShiftAmount * maxY))
+      bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      bx1 = Math.min(bx0 + 1, maxX)
+      by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      by1 = Math.min(by0 + 1, maxY)
+      bsx = bx - bx0
+      bsy = by - by0
+      bosx = 1 - bsx
+      bosy = 1 - bsy
+      bi00 = (by0 * width + bx0) * 4
+      bi10 = (by0 * width + bx1) * 4
+      bi01 = (by1 * width + bx0) * 4
+      bi11 = (by1 * width + bx1) * 4
+      const r = (source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy
+
+      // Green channel — clamp pcX/pcY first (matches original texture() mutation)
       pcX = Math.min(maxX, Math.max(0, pcX))
       pcY = Math.min(maxY, Math.max(0, pcY))
-      const greenSample = sampleBilinear(source, width, maxX, maxY, pcX, pcY)
-      const g = greenSample[1]
+      bx0 = Math.min(Math.max(Math.floor(pcX), 0), maxX)
+      bx1 = Math.min(bx0 + 1, maxX)
+      by0 = Math.min(Math.max(Math.floor(pcY), 0), maxY)
+      by1 = Math.min(by0 + 1, maxY)
+      bsx = pcX - bx0
+      bsy = pcY - by0
+      bosx = 1 - bsx
+      bosy = 1 - bsy
+      bi00 = (by0 * width + bx0) * 4
+      bi10 = (by0 * width + bx1) * 4
+      bi01 = (by1 * width + bx0) * 4
+      bi11 = (by1 * width + bx1) * 4
+      const g =
+        (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
+        (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
 
-      const blueSample = sampleBilinear(
-        source,
-        width,
-        maxX,
-        maxY,
-        pcX - vcX * rgbShiftAmount * maxX,
-        pcY - vcY * rgbShiftAmount * maxY
-      )
-      const b = blueSample[2]
+      // Blue channel — inline bilinear sample
+      bx = Math.min(maxX, Math.max(0, pcX - vcX * rgbShiftAmount * maxX))
+      by = Math.min(maxY, Math.max(0, pcY - vcY * rgbShiftAmount * maxY))
+      bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      bx1 = Math.min(bx0 + 1, maxX)
+      by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      by1 = Math.min(by0 + 1, maxY)
+      bsx = bx - bx0
+      bsy = by - by0
+      bosx = 1 - bsx
+      bosy = 1 - bsy
+      bi00 = (by0 * width + bx0) * 4
+      bi10 = (by0 * width + bx1) * 4
+      bi01 = (by1 * width + bx0) * 4
+      bi11 = (by1 * width + bx1) * 4
+      const b =
+        (source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
+        (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy
 
-      const scanLineY = Math.floor(rsY * opts.scanLineCount) % 2
-      const scanLine = 1 - scanLineY * opts.scanLineStrength
+      const scanLineY = Math.floor(rsY * scanLineCount) % 2
+      const scanLine = 1 - scanLineY * scanLineStrength
 
       const noiseSeed = Math.sin(uvX * 12.9898 + uvY * 78.233) * 43758.5453
-      const noise = 1 + ((noiseSeed - Math.floor(noiseSeed)) * 2 - 1) * opts.noiseIntensity
+      const noise = 1 + ((noiseSeed - Math.floor(noiseSeed)) * 2 - 1) * noiseIntensity
 
       let bloom = 0
       if (hasBloom) {
         let bloomSum = 0
         for (let bi = 0; bi < 8; bi++) {
-          const sx = pcX + BLOOM_OFFSETS[bi][0]
-          const sy = pcY + BLOOM_OFFSETS[bi][1]
+          const sx = pcX + BLOOM_OFFSETS_X[bi]
+          const sy = pcY + BLOOM_OFFSETS_Y[bi]
           if (sx >= 0 && sx <= maxX && sy >= 0 && sy <= maxY) {
-            const s = sampleBilinear(source, width, maxX, maxY, sx, sy)
-            bloomSum += (s[0] + s[1] + s[2]) / 3
+            bx0 = Math.min(Math.max(Math.floor(sx), 0), maxX)
+            bx1 = Math.min(bx0 + 1, maxX)
+            by0 = Math.min(Math.max(Math.floor(sy), 0), maxY)
+            by1 = Math.min(by0 + 1, maxY)
+            bsx = sx - bx0
+            bsy = sy - by0
+            bosx = 1 - bsx
+            bosy = 1 - bsy
+            bi00 = (by0 * width + bx0) * 4
+            bi10 = (by0 * width + bx1) * 4
+            bi01 = (by1 * width + bx0) * 4
+            bi11 = (by1 * width + bx1) * 4
+            const sr =
+              (source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy
+            const sg =
+              (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
+              (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
+            const sb =
+              (source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
+              (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy
+            bloomSum += (sr + sg + sb) / 3
           }
         }
-        bloom = (bloomSum / 8) * opts.bloomAmount
+        bloom = (bloomSum / 8) * bloomAmount
       }
 
       target[idx] = Math.min(255, Math.max(0, r * vignette * scanLine * noise + bloom))

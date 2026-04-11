@@ -1,33 +1,57 @@
-import { sampleBilinear } from '../utils/bilinear'
-
 const screenCurvature = 0.1
 
 export function curve(source: Buffer, width: number, height: number): Buffer {
   const maxX = width - 1
   const maxY = height - 1
   const target = Buffer.alloc(width * height * 4)
+  const w4 = width * 4
 
   for (let py = 0; py < height; py++) {
     const uvY = py / height
+    const ccY = uvY - 0.5
+    const ccY2 = ccY * ccY
+    const oneMinusUvY = 1 - uvY
+    const rowBase = py * w4
 
     for (let px = 0; px < width; px++) {
       const uvX = px / width
-      const idx = (py * width + px) * 4
+      const idx = rowBase + px * 4
 
       const ccX = uvX - 0.5
-      const ccY = uvY - 0.5
-      const dist = (ccX * ccX + ccY * ccY) * screenCurvature
+      const dist = (ccX * ccX + ccY2) * screenCurvature
       const temp = (1 + dist) * dist
-      const targetX = (uvX + ccX * temp) * maxX
-      const targetY = (uvY + ccY * temp) * maxY
+      const tx = (uvX + ccX * temp) * maxX
+      const ty = (uvY + ccY * temp) * maxY
 
-      const vignette = Math.pow(uvX * (1 - uvY) * uvY * (1 - uvX) * 15, 0.25)
+      const vignette = Math.pow(uvX * oneMinusUvY * uvY * (1 - uvX) * 15, 0.25)
 
-      const samplerColor = sampleBilinear(source, width, maxX, maxY, targetX, targetY)
+      // Inline bilinear sample
+      const bx = Math.min(maxX, Math.max(0, tx))
+      const by = Math.min(maxY, Math.max(0, ty))
+      const bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      const bx1 = Math.min(bx0 + 1, maxX)
+      const by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      const by1 = Math.min(by0 + 1, maxY)
+      const bsx = bx - bx0
+      const bsy = by - by0
+      const bosx = 1 - bsx
+      const bosy = 1 - bsy
+      const bi00 = (by0 * width + bx0) * 4
+      const bi10 = (by0 * width + bx1) * 4
+      const bi01 = (by1 * width + bx0) * 4
+      const bi11 = (by1 * width + bx1) * 4
 
-      target[idx] = samplerColor[0] * vignette
-      target[idx + 1] = samplerColor[1] * vignette
-      target[idx + 2] = samplerColor[2] * vignette
+      target[idx] =
+        ((source[bi00] * bosx + source[bi10] * bsx) * bosy + (source[bi01] * bosx + source[bi11] * bsx) * bsy) *
+        vignette
+      target[idx + 1] =
+        ((source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
+          (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy) *
+        vignette
+      target[idx + 2] =
+        ((source[bi00 + 2] * bosx + source[bi10 + 2] * bsx) * bosy +
+          (source[bi01 + 2] * bosx + source[bi11 + 2] * bsx) * bsy) *
+        vignette
       target[idx + 3] = 255
     }
   }

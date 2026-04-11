@@ -1,20 +1,32 @@
 const screenCurvature = 0.1
 
+const FOURTH_ROOT_15 = Math.pow(15, 0.25)
+
 export function curve(source: Buffer, width: number, height: number): Buffer {
   const maxX = width - 1
   const maxY = height - 1
   const target = Buffer.allocUnsafe(width * height * 4)
   const w4 = width * 4
 
+  const colVignette = new Float64Array(width)
+  const invW = 1 / width
+  for (let px = 0; px < width; px++) {
+    const uvX = px * invW
+    colVignette[px] = Math.pow(uvX * (1 - uvX), 0.25)
+  }
+
+  const invH = 1 / height
+
   for (let py = 0; py < height; py++) {
-    const uvY = py / height
+    const uvY = py * invH
     const ccY = uvY - 0.5
     const ccY2 = ccY * ccY
-    const oneMinusUvY = 1 - uvY
     const rowBase = py * w4
 
+    const rowVignette = Math.pow(uvY * (1 - uvY), 0.25) * FOURTH_ROOT_15
+
     for (let px = 0; px < width; px++) {
-      const uvX = px / width
+      const uvX = px * invW
       const idx = rowBase + px * 4
 
       const ccX = uvX - 0.5
@@ -23,7 +35,7 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
       const tx = (uvX + ccX * temp) * maxX
       const ty = (uvY + ccY * temp) * maxY
 
-      const vignette = Math.sqrt(Math.sqrt(uvX * oneMinusUvY * uvY * (1 - uvX) * 15))
+      const vignette = colVignette[px] * rowVignette
 
       const bx = Math.min(maxX, Math.max(0, tx))
       const by = Math.min(maxY, Math.max(0, ty))

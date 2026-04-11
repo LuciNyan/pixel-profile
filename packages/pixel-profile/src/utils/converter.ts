@@ -14,7 +14,7 @@ export async function getPixelsFromPngBuffer(png: Buffer): Promise<{
 
   const width = image.getWidth()
   const height = image.getHeight()
-  const pixels = Buffer.from(image.bitmap.data)
+  const pixels = image.bitmap.data as Buffer
 
   return {
     pixels,

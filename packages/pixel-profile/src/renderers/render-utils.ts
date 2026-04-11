@@ -83,7 +83,8 @@ export async function renderToPixels(
   } as const
 
   const pngData = new Resvg(svg, opts).render()
-  const pixels = Buffer.from(pngData.pixels)
+  const px = pngData.pixels
+  const pixels = Buffer.from(px.buffer, px.byteOffset, px.byteLength)
 
   return { pixels, width, height }
 }

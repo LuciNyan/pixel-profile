@@ -25,12 +25,11 @@ export function curve(source: Buffer, width: number, height: number): Buffer {
 
       const vignette = Math.sqrt(Math.sqrt(uvX * oneMinusUvY * uvY * (1 - uvX) * 15))
 
-      // Inline bilinear sample
       const bx = Math.min(maxX, Math.max(0, tx))
       const by = Math.min(maxY, Math.max(0, ty))
-      const bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      const bx0 = bx | 0
       const bx1 = Math.min(bx0 + 1, maxX)
-      const by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      const by0 = by | 0
       const by1 = Math.min(by0 + 1, maxY)
       const bsx = bx - bx0
       const bsy = by - by0

@@ -83,16 +83,16 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       let vignette = (1 - distFromCenter * 1.5) * (1 - cornerDist * 0.5)
       vignette = Math.min(1, Math.max(1 - vignetteDarkness, vignette))
 
-      // Red channel — inline bilinear sample
       let bx: number, by: number, bx0: number, bx1: number, by0: number, by1: number
       let bsx: number, bsy: number, bosx: number, bosy: number
       let bi00: number, bi10: number, bi01: number, bi11: number
 
+      // Red channel — coords clamped to [0, max], so floor via |0 is safe
       bx = Math.min(maxX, Math.max(0, pcX + vcX * rgbShiftAmount * maxX))
       by = Math.min(maxY, Math.max(0, pcY + vcY * rgbShiftAmount * maxY))
-      bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      bx0 = bx | 0
       bx1 = Math.min(bx0 + 1, maxX)
-      by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      by0 = by | 0
       by1 = Math.min(by0 + 1, maxY)
       bsx = bx - bx0
       bsy = by - by0
@@ -107,9 +107,9 @@ export function crt(source: Buffer, width: number, height: number, options: Part
       // Green channel — clamp pcX/pcY first (matches original texture() mutation)
       pcX = Math.min(maxX, Math.max(0, pcX))
       pcY = Math.min(maxY, Math.max(0, pcY))
-      bx0 = Math.min(Math.max(Math.floor(pcX), 0), maxX)
+      bx0 = pcX | 0
       bx1 = Math.min(bx0 + 1, maxX)
-      by0 = Math.min(Math.max(Math.floor(pcY), 0), maxY)
+      by0 = pcY | 0
       by1 = Math.min(by0 + 1, maxY)
       bsx = pcX - bx0
       bsy = pcY - by0
@@ -123,12 +123,12 @@ export function crt(source: Buffer, width: number, height: number, options: Part
         (source[bi00 + 1] * bosx + source[bi10 + 1] * bsx) * bosy +
         (source[bi01 + 1] * bosx + source[bi11 + 1] * bsx) * bsy
 
-      // Blue channel — inline bilinear sample
+      // Blue channel — coords clamped to [0, max], floor via |0
       bx = Math.min(maxX, Math.max(0, pcX - vcX * rgbShiftAmount * maxX))
       by = Math.min(maxY, Math.max(0, pcY - vcY * rgbShiftAmount * maxY))
-      bx0 = Math.min(Math.max(Math.floor(bx), 0), maxX)
+      bx0 = bx | 0
       bx1 = Math.min(bx0 + 1, maxX)
-      by0 = Math.min(Math.max(Math.floor(by), 0), maxY)
+      by0 = by | 0
       by1 = Math.min(by0 + 1, maxY)
       bsx = bx - bx0
       bsy = by - by0
@@ -155,9 +155,9 @@ export function crt(source: Buffer, width: number, height: number, options: Part
           const sx = pcX + BLOOM_OFFSETS_X[bi]
           const sy = pcY + BLOOM_OFFSETS_Y[bi]
           if (sx >= 0 && sx <= maxX && sy >= 0 && sy <= maxY) {
-            bx0 = Math.min(Math.max(Math.floor(sx), 0), maxX)
+            bx0 = sx | 0
             bx1 = Math.min(bx0 + 1, maxX)
-            by0 = Math.min(Math.max(Math.floor(sy), 0), maxY)
+            by0 = sy | 0
             by1 = Math.min(by0 + 1, maxY)
             bsx = sx - bx0
             bsy = sy - by0

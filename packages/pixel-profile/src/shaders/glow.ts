@@ -80,6 +80,9 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
   const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
   const falloffFn = getFalloffFunction(falloff)
 
+  const rowPrefix = new Int32Array(width + 1)
+  const colPrefix = new Int32Array((height + 1) * width)
+
   function horizontalPass(
     input: Buffer | Float32Array,
     output: Float32Array,
@@ -87,18 +90,36 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     currentRadius: number,
     weights: Float64Array
   ) {
+    const maxX = width - 1
+
     for (let y = 0; y < height; y++) {
       const rowOffset = y * width
 
+      rowPrefix[0] = 0
+      for (let x = 0; x < width; x++) {
+        rowPrefix[x + 1] = rowPrefix[x] + (luminance[rowOffset + x] > threshold ? 1 : 0)
+      }
+
       for (let x = 0; x < width; x++) {
         const centerIdx = (rowOffset + x) * 4
+
+        const lo = Math.max(0, x - currentRadius)
+        const hi = Math.min(maxX, x + currentRadius)
+        if (rowPrefix[hi + 1] - rowPrefix[lo] === 0) {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          continue
+        }
+
         let sumR = 0
         let sumG = 0
         let sumB = 0
         let weightSum = 0
 
         for (let i = -currentRadius; i <= currentRadius; i++) {
-          const sampleX = Math.min(Math.max(x + i, 0), width - 1)
+          const sampleX = Math.min(Math.max(x + i, 0), maxX)
           const sampleIdx = (rowOffset + sampleX) * 4
 
           if (luminance[rowOffset + sampleX] > threshold) {
@@ -133,16 +154,40 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
     currentRadius: number,
     weights: Float64Array
   ) {
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
+    const maxY = height - 1
+
+    for (let y = 0; y < height; y++) {
+      const currRow = (y + 1) * width
+      const prevRow = y * width
+      for (let x = 0; x < width; x++) {
+        colPrefix[currRow + x] = colPrefix[prevRow + x] + (luminance[prevRow + x] > threshold ? 1 : 0)
+      }
+    }
+
+    for (let y = 0; y < height; y++) {
+      const lo = Math.max(0, y - currentRadius)
+      const hi = Math.min(maxY, y + currentRadius)
+      const loRow = lo * width
+      const hiRow = (hi + 1) * width
+
+      for (let x = 0; x < width; x++) {
         const centerIdx = (y * width + x) * 4
+
+        if (colPrefix[hiRow + x] - colPrefix[loRow + x] === 0) {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          continue
+        }
+
         let sumR = 0
         let sumG = 0
         let sumB = 0
         let weightSum = 0
 
         for (let i = -currentRadius; i <= currentRadius; i++) {
-          const sampleY = Math.min(Math.max(y + i, 0), height - 1)
+          const sampleY = Math.min(Math.max(y + i, 0), maxY)
           const sampleIdx = (sampleY * width + x) * 4
 
           if (luminance[sampleY * width + x] > threshold) {

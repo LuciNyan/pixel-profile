@@ -32,6 +32,40 @@ function buildSampleOffsets(blockSize: number, antiAlias: boolean): [number, num
   return offsets
 }
 
+function fillBlockBands(
+  target: Buffer,
+  blockColors: Float64Array,
+  width: number,
+  height: number,
+  blockSize: number,
+  blocksX: number
+) {
+  const rowLen = width * 4
+  let prevBy = -1
+  let bandRowStart = 0
+
+  for (let py = 0; py < height; py++) {
+    const by = Math.floor(py / blockSize)
+
+    if (by !== prevBy) {
+      prevBy = by
+      bandRowStart = py * rowLen
+
+      for (let px = 0; px < width; px++) {
+        const bx = Math.floor(px / blockSize)
+        const bi = (by * blocksX + bx) * 4
+        const idx = bandRowStart + px * 4
+        target[idx] = blockColors[bi]
+        target[idx + 1] = blockColors[bi + 1]
+        target[idx + 2] = blockColors[bi + 2]
+        target[idx + 3] = blockColors[bi + 3]
+      }
+    } else {
+      target.copy(target, py * rowLen, bandRowStart, bandRowStart + rowLen)
+    }
+  }
+}
+
 function pixelateDominant(
   source: Buffer,
   width: number,
@@ -137,18 +171,7 @@ function pixelateDominant(
     }
   }
 
-  for (let py = 0; py < height; py++) {
-    const bky = Math.floor(py / blockSize)
-    for (let px = 0; px < width; px++) {
-      const bkx = Math.floor(px / blockSize)
-      const bi = (bky * blocksX + bkx) * 4
-      const idx = (py * width + px) * 4
-      target[idx] = blockColors[bi]
-      target[idx + 1] = blockColors[bi + 1]
-      target[idx + 2] = blockColors[bi + 2]
-      target[idx + 3] = blockColors[bi + 3]
-    }
-  }
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
 
   return target
 }
@@ -210,18 +233,7 @@ function pixelateAverage(source: Buffer, width: number, height: number, blockSiz
     }
   }
 
-  for (let py = 0; py < height; py++) {
-    const bky = Math.floor(py / blockSize)
-    for (let px = 0; px < width; px++) {
-      const bkx = Math.floor(px / blockSize)
-      const bi = (bky * blocksX + bkx) * 4
-      const idx = (py * width + px) * 4
-      target[idx] = blockColors[bi]
-      target[idx + 1] = blockColors[bi + 1]
-      target[idx + 2] = blockColors[bi + 2]
-      target[idx + 3] = blockColors[bi + 3]
-    }
-  }
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
 
   return target
 }
@@ -267,18 +279,7 @@ function pixelateCenter(source: Buffer, width: number, height: number, blockSize
     }
   }
 
-  for (let py = 0; py < height; py++) {
-    const bky = Math.floor(py / blockSize)
-    for (let px = 0; px < width; px++) {
-      const bkx = Math.floor(px / blockSize)
-      const bi = (bky * blocksX + bkx) * 4
-      const idx = (py * width + px) * 4
-      target[idx] = blockColors[bi]
-      target[idx + 1] = blockColors[bi + 1]
-      target[idx + 2] = blockColors[bi + 2]
-      target[idx + 3] = blockColors[bi + 3]
-    }
-  }
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
 
   return target
 }

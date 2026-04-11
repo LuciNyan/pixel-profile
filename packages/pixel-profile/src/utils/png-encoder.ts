@@ -61,7 +61,7 @@ export function encodePng(pixels: Buffer, width: number, height: number): Buffer
     pixels.copy(raw, dstOff + 1, srcOff, srcOff + rowBytes)
   }
 
-  const compressed = deflateSync(raw)
+  const compressed = deflateSync(raw, { level: 1 })
 
   const ihdr = makeChunk('IHDR', encodeIHDR(width, height))
   const idat = makeChunk('IDAT', compressed)

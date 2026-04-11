@@ -48,3 +48,15 @@ export type ContributionsData = {
   username: string
   calendar: ContributionCalendar
 }
+
+export type RepoData = {
+  name: string
+  owner: string
+  description: string
+  language: string
+  languageColor: string
+  stars: number
+  forks: number
+  isArchived: boolean
+  isFork: boolean
+}

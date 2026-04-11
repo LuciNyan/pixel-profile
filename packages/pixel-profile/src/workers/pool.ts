@@ -1,4 +1,5 @@
 import { crtCore, defaultCRTOptions } from '../shaders/crt'
+import { curveCore } from '../shaders/curve'
 import {
   buildLuminanceMap,
   buildWeightTable,
@@ -21,7 +22,15 @@ let pool: PoolWorker[] | null = null
 let poolFailed = false
 
 function buildWorkerCode(): string {
-  const fns = [crtCore, buildLuminanceMap, buildWeightTable, getFalloffFunction, horizontalPassCore, verticalPassCore]
+  const fns = [
+    crtCore,
+    curveCore,
+    buildLuminanceMap,
+    buildWeightTable,
+    getFalloffFunction,
+    horizontalPassCore,
+    verticalPassCore
+  ]
   const fnDefs = fns.map((fn) => `var ${fn.name} = ${fn.toString()};`).join('\n')
 
   return `
@@ -35,6 +44,10 @@ parentPort.on('message', function(msg) {
     var src = new Uint8Array(msg.sourceSab);
     var tgt = new Uint8Array(msg.targetSab);
     crtCore(src, tgt, msg.width, msg.height, msg.startRow, msg.endRow, msg.opts);
+  } else if (msg.type === 'curve') {
+    var src = new Uint8Array(msg.sourceSab);
+    var tgt = new Uint8Array(msg.targetSab);
+    curveCore(src, tgt, msg.width, msg.height, msg.startRow, msg.endRow);
   } else if (msg.type === 'glow-layer') {
     var src = new Uint8Array(msg.sourceSab);
     var layerOut = new Float32Array(msg.layerSab);
@@ -116,6 +129,46 @@ export async function dispatchCrt(
     return new Promise<void>((resolve, reject) => {
       pw.pending = { resolve, reject }
       pw.worker.postMessage({ type: 'crt', sourceSab, targetSab, width, height, startRow, endRow, opts })
+    })
+  })
+
+  await Promise.all(promises)
+
+  const result = Buffer.allocUnsafe(byteLen)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Buffer.from(targetSab as any).copy(result as any)
+
+  return result
+}
+
+export async function dispatchCurve(source: Buffer, width: number, height: number): Promise<Buffer | null> {
+  const workers = ensurePool()
+  if (!workers) return null
+
+  const byteLen = width * height * 4
+  const sourceSab = new SharedArrayBuffer(byteLen)
+  new Uint8Array(sourceSab).set(new Uint8Array(source.buffer, source.byteOffset, byteLen))
+
+  const targetSab = new SharedArrayBuffer(byteLen)
+
+  const rowsPerWorker = Math.ceil(height / workers.length)
+
+  const promises = workers.map((pw, i) => {
+    const startRow = i * rowsPerWorker
+    const endRow = Math.min(startRow + rowsPerWorker, height)
+    if (startRow >= height) return Promise.resolve()
+
+    return new Promise<void>((resolve, reject) => {
+      pw.pending = { resolve, reject }
+      pw.worker.postMessage({
+        type: 'curve',
+        sourceSab,
+        targetSab,
+        width,
+        height,
+        startRow,
+        endRow
+      })
     })
   })
 

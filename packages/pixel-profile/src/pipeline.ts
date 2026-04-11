@@ -2,7 +2,7 @@ import { addBorder, crt, curve, pixelate } from './shaders'
 import { BUILTIN_PALETTES, orderedBayer, paletteDither, type PaletteId } from './shaders/dithering'
 import { glow } from './shaders/glow'
 import { scanline } from './shaders/scanline'
-import { dispatchCrt, dispatchGlow } from './workers/pool'
+import { dispatchCrt, dispatchCurve, dispatchGlow } from './workers/pool'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ShaderFn = (pixels: Buffer, width: number, height: number, opts?: any) => Buffer
@@ -58,6 +58,12 @@ export async function executePipelineAsync(
         }
       } else if (pass.name === 'glow') {
         const parallel = await dispatchGlow(result, width, height, pass.options || {})
+        if (parallel) {
+          result = parallel
+          continue
+        }
+      } else if (pass.name === 'curve') {
+        const parallel = await dispatchCurve(result, width, height)
         if (parallel) {
           result = parallel
           continue
@@ -147,7 +153,7 @@ export function buildStatsPipeline(options: {
         }
       })
     }
-    pipeline.push({ name: 'curve', shader: curve })
+    pipeline.push({ name: 'curve', shader: curve, parallel: true })
   }
 
   return pipeline
@@ -226,7 +232,7 @@ export function buildContributionsPipeline(options: {
         }
       })
     }
-    pipeline.push({ name: 'curve', shader: curve })
+    pipeline.push({ name: 'curve', shader: curve, parallel: true })
   }
 
   return pipeline

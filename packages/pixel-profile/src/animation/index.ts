@@ -129,6 +129,12 @@ export async function renderAnimatedGif(
   if (effect === 'glow-pulse') {
     return renderGlowPulseOptimized(basePixels, width, height, basePipeline, frameCount, frameDelay)
   }
+  if (effect === 'scanline-scroll') {
+    return renderScanlineScrollOptimized(basePixels, width, height, basePipeline, frameCount, frameDelay)
+  }
+  if (effect === 'crt-flicker') {
+    return renderCrtFlickerOptimized(basePixels, width, height, basePipeline, frameCount, frameDelay)
+  }
 
   const animatedPipelines = buildAnimatedPipelines(effect, frameCount, basePipeline)
 
@@ -187,6 +193,118 @@ async function renderGlowPulseOptimized(
   }
 
   return encodeGif(frames, width, height)
+}
+
+async function renderScanlineScrollOptimized(
+  basePixels: Buffer,
+  width: number,
+  height: number,
+  basePipeline: Pipeline,
+  frameCount: number,
+  frameDelay: number
+): Promise<Buffer> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const processed = await executePipelineSmart(Buffer.from(basePixels as any), width, height, basePipeline)
+
+  const frames: GifFrame[] = []
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / frameCount
+    const scrollOffset = Math.floor(t * 6)
+    frames.push({ pixels: scanlineWithOffset(processed, width, height, scrollOffset), delay: frameDelay })
+  }
+
+  return encodeGif(frames, width, height)
+}
+
+async function renderCrtFlickerOptimized(
+  basePixels: Buffer,
+  width: number,
+  height: number,
+  basePipeline: Pipeline,
+  frameCount: number,
+  frameDelay: number
+): Promise<Buffer> {
+  const crtPass = basePipeline.find((p) => p.name === 'crt')
+  const glowPass = basePipeline.find((p) => p.name === 'glow')
+  const nonGlowPipeline = basePipeline.filter((p) => p.name !== 'glow')
+
+  if (!crtPass || !glowPass) {
+    const animatedPipelines = buildAnimatedPipelines('crt-flicker', frameCount, basePipeline)
+    const frames: GifFrame[] = []
+    for (const pipeline of animatedPipelines) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, pipeline)
+      frames.push({ pixels, delay: frameDelay })
+    }
+
+    return encodeGif(frames, width, height)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const baseCrt = await executePipelineSmart(Buffer.from(basePixels as any), width, height, nonGlowPipeline)
+  const precomputed = await precomputeGlowLayers(baseCrt, width, height, glowPass.options || {})
+
+  if (!precomputed) {
+    const animatedPipelines = buildAnimatedPipelines('crt-flicker', frameCount, basePipeline)
+    const frames: GifFrame[] = []
+    for (const pipeline of animatedPipelines) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, pipeline)
+      frames.push({ pixels, delay: frameDelay })
+    }
+
+    return encodeGif(frames, width, height)
+  }
+
+  const color: [number, number, number] = glowPass.options?.color ?? [1, 1, 1]
+  const intensity = glowPass.options?.intensity ?? 0.17
+
+  const frames: GifFrame[] = []
+  for (let i = 0; i < frameCount; i++) {
+    const t = i / frameCount
+    const noiseIntensity = 0.03 + 0.04 * Math.sin(t * Math.PI * 2)
+    const scanLineStrength = 0.1 + 0.1 * Math.sin(t * Math.PI * 2 + 1)
+
+    const frameCrtPipeline: Pipeline = nonGlowPipeline.map((pass) => {
+      if (pass.name === 'crt') {
+        return { ...pass, options: { ...pass.options, noiseIntensity, scanLineStrength } }
+      }
+
+      return pass
+    })
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const crtPixels = await executePipelineSmart(Buffer.from(basePixels as any), width, height, frameCrtPipeline)
+
+    const glowResult = await compositeGlowFromPrecomputed(precomputed, intensity, color)
+    const merged = blendCrtWithGlow(crtPixels, glowResult, baseCrt, width, height)
+    frames.push({ pixels: merged, delay: frameDelay })
+  }
+
+  return encodeGif(frames, width, height)
+}
+
+function blendCrtWithGlow(
+  frameCrt: Buffer,
+  glowOnBase: Buffer,
+  baseCrt: Buffer,
+  width: number,
+  height: number
+): Buffer {
+  const size = width * height * 4
+  const result = Buffer.allocUnsafe(size)
+
+  for (let i = 0; i < size; i += 4) {
+    const diffR = frameCrt[i] - baseCrt[i]
+    const diffG = frameCrt[i + 1] - baseCrt[i + 1]
+    const diffB = frameCrt[i + 2] - baseCrt[i + 2]
+    result[i] = Math.max(0, Math.min(255, glowOnBase[i] + diffR))
+    result[i + 1] = Math.max(0, Math.min(255, glowOnBase[i + 1] + diffG))
+    result[i + 2] = Math.max(0, Math.min(255, glowOnBase[i + 2] + diffB))
+    result[i + 3] = 255
+  }
+
+  return result
 }
 
 export { encodeGif, type GifFrame } from './gif-encoder'

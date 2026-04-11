@@ -1,6 +1,6 @@
 import { fontBuffer } from '../assets/fonts/press-start-2p'
 import { GithubStats, TemplateStats } from '../types'
-import { getPixelsFromPngBuffer, kFormatter } from '../utils'
+import { kFormatter } from '../utils'
 import { Resvg } from '@resvg/resvg-js'
 import satori from 'satori'
 
@@ -83,9 +83,7 @@ export async function renderToPixels(
   } as const
 
   const pngData = new Resvg(svg, opts).render()
-  const pngBuffer = pngData.asPng()
-
-  const { pixels } = await getPixelsFromPngBuffer(pngBuffer)
+  const pixels = Buffer.from(pngData.pixels)
 
   return { pixels, width, height }
 }

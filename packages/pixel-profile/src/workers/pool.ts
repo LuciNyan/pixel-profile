@@ -1,6 +1,7 @@
 import { crtCore, defaultCRTOptions } from '../shaders/crt'
 import { curveCore } from '../shaders/curve'
 import {
+  buildColumnPrefixMap,
   buildLuminanceMap,
   buildWeightTable,
   calculateAdaptiveThreshold,
@@ -25,7 +26,15 @@ let poolFailed = false
 let poolReadyPromise: Promise<boolean> | null = null
 
 function buildWorkerCode(): string {
-  const fns = [crtCore, curveCore, buildWeightTable, getFalloffFunction, horizontalPassCore, verticalPassCore]
+  const fns = [
+    crtCore,
+    curveCore,
+    buildColumnPrefixMap,
+    buildWeightTable,
+    getFalloffFunction,
+    horizontalPassCore,
+    verticalPassCore
+  ]
   const fnDefs = fns.map((fn) => `var ${fn.name} = ${fn.toString()};`).join('\n')
 
   return `
@@ -70,7 +79,8 @@ parentPort.on('message', function(msg) {
       var oS = new Float32Array(la.layerOutSab);
       var ffn = getFalloffFunction(ft);
       var wt = buildWeightTable(la.radius, ffn);
-      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR);
+      var cp = la.colPrefixSab ? new Int32Array(la.colPrefixSab) : undefined;
+      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR, cp);
     }
   } else if (msg.type === 'glow-composite') {
     var src = new Uint8Array(msg.sourceSab);
@@ -123,7 +133,8 @@ parentPort.on('message', function(msg) {
       layerOuts[li] = oS;
       var ffn = getFalloffFunction(ft);
       var wt = buildWeightTable(la.radius, ffn);
-      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR);
+      var cp = la.colPrefixSab ? new Int32Array(la.colPrefixSab) : undefined;
+      verticalPassCore(hB, oS, hL, w, h, th, la.radius, wt, sR, eR, cp);
     }
     var src = new Uint8Array(msg.sourceSab);
     var res = new Uint8Array(msg.resultSab);
@@ -385,8 +396,9 @@ export async function precomputeGlowLayers(
   const sourceSab = toSharedSource(source, byteLen)
 
   const lumSab = new SharedArrayBuffer(size * 8)
-  new Float64Array(lumSab).set(buildLuminanceMap(source, size))
+  buildLuminanceMap(source, size, new Float64Array(lumSab))
 
+  const colPrefixLen = (height + 1) * width
   const layerMsgs: PrecomputedGlowLayers['layerMsgs'] = []
   for (let i = 0; i < layers; i++) {
     layerMsgs.push({
@@ -422,6 +434,13 @@ export async function precomputeGlowLayers(
       })
     })
   )
+
+  for (const lm of layerMsgs) {
+    const hLum = new Float64Array(lm.hLumSab)
+    const cpSab = new SharedArrayBuffer(colPrefixLen * 4)
+    buildColumnPrefixMap(hLum, width, height, threshold, new Int32Array(cpSab))
+    ;(lm as { colPrefixSab?: SharedArrayBuffer }).colPrefixSab = cpSab
+  }
 
   await Promise.all(
     workers.map((pw, i) => {
@@ -544,11 +563,113 @@ export async function dispatchGlow(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   userOpts: any
 ): Promise<Buffer | null> {
-  const opts = { ...DEFAULT_GLOW, ...userOpts }
-  const precomputed = await precomputeGlowLayers(source, width, height, userOpts)
-  if (!precomputed) return null
+  const workers = await getPool()
+  if (!workers) return null
 
-  return compositeGlowFromPrecomputed(precomputed, opts.intensity, opts.color)
+  const opts = { ...DEFAULT_GLOW, ...userOpts }
+  const { radius, intensity, layers, falloff, adaptiveThreshold, threshold: _threshold, color } = opts
+  const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
+
+  const byteLen = width * height * 4
+  const size = width * height
+  const sourceSab = toSharedSource(source, byteLen)
+  const colPrefixLen = (height + 1) * width
+
+  const lumSab = new SharedArrayBuffer(size * 8)
+  buildLuminanceMap(source, size, new Float64Array(lumSab))
+
+  const layerMsgs: {
+    hBlurSab: SharedArrayBuffer
+    hLumSab: SharedArrayBuffer
+    layerOutSab: SharedArrayBuffer
+    radius: number
+    colPrefixSab?: SharedArrayBuffer
+  }[] = []
+  for (let i = 0; i < layers; i++) {
+    layerMsgs.push({
+      hBlurSab: new SharedArrayBuffer(size * 4 * 4),
+      hLumSab: new SharedArrayBuffer(size * 8),
+      layerOutSab: new SharedArrayBuffer(size * 4 * 4),
+      radius: Math.floor(radius * (i + 1))
+    })
+  }
+
+  const rowsPerWorker = Math.ceil(height / workers.length)
+
+  await Promise.all(
+    workers.map((pw, i) => {
+      const startRow = i * rowsPerWorker
+      const endRow = Math.min(startRow + rowsPerWorker, height)
+      if (startRow >= height) return Promise.resolve()
+
+      return new Promise<void>((resolve, reject) => {
+        pw.pending = { resolve, reject }
+        pw.worker.postMessage({
+          type: 'glow-h-batch',
+          sourceSab,
+          lumSab,
+          layers: layerMsgs,
+          width,
+          height,
+          threshold,
+          falloffType: falloff,
+          startRow,
+          endRow
+        })
+      })
+    })
+  )
+
+  for (const lm of layerMsgs) {
+    const hLum = new Float64Array(lm.hLumSab)
+    const cpSab = new SharedArrayBuffer(colPrefixLen * 4)
+    buildColumnPrefixMap(hLum, width, height, threshold, new Int32Array(cpSab))
+    lm.colPrefixSab = cpSab
+  }
+
+  const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
+  const layerIntensities: number[] = []
+  const layerOneMinusT: number[] = []
+  for (let li = 0; li < layers; li++) {
+    layerIntensities.push(intensity / (li + 1))
+    layerOneMinusT.push(1 - intensity / (li + 1))
+  }
+
+  const resultSab = new SharedArrayBuffer(byteLen)
+
+  await Promise.all(
+    workers.map((pw, i) => {
+      const startRow = i * rowsPerWorker
+      const endRow = Math.min(startRow + rowsPerWorker, height)
+      if (startRow >= height) return Promise.resolve()
+
+      return new Promise<void>((resolve, reject) => {
+        pw.pending = { resolve, reject }
+        pw.worker.postMessage({
+          type: 'glow-vc-batch',
+          layers: layerMsgs,
+          sourceSab,
+          resultSab,
+          width,
+          height,
+          threshold,
+          falloffType: falloff,
+          startRow,
+          endRow,
+          colorIsWhite: isWhite,
+          colorR,
+          colorG,
+          colorB,
+          layerIntensities,
+          layerOneMinusT
+        })
+      })
+    })
+  )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return Buffer.from(resultSab as any) as Buffer
 }
 
 export function shutdownPool(): void {

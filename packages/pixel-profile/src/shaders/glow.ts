@@ -62,8 +62,8 @@ export function buildWeightTable(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function buildLuminanceMap(input: any, size: number): Float64Array {
-  const lum = new Float64Array(size)
+export function buildLuminanceMap(input: any, size: number, output?: Float64Array): Float64Array {
+  const lum = output || new Float64Array(size)
 
   for (let i = 0; i < size; i++) {
     const idx = i * 4
@@ -180,8 +180,28 @@ export function horizontalPassCore(
   }
 }
 
+export function buildColumnPrefixMap(
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  output?: Int32Array
+): Int32Array {
+  const colPrefix = output || new Int32Array((height + 1) * width)
+  for (let y = 0; y < height; y++) {
+    const currRow = (y + 1) * width
+    const prevRow = y * width
+    for (let x = 0; x < width; x++) {
+      colPrefix[currRow + x] = colPrefix[prevRow + x] + (luminance[prevRow + x] > threshold ? 1 : 0)
+    }
+  }
+
+  return colPrefix
+}
+
 /**
  * Vertical blur pass. All parameters explicit (closure-free for Worker serialization).
+ * When precomputedColPrefix is provided, skips the O(height*width) prefix scan.
  */
 export function verticalPassCore(
   input: Float32Array,
@@ -193,7 +213,8 @@ export function verticalPassCore(
   currentRadius: number,
   weights: Float64Array,
   startRow: number = 0,
-  endRow: number = height
+  endRow: number = height,
+  precomputedColPrefix?: Int32Array
 ): void {
   const maxY = height - 1
   const diameter = currentRadius * 2 + 1
@@ -201,15 +222,7 @@ export function verticalPassCore(
   for (let w = 0; w < diameter; w++) totalWeight += weights[w]
   const w4 = width * 4
 
-  const colPrefix = new Int32Array((height + 1) * width)
-
-  for (let y = 0; y < height; y++) {
-    const currRow = (y + 1) * width
-    const prevRow = y * width
-    for (let x = 0; x < width; x++) {
-      colPrefix[currRow + x] = colPrefix[prevRow + x] + (luminance[prevRow + x] > threshold ? 1 : 0)
-    }
-  }
+  const colPrefix = precomputedColPrefix || buildColumnPrefixMap(luminance, width, height, threshold)
 
   for (let y = startRow; y < endRow; y++) {
     const lo = Math.max(0, y - currentRadius)
@@ -326,11 +339,29 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
   const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
 
   const size = width * height
+  const sourceLuminance = buildLuminanceMap(source, size)
   const glowLayers: Float32Array[] = []
 
   for (let i = 0; i < layers; i++) {
     const currentRadius = Math.floor(radius * (i + 1))
-    glowLayers.push(glowLayerCore(source, width, height, threshold, currentRadius, falloff))
+    const falloffFn = getFalloffFunction(falloff)
+    const weights = buildWeightTable(currentRadius, falloffFn)
+    const horizontalBlur = new Float32Array(size * 4)
+    const hBlurLuminance = new Float64Array(size)
+    const layerOutput = new Float32Array(size * 4)
+    horizontalPassCore(
+      source,
+      horizontalBlur,
+      sourceLuminance,
+      hBlurLuminance,
+      width,
+      height,
+      threshold,
+      currentRadius,
+      weights
+    )
+    verticalPassCore(horizontalBlur, layerOutput, hBlurLuminance, width, height, threshold, currentRadius, weights)
+    glowLayers.push(layerOutput)
   }
 
   const result = Buffer.allocUnsafe(size * 4)

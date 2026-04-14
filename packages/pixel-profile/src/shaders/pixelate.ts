@@ -1,6 +1,3 @@
-import type { RGBA } from '../renderer'
-import { render } from '../renderer'
-
 export type PixelateOptions = {
   blockSize: number
   samplingMode?: 'center' | 'average' | 'dominant'
@@ -11,64 +8,279 @@ export function pixelate(source: Buffer, width: number, height: number, options:
   const opts: PixelateOptions = typeof options === 'number' ? { blockSize: options } : options
 
   const { blockSize, samplingMode = 'center', antiAlias = true } = opts
-  const halfBlockSize = blockSize / 2
 
+  if (samplingMode === 'center') {
+    return pixelateCenter(source, width, height, blockSize)
+  }
+
+  if (samplingMode === 'dominant') {
+    return pixelateDominant(source, width, height, blockSize, antiAlias)
+  }
+
+  return pixelateAverage(source, width, height, blockSize, antiAlias)
+}
+
+function buildSampleOffsets(blockSize: number, antiAlias: boolean): [number, number][] {
   const samplePoints = antiAlias ? 4 : 1
-  const sampleOffsets: [number, number][] = []
+  const offsets: [number, number][] = []
   for (let i = 0; i < samplePoints; i++) {
     for (let j = 0; j < samplePoints; j++) {
-      sampleOffsets.push([(i + 0.5) * (blockSize / samplePoints), (j + 0.5) * (blockSize / samplePoints)])
+      offsets.push([(i + 0.5) * (blockSize / samplePoints), (j + 0.5) * (blockSize / samplePoints)])
     }
   }
 
-  return render(source, width, height, (coords, texture) => {
-    const x = Math.floor(coords[0] / blockSize)
-    const y = Math.floor(coords[1] / blockSize)
-    const blockX = x * blockSize
-    const blockY = y * blockSize
+  return offsets
+}
 
-    if (samplingMode === 'center') {
-      return texture([blockX + halfBlockSize, blockY + halfBlockSize])
-    }
+function fillBlockBands(
+  target: Buffer,
+  blockColors: Float64Array,
+  width: number,
+  height: number,
+  blockSize: number,
+  blocksX: number
+) {
+  const rowLen = width * 4
+  let prevBy = -1
+  let bandRowStart = 0
 
-    const samples: RGBA[] = []
-    samples.length = sampleOffsets.length
-    for (let i = 0; i < sampleOffsets.length; i++) {
-      const [offsetX, offsetY] = sampleOffsets[i]
-      samples[i] = texture([blockX + offsetX, blockY + offsetY])
-    }
+  for (let py = 0; py < height; py++) {
+    const by = Math.floor(py / blockSize)
 
-    if (samplingMode === 'average') {
-      const sum: RGBA = [0, 0, 0, 0]
-      for (const color of samples) {
-        sum[0] += color[0]
-        sum[1] += color[1]
-        sum[2] += color[2]
-        sum[3] += color[3]
+    if (by !== prevBy) {
+      prevBy = by
+      bandRowStart = py * rowLen
+
+      for (let px = 0; px < width; px++) {
+        const bx = Math.floor(px / blockSize)
+        const bi = (by * blocksX + bx) * 4
+        const idx = bandRowStart + px * 4
+        target[idx] = blockColors[bi]
+        target[idx + 1] = blockColors[bi + 1]
+        target[idx + 2] = blockColors[bi + 2]
+        target[idx + 3] = blockColors[bi + 3]
       }
-      const count = samples.length
-
-      return [sum[0] / count, sum[1] / count, sum[2] / count, sum[3] / count] as RGBA
     } else {
-      const colorCount = new Map<string, { color: RGBA; count: number }>()
-      let maxCount = 0
-      let dominantColor = samples[0]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      target.copy(target as any, py * rowLen, bandRowStart, bandRowStart + rowLen)
+    }
+  }
+}
 
-      for (const color of samples) {
-        const key = color.join(',')
-        const entry = colorCount.get(key)
-        if (entry) {
-          entry.count++
-          if (entry.count > maxCount) {
-            maxCount = entry.count
-            dominantColor = entry.color
+function pixelateDominant(
+  source: Buffer,
+  width: number,
+  height: number,
+  blockSize: number,
+  antiAlias: boolean
+): Buffer {
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.allocUnsafe(width * height * 4)
+  const offsets = buildSampleOffsets(blockSize, antiAlias)
+  const numSamples = offsets.length
+
+  const blocksX = Math.ceil(width / blockSize)
+  const blocksY = Math.ceil(height / blockSize)
+
+  const blockColors = new Float64Array(blocksX * blocksY * 4)
+
+  const MAX_DISTINCT = 16
+  const sampleR = new Float64Array(MAX_DISTINCT)
+  const sampleG = new Float64Array(MAX_DISTINCT)
+  const sampleB = new Float64Array(MAX_DISTINCT)
+  const sampleA = new Float64Array(MAX_DISTINCT)
+  const sampleCount = new Uint8Array(MAX_DISTINCT)
+
+  for (let by = 0; by < blocksY; by++) {
+    const blockY = by * blockSize
+    for (let bx = 0; bx < blocksX; bx++) {
+      const blockX = bx * blockSize
+
+      let numDistinct = 0
+      let maxCount = 0
+      let domR = 0
+      let domG = 0
+      let domB = 0
+      let domA = 0
+
+      for (let s = 0; s < numSamples; s++) {
+        const fx = blockX + offsets[s][0]
+        const fy = blockY + offsets[s][1]
+
+        const cx = Math.min(maxX, Math.max(0, fx))
+        const cy = Math.min(maxY, Math.max(0, fy))
+        const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+        const x1 = Math.min(x0 + 1, maxX)
+        const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+        const y1 = Math.min(y0 + 1, maxY)
+        const sx = cx - x0
+        const sy = cy - y0
+        const osx = 1 - sx
+        const osy = 1 - sy
+        const i00 = (y0 * width + x0) * 4
+        const i10 = (y0 * width + x1) * 4
+        const i01 = (y1 * width + x0) * 4
+        const i11 = (y1 * width + x1) * 4
+        const r = (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+        const g =
+          (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+        const b =
+          (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+        const a =
+          (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
+
+        if (s === 0) {
+          domR = r
+          domG = g
+          domB = b
+          domA = a
+        }
+
+        let found = false
+        for (let c = 0; c < numDistinct; c++) {
+          if (sampleR[c] === r && sampleG[c] === g && sampleB[c] === b && sampleA[c] === a) {
+            sampleCount[c]++
+            if (sampleCount[c] > maxCount) {
+              maxCount = sampleCount[c]
+              domR = r
+              domG = g
+              domB = b
+              domA = a
+            }
+            found = true
+            break
           }
-        } else {
-          colorCount.set(key, { color, count: 1 })
+        }
+        if (!found) {
+          sampleR[numDistinct] = r
+          sampleG[numDistinct] = g
+          sampleB[numDistinct] = b
+          sampleA[numDistinct] = a
+          sampleCount[numDistinct] = 1
+          numDistinct++
         }
       }
 
-      return dominantColor
+      const bi = (by * blocksX + bx) * 4
+      blockColors[bi] = domR
+      blockColors[bi + 1] = domG
+      blockColors[bi + 2] = domB
+      blockColors[bi + 3] = domA
+
+      for (let c = 0; c < numDistinct; c++) sampleCount[c] = 0
     }
-  })
+  }
+
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
+
+  return target
+}
+
+function pixelateAverage(source: Buffer, width: number, height: number, blockSize: number, antiAlias: boolean): Buffer {
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.allocUnsafe(width * height * 4)
+  const offsets = buildSampleOffsets(blockSize, antiAlias)
+  const numSamples = offsets.length
+
+  const blocksX = Math.ceil(width / blockSize)
+  const blocksY = Math.ceil(height / blockSize)
+
+  const blockColors = new Float64Array(blocksX * blocksY * 4)
+
+  for (let by = 0; by < blocksY; by++) {
+    const blockY = by * blockSize
+    for (let bx = 0; bx < blocksX; bx++) {
+      const blockX = bx * blockSize
+      let sumR = 0
+      let sumG = 0
+      let sumB = 0
+      let sumA = 0
+
+      for (let s = 0; s < numSamples; s++) {
+        const fx = blockX + offsets[s][0]
+        const fy = blockY + offsets[s][1]
+
+        const cx = Math.min(maxX, Math.max(0, fx))
+        const cy = Math.min(maxY, Math.max(0, fy))
+        const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+        const x1 = Math.min(x0 + 1, maxX)
+        const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+        const y1 = Math.min(y0 + 1, maxY)
+        const sx = cx - x0
+        const sy = cy - y0
+        const osx = 1 - sx
+        const osy = 1 - sy
+        const i00 = (y0 * width + x0) * 4
+        const i10 = (y0 * width + x1) * 4
+        const i01 = (y1 * width + x0) * 4
+        const i11 = (y1 * width + x1) * 4
+
+        sumR += (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+        sumG +=
+          (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+        sumB +=
+          (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+        sumA +=
+          (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
+      }
+
+      const bi = (by * blocksX + bx) * 4
+      blockColors[bi] = sumR / numSamples
+      blockColors[bi + 1] = sumG / numSamples
+      blockColors[bi + 2] = sumB / numSamples
+      blockColors[bi + 3] = sumA / numSamples
+    }
+  }
+
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
+
+  return target
+}
+
+function pixelateCenter(source: Buffer, width: number, height: number, blockSize: number): Buffer {
+  const maxX = width - 1
+  const maxY = height - 1
+  const target = Buffer.allocUnsafe(width * height * 4)
+  const halfBlock = blockSize / 2
+
+  const blocksX = Math.ceil(width / blockSize)
+  const blocksY = Math.ceil(height / blockSize)
+
+  const blockColors = new Float64Array(blocksX * blocksY * 4)
+  for (let by = 0; by < blocksY; by++) {
+    const fy = by * blockSize + halfBlock
+    for (let bx = 0; bx < blocksX; bx++) {
+      const fx = bx * blockSize + halfBlock
+
+      const cx = Math.min(maxX, Math.max(0, fx))
+      const cy = Math.min(maxY, Math.max(0, fy))
+      const x0 = Math.min(Math.max(Math.floor(cx), 0), maxX)
+      const x1 = Math.min(x0 + 1, maxX)
+      const y0 = Math.min(Math.max(Math.floor(cy), 0), maxY)
+      const y1 = Math.min(y0 + 1, maxY)
+      const sx = cx - x0
+      const sy = cy - y0
+      const osx = 1 - sx
+      const osy = 1 - sy
+      const i00 = (y0 * width + x0) * 4
+      const i10 = (y0 * width + x1) * 4
+      const i01 = (y1 * width + x0) * 4
+      const i11 = (y1 * width + x1) * 4
+
+      const bi = (by * blocksX + bx) * 4
+      blockColors[bi] = (source[i00] * osx + source[i10] * sx) * osy + (source[i01] * osx + source[i11] * sx) * sy
+      blockColors[bi + 1] =
+        (source[i00 + 1] * osx + source[i10 + 1] * sx) * osy + (source[i01 + 1] * osx + source[i11 + 1] * sx) * sy
+      blockColors[bi + 2] =
+        (source[i00 + 2] * osx + source[i10 + 2] * sx) * osy + (source[i01 + 2] * osx + source[i11 + 2] * sx) * sy
+      blockColors[bi + 3] =
+        (source[i00 + 3] * osx + source[i10 + 3] * sx) * osy + (source[i01 + 3] * osx + source[i11 + 3] * sx) * sy
+    }
+  }
+
+  fillBlockBands(target, blockColors, width, height, blockSize, blocksX)
+
+  return target
 }

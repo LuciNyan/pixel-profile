@@ -1,7 +1,7 @@
-import { addBorder, crt, curve, pixelate } from '../shaders'
-import { orderedBayer } from '../shaders/dithering'
-import { glow } from '../shaders/glow'
-import { scanline } from '../shaders/scanline'
+import { type AnimationOptions, renderAnimatedGif } from '../animation'
+import { buildStatsPipeline, executePipelineSmart } from '../pipeline'
+import { pixelate } from '../shaders'
+import { addBorder } from '../shaders/border'
 import { AVATAR_SIZE, defaultTemplateOptions, makeGithubStats, TemplateOptions } from '../templates/stats-template'
 import { getThemeOptions } from '../theme'
 import { GithubStats } from '../types'
@@ -24,6 +24,8 @@ type Options = {
   pixelateAvatar?: boolean
   avatarBorder?: boolean
   dithering?: boolean
+  ditheringPalette?: string
+  animation?: AnimationOptions | boolean
 }
 
 const CARD_SIZE = {
@@ -51,7 +53,8 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
     isFastMode = true,
     avatarBorder,
     theme = '',
-    dithering = false
+    dithering = false,
+    ditheringPalette
   } = options
 
   const applyAvatarBorder = avatarBorder !== undefined ? avatarBorder : theme !== ''
@@ -86,38 +89,15 @@ export async function renderStats(stats: GithubStats, options: Options = {}): Pr
     () => makeGithubStats({ ...templateStats, name: username }, templateOptions)
   )
 
-  let pixels = renderedPixels
+  const pipeline = buildStatsPipeline({ theme, screenEffect, isFastMode, dithering, ditheringPalette })
 
-  if (theme === 'crt') {
-    pixels = crt(pixels, width, height)
-    pixels = glow(pixels, width, height, {
-      radius: 5,
-      intensity: 0.17,
-      color: [1, 1, 1],
-      layers: 5,
-      falloff: 'exponential'
-    })
-  } else {
-    if (dithering) {
-      pixels = orderedBayer(pixels, width, height)
-    }
+  if (options.animation) {
+    const animOpts: AnimationOptions = typeof options.animation === 'boolean' ? {} : options.animation
 
-    if (screenEffect) {
-      if (!dithering) {
-        pixels = scanline(pixels, width, height)
-      }
-      if (!isFastMode) {
-        pixels = glow(pixels, width, height, {
-          radius: 3,
-          intensity: 0.3,
-          color: [1, 1, 1],
-          layers: 2,
-          falloff: 'exponential'
-        })
-      }
-      pixels = curve(pixels, width, height)
-    }
+    return await renderAnimatedGif(renderedPixels, width, height, pipeline, animOpts)
   }
+
+  const pixels = await executePipelineSmart(renderedPixels, width, height, pipeline)
 
   return await getPngBufferFromPixels(pixels, width, height)
 }

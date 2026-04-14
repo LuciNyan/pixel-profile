@@ -1,5 +1,4 @@
-import { coordsToIndex, render } from '../renderer'
-import { mix3, multiply3, type Vec3 } from '../utils/math'
+import type { Vec3 } from '../utils/math'
 
 interface GlowOptions {
   radius: number
@@ -21,23 +20,21 @@ const defaultOptions: GlowOptions = {
   adaptiveThreshold: true
 }
 
-function calculateAdaptiveThreshold(source: Buffer, width: number, height: number): number {
-  let totalLuminance = 0
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function calculateAdaptiveThreshold(source: any, width: number, height: number): number {
+  let totalWeightedSum = 0
   const size = width * height
 
   for (let i = 0; i < size * 4; i += 4) {
-    const r = source[i]
-    const g = source[i + 1]
-    const b = source[i + 2]
-    totalLuminance += (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
+    totalWeightedSum += source[i] * 0.2126 + source[i + 1] * 0.7152 + source[i + 2] * 0.0722
   }
 
-  const avgLuminance = totalLuminance / size
+  const avgLuminance = totalWeightedSum / (size * 255)
 
   return Math.max(0.6, Math.min(0.9, avgLuminance + 0.3))
 }
 
-function getFalloffFunction(type: string): (dist: number, radiusSquared: number) => number {
+export function getFalloffFunction(type: string): (dist: number, radiusSquared: number) => number {
   switch (type) {
     case 'linear':
       return (dist, radiusSquared) => Math.max(0, 1 - dist / Math.sqrt(radiusSquared))
@@ -50,144 +47,502 @@ function getFalloffFunction(type: string): (dist: number, radiusSquared: number)
   }
 }
 
+export function buildWeightTable(
+  currentRadius: number,
+  falloffFn: (dist: number, radiusSquared: number) => number
+): Float64Array {
+  const radiusSquared = currentRadius * currentRadius * 2
+  const weights = new Float64Array(currentRadius * 2 + 1)
+
+  for (let i = -currentRadius; i <= currentRadius; i++) {
+    weights[i + currentRadius] = falloffFn(i * i, radiusSquared)
+  }
+
+  return weights
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function buildLuminanceMap(input: any, size: number, output?: Float64Array): Float64Array {
+  const lum = output || new Float64Array(size)
+
+  for (let i = 0; i < size; i++) {
+    const idx = i * 4
+    lum[i] = (input[idx] * 0.2126 + input[idx + 1] * 0.7152 + input[idx + 2] * 0.0722) / 255
+  }
+
+  return lum
+}
+
+/**
+ * Horizontal blur pass. All parameters explicit (closure-free for Worker serialization).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function horizontalPassCore(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+  output: Float32Array,
+  luminance: Float64Array,
+  outLuminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  currentRadius: number,
+  weights: Float64Array,
+  startRow: number = 0,
+  endRow: number = height
+): void {
+  const maxX = width - 1
+  const diameter = currentRadius * 2 + 1
+  let totalWeight = 0
+  for (let w = 0; w < diameter; w++) totalWeight += weights[w]
+
+  const rowPrefix = new Int32Array(width + 1)
+
+  for (let y = startRow; y < endRow; y++) {
+    const rowOffset = y * width
+
+    rowPrefix[0] = 0
+    for (let x = 0; x < width; x++) {
+      rowPrefix[x + 1] = rowPrefix[x] + (luminance[rowOffset + x] > threshold ? 1 : 0)
+    }
+
+    for (let x = 0; x < width; x++) {
+      const centerIdx = (rowOffset + x) * 4
+
+      const lo = Math.max(0, x - currentRadius)
+      const hi = Math.min(maxX, x + currentRadius)
+      const brightCount = rowPrefix[hi + 1] - rowPrefix[lo]
+
+      if (brightCount === 0) {
+        output[centerIdx] = input[centerIdx]
+        output[centerIdx + 1] = input[centerIdx + 1]
+        output[centerIdx + 2] = input[centerIdx + 2]
+        output[centerIdx + 3] = input[centerIdx + 3]
+        outLuminance[rowOffset + x] = luminance[rowOffset + x]
+        continue
+      }
+
+      if (x >= currentRadius && x <= maxX - currentRadius && brightCount === diameter) {
+        let sumR = 0
+        let sumG = 0
+        let sumB = 0
+        let si = (rowOffset + x - currentRadius) * 4
+        for (let i = 0; i < diameter; i++) {
+          const wt = weights[i]
+          sumR += input[si] * wt
+          sumG += input[si + 1] * wt
+          sumB += input[si + 2] * wt
+          si += 4
+        }
+        output[centerIdx] = sumR / totalWeight
+        output[centerIdx + 1] = sumG / totalWeight
+        output[centerIdx + 2] = sumB / totalWeight
+        output[centerIdx + 3] = 255
+        outLuminance[rowOffset + x] =
+          (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+        continue
+      }
+
+      let sumR = 0
+      let sumG = 0
+      let sumB = 0
+      let weightSum = 0
+
+      for (let i = -currentRadius; i <= currentRadius; i++) {
+        const sampleX = Math.min(Math.max(x + i, 0), maxX)
+        const sampleIdx = (rowOffset + sampleX) * 4
+
+        if (luminance[rowOffset + sampleX] > threshold) {
+          const weight = weights[i + currentRadius]
+
+          sumR += input[sampleIdx] * weight
+          sumG += input[sampleIdx + 1] * weight
+          sumB += input[sampleIdx + 2] * weight
+          weightSum += weight
+        }
+      }
+
+      if (weightSum > 0) {
+        output[centerIdx] = sumR / weightSum
+        output[centerIdx + 1] = sumG / weightSum
+        output[centerIdx + 2] = sumB / weightSum
+        output[centerIdx + 3] = 255
+        outLuminance[rowOffset + x] =
+          (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+      } else {
+        output[centerIdx] = input[centerIdx]
+        output[centerIdx + 1] = input[centerIdx + 1]
+        output[centerIdx + 2] = input[centerIdx + 2]
+        output[centerIdx + 3] = input[centerIdx + 3]
+        outLuminance[rowOffset + x] = luminance[rowOffset + x]
+      }
+    }
+  }
+}
+
+/**
+ * Fused multi-layer horizontal pass. Processes one row at a time across all layers,
+ * sharing the row prefix scan and keeping source data hot in L1 cache.
+ * Closure-free for Worker serialization.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function horizontalPassFusedCore(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  numLayers: number,
+  outputs: Float32Array[],
+  outLuminances: Float64Array[],
+  radii: number[],
+  weightTables: Float64Array[],
+  startRow: number,
+  endRow: number
+): void {
+  const maxX = width - 1
+  const rowPrefix = new Int32Array(width + 1)
+
+  const diameters = new Array(numLayers)
+  const totalWeights = new Array(numLayers)
+  for (let li = 0; li < numLayers; li++) {
+    diameters[li] = radii[li] * 2 + 1
+    let tw = 0
+    const d = diameters[li]
+    for (let w = 0; w < d; w++) tw += weightTables[li][w]
+    totalWeights[li] = tw
+  }
+
+  for (let y = startRow; y < endRow; y++) {
+    const rowOffset = y * width
+
+    rowPrefix[0] = 0
+    for (let x = 0; x < width; x++) {
+      rowPrefix[x + 1] = rowPrefix[x] + (luminance[rowOffset + x] > threshold ? 1 : 0)
+    }
+
+    for (let li = 0; li < numLayers; li++) {
+      const output = outputs[li]
+      const outLuminance = outLuminances[li]
+      const currentRadius = radii[li]
+      const weights = weightTables[li]
+      const diameter = diameters[li]
+      const totalWeight = totalWeights[li]
+
+      for (let x = 0; x < width; x++) {
+        const centerIdx = (rowOffset + x) * 4
+        const lo = Math.max(0, x - currentRadius)
+        const hi = Math.min(maxX, x + currentRadius)
+        const brightCount = rowPrefix[hi + 1] - rowPrefix[lo]
+
+        if (brightCount === 0) {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
+          continue
+        }
+
+        if (x >= currentRadius && x <= maxX - currentRadius && brightCount === diameter) {
+          let sumR = 0
+          let sumG = 0
+          let sumB = 0
+          let si = (rowOffset + x - currentRadius) * 4
+          for (let i = 0; i < diameter; i++) {
+            const wt = weights[i]
+            sumR += input[si] * wt
+            sumG += input[si + 1] * wt
+            sumB += input[si + 2] * wt
+            si += 4
+          }
+          output[centerIdx] = sumR / totalWeight
+          output[centerIdx + 1] = sumG / totalWeight
+          output[centerIdx + 2] = sumB / totalWeight
+          output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+          continue
+        }
+
+        let sumR = 0
+        let sumG = 0
+        let sumB = 0
+        let weightSum = 0
+
+        for (let i = -currentRadius; i <= currentRadius; i++) {
+          const sampleX = Math.min(Math.max(x + i, 0), maxX)
+          const sampleIdx = (rowOffset + sampleX) * 4
+
+          if (luminance[rowOffset + sampleX] > threshold) {
+            const weight = weights[i + currentRadius]
+            sumR += input[sampleIdx] * weight
+            sumG += input[sampleIdx + 1] * weight
+            sumB += input[sampleIdx + 2] * weight
+            weightSum += weight
+          }
+        }
+
+        if (weightSum > 0) {
+          output[centerIdx] = sumR / weightSum
+          output[centerIdx + 1] = sumG / weightSum
+          output[centerIdx + 2] = sumB / weightSum
+          output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+        } else {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
+        }
+      }
+    }
+  }
+}
+
+export function buildColumnPrefixMap(
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  output?: Int32Array
+): Int32Array {
+  const colPrefix = output || new Int32Array((height + 1) * width)
+  for (let y = 0; y < height; y++) {
+    const currRow = (y + 1) * width
+    const prevRow = y * width
+    for (let x = 0; x < width; x++) {
+      colPrefix[currRow + x] = colPrefix[prevRow + x] + (luminance[prevRow + x] > threshold ? 1 : 0)
+    }
+  }
+
+  return colPrefix
+}
+
+/**
+ * Vertical blur pass. All parameters explicit (closure-free for Worker serialization).
+ * When precomputedColPrefix is provided, skips the O(height*width) prefix scan.
+ */
+export function verticalPassCore(
+  input: Float32Array,
+  output: Float32Array,
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  currentRadius: number,
+  weights: Float64Array,
+  startRow: number = 0,
+  endRow: number = height,
+  precomputedColPrefix?: Int32Array
+): void {
+  const maxY = height - 1
+  const diameter = currentRadius * 2 + 1
+  let totalWeight = 0
+  for (let w = 0; w < diameter; w++) totalWeight += weights[w]
+  const w4 = width * 4
+
+  const colPrefix = precomputedColPrefix || buildColumnPrefixMap(luminance, width, height, threshold)
+
+  for (let y = startRow; y < endRow; y++) {
+    const lo = Math.max(0, y - currentRadius)
+    const hi = Math.min(maxY, y + currentRadius)
+    const loRow = lo * width
+    const hiRow = (hi + 1) * width
+
+    for (let x = 0; x < width; x++) {
+      const centerIdx = (y * width + x) * 4
+      const brightCount = colPrefix[hiRow + x] - colPrefix[loRow + x]
+
+      if (brightCount === 0) {
+        output[centerIdx] = input[centerIdx]
+        output[centerIdx + 1] = input[centerIdx + 1]
+        output[centerIdx + 2] = input[centerIdx + 2]
+        output[centerIdx + 3] = input[centerIdx + 3]
+        continue
+      }
+
+      if (y >= currentRadius && y <= maxY - currentRadius && brightCount === diameter) {
+        let sumR = 0
+        let sumG = 0
+        let sumB = 0
+        let si = ((y - currentRadius) * width + x) * 4
+        for (let i = 0; i < diameter; i++) {
+          const wt = weights[i]
+          sumR += input[si] * wt
+          sumG += input[si + 1] * wt
+          sumB += input[si + 2] * wt
+          si += w4
+        }
+        output[centerIdx] = sumR / totalWeight
+        output[centerIdx + 1] = sumG / totalWeight
+        output[centerIdx + 2] = sumB / totalWeight
+        output[centerIdx + 3] = 255
+        continue
+      }
+
+      let sumR = 0
+      let sumG = 0
+      let sumB = 0
+      let weightSum = 0
+
+      for (let i = -currentRadius; i <= currentRadius; i++) {
+        const sampleY = Math.min(Math.max(y + i, 0), maxY)
+        const sampleIdx = (sampleY * width + x) * 4
+
+        if (luminance[sampleY * width + x] > threshold) {
+          const weight = weights[i + currentRadius]
+
+          sumR += input[sampleIdx] * weight
+          sumG += input[sampleIdx + 1] * weight
+          sumB += input[sampleIdx + 2] * weight
+          weightSum += weight
+        }
+      }
+
+      if (weightSum > 0) {
+        output[centerIdx] = sumR / weightSum
+        output[centerIdx + 1] = sumG / weightSum
+        output[centerIdx + 2] = sumB / weightSum
+        output[centerIdx + 3] = 255
+      } else {
+        output[centerIdx] = input[centerIdx]
+        output[centerIdx + 1] = input[centerIdx + 1]
+        output[centerIdx + 2] = input[centerIdx + 2]
+        output[centerIdx + 3] = input[centerIdx + 3]
+      }
+    }
+  }
+}
+
+/**
+ * Process a single glow layer. Closure-free for Worker serialization.
+ * Returns a Float32Array of the blurred layer.
+ */
+export function glowLayerCore(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  source: any,
+  width: number,
+  height: number,
+  threshold: number,
+  layerRadius: number,
+  falloffType: string
+): Float32Array {
+  const size = width * height
+  const sourceLuminance = buildLuminanceMap(source, size)
+  const falloffFn = getFalloffFunction(falloffType)
+  const weights = buildWeightTable(layerRadius, falloffFn)
+
+  const horizontalBlur = new Float32Array(size * 4)
+  const hBlurLuminance = new Float64Array(size)
+  const layerOutput = new Float32Array(size * 4)
+
+  horizontalPassCore(
+    source,
+    horizontalBlur,
+    sourceLuminance,
+    hBlurLuminance,
+    width,
+    height,
+    threshold,
+    layerRadius,
+    weights
+  )
+  verticalPassCore(horizontalBlur, layerOutput, hBlurLuminance, width, height, threshold, layerRadius, weights)
+
+  return layerOutput
+}
+
 export function glow(source: Buffer, width: number, height: number, userOptions: Partial<GlowOptions> = {}): Buffer {
   const options = { ...defaultOptions, ...userOptions }
   const { radius, intensity, color, layers, falloff, adaptiveThreshold, threshold: _threshold } = options
   const threshold = adaptiveThreshold ? calculateAdaptiveThreshold(source, width, height) : _threshold
-  const falloffFn = getFalloffFunction(falloff)
-
-  function horizontalPass(input: Buffer | Float32Array, output: Float32Array, currentRadius: number) {
-    const radiusSquared = currentRadius * currentRadius * 2
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const centerIdx = (y * width + x) * 4
-        let sumR = 0
-        let sumG = 0
-        let sumB = 0
-        let weightSum = 0
-
-        for (let i = -currentRadius; i <= currentRadius; i++) {
-          const sampleX = Math.min(Math.max(x + i, 0), width - 1)
-          const sampleIdx = (y * width + sampleX) * 4
-
-          const r = input[sampleIdx]
-          const g = input[sampleIdx + 1]
-          const b = input[sampleIdx + 2]
-          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
-
-          if (luminance > threshold) {
-            const dist = i * i
-            const weight = falloffFn(dist, radiusSquared)
-
-            sumR += r * weight
-            sumG += g * weight
-            sumB += b * weight
-            weightSum += weight
-          }
-        }
-
-        if (weightSum > 0) {
-          output[centerIdx] = sumR / weightSum
-          output[centerIdx + 1] = sumG / weightSum
-          output[centerIdx + 2] = sumB / weightSum
-          output[centerIdx + 3] = 255
-        } else {
-          output[centerIdx] = input[centerIdx]
-          output[centerIdx + 1] = input[centerIdx + 1]
-          output[centerIdx + 2] = input[centerIdx + 2]
-          output[centerIdx + 3] = input[centerIdx + 3]
-        }
-      }
-    }
-  }
-
-  function verticalPass(input: Float32Array, output: Float32Array, currentRadius: number) {
-    const radiusSquared = currentRadius * currentRadius * 2
-
-    for (let x = 0; x < width; x++) {
-      for (let y = 0; y < height; y++) {
-        const centerIdx = (y * width + x) * 4
-        let sumR = 0
-        let sumG = 0
-        let sumB = 0
-        let weightSum = 0
-
-        for (let i = -currentRadius; i <= currentRadius; i++) {
-          const sampleY = Math.min(Math.max(y + i, 0), height - 1)
-          const sampleIdx = (sampleY * width + x) * 4
-
-          const r = input[sampleIdx]
-          const g = input[sampleIdx + 1]
-          const b = input[sampleIdx + 2]
-          const luminance = (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255
-
-          if (luminance > threshold) {
-            const dist = i * i
-            const weight = falloffFn(dist, radiusSquared)
-
-            sumR += r * weight
-            sumG += g * weight
-            sumB += b * weight
-            weightSum += weight
-          }
-        }
-
-        if (weightSum > 0) {
-          output[centerIdx] = sumR / weightSum
-          output[centerIdx + 1] = sumG / weightSum
-          output[centerIdx + 2] = sumB / weightSum
-          output[centerIdx + 3] = 255
-        } else {
-          output[centerIdx] = input[centerIdx]
-          output[centerIdx + 1] = input[centerIdx + 1]
-          output[centerIdx + 2] = input[centerIdx + 2]
-          output[centerIdx + 3] = input[centerIdx + 3]
-        }
-      }
-    }
-  }
 
   const size = width * height
-  const horizontalBlur = new Float32Array(size * 4)
+  const sourceLuminance = buildLuminanceMap(source, size)
 
-  const glowLayers: Float32Array[] = []
-
+  const hBlurs: Float32Array[] = []
+  const hLums: Float64Array[] = []
+  const radii: number[] = []
+  const weightTables: Float64Array[] = []
   for (let i = 0; i < layers; i++) {
-    const currentRadius = Math.floor(radius * (i + 1))
-    const currentLayer = new Float32Array(size * 4)
-
-    horizontalPass(source, horizontalBlur, currentRadius)
-    verticalPass(horizontalBlur, currentLayer, currentRadius)
-
-    glowLayers.push(currentLayer)
+    radii.push(Math.floor(radius * (i + 1)))
+    weightTables.push(buildWeightTable(radii[i], getFalloffFunction(falloff)))
+    hBlurs.push(new Float32Array(size * 4))
+    hLums.push(new Float64Array(size))
   }
 
-  return render(
+  horizontalPassFusedCore(
     source,
+    sourceLuminance,
     width,
     height,
-    (uv, texture2D) => {
-      const originalColor = texture2D(uv)
-      let finalColor: Vec3 = [originalColor[0], originalColor[1], originalColor[2]]
+    threshold,
+    layers,
+    hBlurs,
+    hLums,
+    radii,
+    weightTables,
+    0,
+    height
+  )
 
-      for (let i = 0; i < layers; i++) {
-        const currentIntensity = intensity / (i + 1)
-        const layerBuffer = glowLayers[i]
+  const glowLayers: Float32Array[] = []
+  for (let i = 0; i < layers; i++) {
+    const layerOutput = new Float32Array(size * 4)
+    verticalPassCore(hBlurs[i], layerOutput, hLums[i], width, height, threshold, radii[i], weightTables[i])
+    glowLayers.push(layerOutput)
+  }
 
-        const glowColor = [
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4],
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4 + 1],
-          layerBuffer[coordsToIndex(uv[0], uv[1], width) * 4 + 2]
-        ] as Vec3
+  const result = Buffer.allocUnsafe(size * 4)
+  const [colorR, colorG, colorB] = color
+  const isWhite = colorR === 1 && colorG === 1 && colorB === 1
 
-        const tintedGlow = multiply3(glowColor, color)
+  const layerIntensities = new Float64Array(layers)
+  const layerOneMinusT = new Float64Array(layers)
+  for (let li = 0; li < layers; li++) {
+    layerIntensities[li] = intensity / (li + 1)
+    layerOneMinusT[li] = 1 - layerIntensities[li]
+  }
 
-        finalColor = mix3(finalColor, tintedGlow, currentIntensity)
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width
+
+    for (let x = 0; x < width; x++) {
+      const idx = (rowOffset + x) * 4
+      let finalR = source[idx]
+      let finalG = source[idx + 1]
+      let finalB = source[idx + 2]
+
+      if (isWhite) {
+        for (let i = 0; i < layers; i++) {
+          const ci = layerIntensities[i]
+          const oi = layerOneMinusT[i]
+          const lb = glowLayers[i]
+          finalR = finalR * oi + lb[idx] * ci
+          finalG = finalG * oi + lb[idx + 1] * ci
+          finalB = finalB * oi + lb[idx + 2] * ci
+        }
+      } else {
+        for (let i = 0; i < layers; i++) {
+          const ci = layerIntensities[i]
+          const oi = layerOneMinusT[i]
+          const lb = glowLayers[i]
+          finalR = finalR * oi + lb[idx] * colorR * ci
+          finalG = finalG * oi + lb[idx + 1] * colorG * ci
+          finalB = finalB * oi + lb[idx + 2] * colorB * ci
+        }
       }
 
-      return [finalColor[0], finalColor[1], finalColor[2], 255]
-    },
-    { textureFilter: 'NEAREST' }
-  )
+      result[idx] = finalR
+      result[idx + 1] = finalG
+      result[idx + 2] = finalB
+      result[idx + 3] = 255
+    }
+  }
+
+  return result
 }

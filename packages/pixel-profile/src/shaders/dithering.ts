@@ -1,28 +1,5 @@
-import { render, TEXTURE_FILTER } from '../renderer'
-import { hslToRgb, rgbToHsl } from '../utils'
 import { Vec3 } from '../utils/math'
 
-// const PALETTE_16: Vec3[] = [
-//   [0.1498, 0.7753, 0.8255],
-//   [0.1024, 0.9387, 0.6804],
-//   [0.0699, 0.6976, 0.598],
-//   [0.9567, 0.2212, 0.4431],
-//   [0.8718, 0.2321, 0.2196],
-//   [0.3833, 0.3623, 0.2706],
-//   [0.2965, 0.3277, 0.4608],
-//   [0.175, 0.5405, 0.5647],
-//   [0.5355, 0.5341, 0.6549],
-//   [0.5996, 0.368, 0.5098],
-//   [0.6795, 0.134, 0.3804],
-//   [0.5333, 0.1643, 0.5824],
-//   [0.0764, 0.2791, 0.8314],
-//   [0, 0.8324, 0.649],
-//   [0.9194, 0.4819, 0.3784],
-//   [0.9423, 0.7605, 0.6725]
-// ]
-// const BIAS_16 = 0.11
-
-// WINDOWS 95 - 256 COLOURS PALETTE
 const PALETTE_256: Vec3[] = [
   [0, 0, 0],
   [0, 1, 0.251],
@@ -285,6 +262,8 @@ const PALETTE_256: Vec3[] = [
 const BIAS_256 = 0
 const lightnessSteps = 4
 const saturationSteps = 4
+const invLightnessSteps = 1 / lightnessSteps
+const invSaturationSteps = 1 / saturationSteps
 
 /* eslint-disable prettier/prettier */
 const ditherTable = new Uint8Array([
@@ -299,14 +278,19 @@ const ditherTable = new Uint8Array([
 ])
 /* eslint-enable prettier/prettier */
 
+const ditherLimits = new Float64Array(64)
+for (let i = 0; i < 64; i++) {
+  ditherLimits[i] = (ditherTable[i] + 1) / 64 + BIAS_256
+}
+
 function hueDistance(h1: number, h2: number): number {
   const diff = Math.abs(h1 - h2)
 
   return diff < 0.5 ? diff : 1 - diff
 }
 
-const lightnessStep = (l: number) => Math.round(l * lightnessSteps) / lightnessSteps
-const saturationStep = (s: number) => Math.round(s * saturationSteps) / saturationSteps
+const lightnessStep = (l: number) => Math.round(l * lightnessSteps) * invLightnessSteps
+const saturationStep = (s: number) => Math.round(s * saturationSteps) * invSaturationSteps
 
 const closestColorsCache = new Map<number, [Vec3, Vec3]>()
 
@@ -338,40 +322,278 @@ function closestColors(hue: number): [Vec3, Vec3] {
   return result
 }
 
-function dither(pos: [number, number], color: Vec3): Vec3 {
-  const index = (pos[0] & 7) + ((pos[1] & 7) << 3)
-  const limit = (ditherTable[index] + 1) / 64 + BIAS_256
+function hue2rgb(p: number, q: number, t: number): number {
+  if (t < 0) t += 1
+  if (t > 1) t -= 1
+  if (t < 1 / 6) return p + (q - p) * 6 * t
+  if (t < 1 / 2) return q
+  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
 
-  const [closest, secondClosest] = closestColors(color[0])
-  const hueDiff = hueDistance(color[0], closest[0]) / hueDistance(secondClosest[0], closest[0])
+  return p
+}
 
-  const l1 = lightnessStep(Math.max(color[2] - 0.125, 0))
-  const l2 = lightnessStep(Math.min(color[2] + 0.124, 1))
-  const lightnessDiff = (color[2] - l1) / (l2 - l1)
+interface DitherEntry {
+  hueDiff: number
+  lightDiff: number
+  satDiff: number
+  combos: Uint8Array
+}
 
-  const resultColor: Vec3 = hueDiff < limit ? [...closest] : [...secondClosest]
-  resultColor[2] = lightnessDiff < limit ? l1 : l2
+const ditherRgbCache = new Map<number, DitherEntry>()
 
-  const s1 = saturationStep(Math.max(color[1] - 0.125, 0))
-  const s2 = saturationStep(Math.min(color[1] + 0.124, 1))
-  const saturationDiff = (color[1] - s1) / (s2 - s1)
+function buildDitherEntry(rRaw: number, gRaw: number, bRaw: number): DitherEntry {
+  const r = rRaw / 255
+  const g = gRaw / 255
+  const b = bRaw / 255
 
-  resultColor[1] = saturationDiff < limit ? s1 : s2
+  const cmax = Math.max(r, g, b)
+  const cmin = Math.min(r, g, b)
 
-  return hslToRgb(resultColor)
+  let h = 0
+  let s = 0
+  const l = (cmax + cmin) / 2
+
+  if (cmax !== cmin) {
+    const d = cmax - cmin
+    s = l > 0.5 ? d / (2 - cmax - cmin) : d / (cmax + cmin)
+    switch (cmax) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
+      case g:
+        h = (b - r) / d + 2
+        break
+      case b:
+        h = (r - g) / d + 4
+        break
+    }
+    h /= 6
+  }
+
+  const [closest, secondClosest] = closestColors(h)
+  const hueDiff = hueDistance(h, closest[0]) / hueDistance(secondClosest[0], closest[0])
+
+  const l1 = lightnessStep(Math.max(l - 0.125, 0))
+  const l2 = lightnessStep(Math.min(l + 0.124, 1))
+  const lightDiff = (l - l1) / (l2 - l1)
+
+  const s1 = saturationStep(Math.max(s - 0.125, 0))
+  const s2 = saturationStep(Math.min(s + 0.124, 1))
+  const satDiff = (s - s1) / (s2 - s1)
+
+  const hueOpts = [closest[0], secondClosest[0]]
+  const lightOpts = [l1, l2]
+  const satOpts = [s1, s2]
+
+  const combos = new Uint8Array(24)
+  for (let dh = 0; dh < 2; dh++) {
+    const rH = hueOpts[dh]
+    for (let dl = 0; dl < 2; dl++) {
+      const rL = lightOpts[dl]
+      for (let ds = 0; ds < 2; ds++) {
+        const rS = satOpts[ds]
+        const ci = (dh * 4 + dl * 2 + ds) * 3
+        if (rS === 0) {
+          const v = rL * 255
+          combos[ci] = v
+          combos[ci + 1] = v
+          combos[ci + 2] = v
+        } else {
+          const q2 = rL < 0.5 ? rL * (1 + rS) : rL + rS - rL * rS
+          const p2 = 2 * rL - q2
+          combos[ci] = hue2rgb(p2, q2, rH + 1 / 3) * 255
+          combos[ci + 1] = hue2rgb(p2, q2, rH) * 255
+          combos[ci + 2] = hue2rgb(p2, q2, rH - 1 / 3) * 255
+        }
+      }
+    }
+  }
+
+  return { hueDiff, lightDiff, satDiff, combos }
+}
+
+export type PaletteId = 'gameboy' | 'nokia' | 'cga' | 'grayscale' | 'sepia' | 'neon'
+
+export const BUILTIN_PALETTES: Record<PaletteId, number[][]> = {
+  gameboy: [
+    [15, 56, 15],
+    [48, 98, 48],
+    [139, 172, 15],
+    [155, 188, 15]
+  ],
+  nokia: [
+    [67, 82, 61],
+    [199, 240, 216]
+  ],
+  grayscale: [
+    [0, 0, 0],
+    [85, 85, 85],
+    [170, 170, 170],
+    [255, 255, 255]
+  ],
+  sepia: [
+    [43, 23, 0],
+    [110, 76, 30],
+    [176, 128, 80],
+    [232, 208, 160]
+  ],
+  neon: [
+    [0, 0, 0],
+    [255, 0, 102],
+    [0, 255, 204],
+    [255, 255, 0],
+    [102, 0, 255]
+  ],
+  cga: [
+    [0, 0, 0],
+    [0, 0, 170],
+    [0, 170, 0],
+    [0, 170, 170],
+    [170, 0, 0],
+    [170, 0, 170],
+    [170, 85, 0],
+    [170, 170, 170],
+    [85, 85, 85],
+    [85, 85, 255],
+    [85, 255, 85],
+    [85, 255, 255],
+    [255, 85, 85],
+    [255, 85, 255],
+    [255, 255, 85],
+    [255, 255, 255]
+  ]
+}
+
+export function paletteDither(source: Buffer, width: number, height: number, paletteColors: number[][]): Buffer {
+  const palLen = paletteColors.length
+
+  if (palLen < 2) {
+    return source
+  }
+
+  const palR = new Uint8Array(palLen)
+  const palG = new Uint8Array(palLen)
+  const palB = new Uint8Array(palLen)
+  for (let i = 0; i < palLen; i++) {
+    palR[i] = paletteColors[i][0]
+    palG[i] = paletteColors[i][1]
+    palB[i] = paletteColors[i][2]
+  }
+
+  const cache = new Map<number, number>()
+
+  function findTwoClosest(r: number, g: number, b: number): number {
+    const key = (r << 16) | (g << 8) | b
+    const cached = cache.get(key)
+    if (cached !== undefined) return cached
+
+    let minDist = Infinity
+    let secondDist = Infinity
+    let closest = 0
+    let second = 0
+
+    for (let i = 0; i < palLen; i++) {
+      const dr = r - palR[i]
+      const dg = g - palG[i]
+      const db = b - palB[i]
+      const dist = dr * dr + dg * dg + db * db
+      if (dist < minDist) {
+        secondDist = minDist
+        second = closest
+        minDist = dist
+        closest = i
+      } else if (dist < secondDist) {
+        secondDist = dist
+        second = i
+      }
+    }
+
+    const totalDist = minDist + secondDist
+    const factor = totalDist > 0 ? minDist / totalDist : 0
+    const factorQ = (factor * 63 + 0.5) | 0
+
+    const packed = (closest & 0xff) | ((second & 0xff) << 8) | ((factorQ & 0xff) << 16)
+    cache.set(key, packed)
+
+    return packed
+  }
+
+  for (let y = 0; y < height; y++) {
+    let prevR = -1
+    let prevG = -1
+    let prevB = -1
+    let packed = 0
+
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const r = source[idx]
+      const g = source[idx + 1]
+      const b = source[idx + 2]
+
+      if (r !== prevR || g !== prevG || b !== prevB) {
+        prevR = r
+        prevG = g
+        prevB = b
+        packed = findTwoClosest(r, g, b)
+      }
+
+      const closest = packed & 0xff
+      const second = (packed >> 8) & 0xff
+      const factorQ = (packed >> 16) & 0xff
+
+      const threshold = ditherTable[(x & 7) + ((y & 7) << 3)]
+      const pick = factorQ > threshold ? second : closest
+
+      source[idx] = palR[pick]
+      source[idx + 1] = palG[pick]
+      source[idx + 2] = palB[pick]
+    }
+  }
+
+  return source
 }
 
 export function orderedBayer(source: Buffer, width: number, height: number): Buffer {
-  return render(
-    source,
-    width,
-    height,
-    (pixelCoords, texture) => {
-      const color = texture(pixelCoords)
-      const ditheredColor = dither(pixelCoords, rgbToHsl(color))
+  for (let y = 0; y < height; y++) {
+    let prevR = -1
+    let prevG = -1
+    let prevB = -1
+    let hueDiff = 0
+    let lightDiff = 0
+    let satDiff = 0
+    let combos: Uint8Array = null!
 
-      return [...ditheredColor, color[3]]
-    },
-    { textureFilter: TEXTURE_FILTER.NEAREST }
-  )
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+
+      const rRaw = source[idx]
+      const gRaw = source[idx + 1]
+      const bRaw = source[idx + 2]
+
+      if (rRaw !== prevR || gRaw !== prevG || bRaw !== prevB) {
+        prevR = rRaw
+        prevG = gRaw
+        prevB = bRaw
+
+        const key = (rRaw << 16) | (gRaw << 8) | bRaw
+        let entry = ditherRgbCache.get(key)
+        if (!entry) {
+          entry = buildDitherEntry(rRaw, gRaw, bRaw)
+          ditherRgbCache.set(key, entry)
+        }
+        hueDiff = entry.hueDiff
+        lightDiff = entry.lightDiff
+        satDiff = entry.satDiff
+        combos = entry.combos
+      }
+
+      const limit = ditherLimits[(x & 7) + ((y & 7) << 3)]
+      const ci = ((hueDiff < limit ? 0 : 4) + (lightDiff < limit ? 0 : 2) + (satDiff < limit ? 0 : 1)) * 3
+      source[idx] = combos[ci]
+      source[idx + 1] = combos[ci + 1]
+      source[idx + 2] = combos[ci + 2]
+    }
+  }
+
+  return source
 }

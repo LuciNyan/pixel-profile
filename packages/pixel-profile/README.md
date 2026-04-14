@@ -63,8 +63,8 @@ The layout in this project is entirely done with JSX, so developing it is almost
 ### TODO
 
 - [x] Github stats card.
-- [ ] Github repo card.
-- [ ] Leetcode stats card.
+- [x] CRT-style stats card.
+- [x] Animated GIF output.
 
 ## Author
 

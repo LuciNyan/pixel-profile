@@ -1,33 +1,29 @@
-import { render, RGBA } from '../renderer'
+/* eslint-disable prettier/prettier */
+const flatMat = new Float64Array([
+  0.1, 0.9, 0.3, 0.9,
+  0.9, 0.3, 0.9, 0.6,
+  0.3, 0.9, 0.1, 0.9,
+  0.9, 0.6, 0.9, 0.6
+])
+/* eslint-enable prettier/prettier */
 
-const dotSize = 4
-const dotDensity = 1
-const mat = [
-  [0.1, 0.9, 0.3, 0.9],
-  [0.9, 0.3, 0.9, 0.6],
-  [0.3, 0.9, 0.1, 0.9],
-  [0.9, 0.6, 0.9, 0.6]
-]
-const ditherRange = 0
+const DARK_U32 = (7 | (85 << 8) | (59 << 16) | (255 << 24)) >>> 0
+const LIGHT_U32 = (206 | (212 << 8) | (106 << 16) | (255 << 24)) >>> 0
 
 export function halftone(source: Buffer, width: number, height: number): Buffer {
-  return render(source, width, height, (pixelCoords, texture) => {
-    const gridCoords = [Math.floor(pixelCoords[0] / dotSize), Math.floor(pixelCoords[1] / dotSize)]
+  const target = Buffer.allocUnsafe(width * height * 4)
+  const u32 = new Uint32Array(target.buffer, target.byteOffset, width * height)
 
-    const samplerColor = texture(pixelCoords)
-    const grayValue = (samplerColor[0] + samplerColor[1] + samplerColor[2]) / (3 * 255)
-    const ditherValue = (Math.random() - 0.5) * ditherRange
-    const adjustedGrayValue = Math.min(Math.max(grayValue + ditherValue, 0), 1)
+  for (let y = 0; y < height; y++) {
+    const rowOffset = y * width
+    for (let x = 0; x < width; x++) {
+      const idx = (rowOffset + x) * 4
+      const grayValue = (source[idx] + source[idx + 1] + source[idx + 2]) / (3 * 255)
+      const dotRadius = 1 - grayValue
 
-    const relativeCoords = [pixelCoords[0] - gridCoords[0] * dotSize, pixelCoords[1] - gridCoords[1] * dotSize]
+      u32[rowOffset + x] = flatMat[(x & 3) * 4 + (y & 3)] < dotRadius ? DARK_U32 : LIGHT_U32
+    }
+  }
 
-    const intensity = mat[relativeCoords[0]][relativeCoords[1]]
-
-    const dotRadius = dotDensity * (1 - adjustedGrayValue)
-    const isInDot = intensity < dotRadius
-
-    const finalColor: RGBA = isInDot ? [7, 85, 59, 255] : [206, 212, 106, 255]
-
-    return finalColor
-  })
+  return target
 }

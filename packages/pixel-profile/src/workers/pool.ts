@@ -7,6 +7,7 @@ import {
   calculateAdaptiveThreshold,
   getFalloffFunction,
   horizontalPassCore,
+  horizontalPassFusedCore,
   verticalPassCore
 } from '../shaders/glow'
 import os from 'node:os'
@@ -33,6 +34,7 @@ function buildWorkerCode(): string {
     buildWeightTable,
     getFalloffFunction,
     horizontalPassCore,
+    horizontalPassFusedCore,
     verticalPassCore
   ]
   const fnDefs = fns.map((fn) => `var ${fn.name} = ${fn.toString()};`).join('\n')
@@ -59,14 +61,19 @@ parentPort.on('message', function(msg) {
     var sR = msg.startRow, eR = msg.endRow;
     var th = msg.threshold, ft = msg.falloffType;
     var ls = msg.layers;
-    for (var li = 0; li < ls.length; li++) {
+    var nL = ls.length;
+    var outs = new Array(nL);
+    var outLums = new Array(nL);
+    var rads = new Array(nL);
+    var wts = new Array(nL);
+    for (var li = 0; li < nL; li++) {
       var la = ls[li];
-      var hB = new Float32Array(la.hBlurSab);
-      var hL = new Float64Array(la.hLumSab);
-      var ffn = getFalloffFunction(ft);
-      var wt = buildWeightTable(la.radius, ffn);
-      horizontalPassCore(src, hB, lum, hL, w, h, th, la.radius, wt, sR, eR);
+      outs[li] = new Float32Array(la.hBlurSab);
+      outLums[li] = new Float64Array(la.hLumSab);
+      rads[li] = la.radius;
+      wts[li] = buildWeightTable(la.radius, getFalloffFunction(ft));
     }
+    horizontalPassFusedCore(src, lum, w, h, th, nL, outs, outLums, rads, wts, sR, eR);
   } else if (msg.type === 'glow-v-only') {
     var w = msg.width, h = msg.height;
     var sR = msg.startRow, eR = msg.endRow;

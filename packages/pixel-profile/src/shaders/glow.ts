@@ -180,6 +180,129 @@ export function horizontalPassCore(
   }
 }
 
+/**
+ * Fused multi-layer horizontal pass. Processes one row at a time across all layers,
+ * sharing the row prefix scan and keeping source data hot in L1 cache.
+ * Closure-free for Worker serialization.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function horizontalPassFusedCore(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  input: any,
+  luminance: Float64Array,
+  width: number,
+  height: number,
+  threshold: number,
+  numLayers: number,
+  outputs: Float32Array[],
+  outLuminances: Float64Array[],
+  radii: number[],
+  weightTables: Float64Array[],
+  startRow: number,
+  endRow: number
+): void {
+  const maxX = width - 1
+  const rowPrefix = new Int32Array(width + 1)
+
+  const diameters = new Array(numLayers)
+  const totalWeights = new Array(numLayers)
+  for (let li = 0; li < numLayers; li++) {
+    diameters[li] = radii[li] * 2 + 1
+    let tw = 0
+    const d = diameters[li]
+    for (let w = 0; w < d; w++) tw += weightTables[li][w]
+    totalWeights[li] = tw
+  }
+
+  for (let y = startRow; y < endRow; y++) {
+    const rowOffset = y * width
+
+    rowPrefix[0] = 0
+    for (let x = 0; x < width; x++) {
+      rowPrefix[x + 1] = rowPrefix[x] + (luminance[rowOffset + x] > threshold ? 1 : 0)
+    }
+
+    for (let li = 0; li < numLayers; li++) {
+      const output = outputs[li]
+      const outLuminance = outLuminances[li]
+      const currentRadius = radii[li]
+      const weights = weightTables[li]
+      const diameter = diameters[li]
+      const totalWeight = totalWeights[li]
+
+      for (let x = 0; x < width; x++) {
+        const centerIdx = (rowOffset + x) * 4
+        const lo = Math.max(0, x - currentRadius)
+        const hi = Math.min(maxX, x + currentRadius)
+        const brightCount = rowPrefix[hi + 1] - rowPrefix[lo]
+
+        if (brightCount === 0) {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
+          continue
+        }
+
+        if (x >= currentRadius && x <= maxX - currentRadius && brightCount === diameter) {
+          let sumR = 0
+          let sumG = 0
+          let sumB = 0
+          let si = (rowOffset + x - currentRadius) * 4
+          for (let i = 0; i < diameter; i++) {
+            const wt = weights[i]
+            sumR += input[si] * wt
+            sumG += input[si + 1] * wt
+            sumB += input[si + 2] * wt
+            si += 4
+          }
+          output[centerIdx] = sumR / totalWeight
+          output[centerIdx + 1] = sumG / totalWeight
+          output[centerIdx + 2] = sumB / totalWeight
+          output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+          continue
+        }
+
+        let sumR = 0
+        let sumG = 0
+        let sumB = 0
+        let weightSum = 0
+
+        for (let i = -currentRadius; i <= currentRadius; i++) {
+          const sampleX = Math.min(Math.max(x + i, 0), maxX)
+          const sampleIdx = (rowOffset + sampleX) * 4
+
+          if (luminance[rowOffset + sampleX] > threshold) {
+            const weight = weights[i + currentRadius]
+            sumR += input[sampleIdx] * weight
+            sumG += input[sampleIdx + 1] * weight
+            sumB += input[sampleIdx + 2] * weight
+            weightSum += weight
+          }
+        }
+
+        if (weightSum > 0) {
+          output[centerIdx] = sumR / weightSum
+          output[centerIdx + 1] = sumG / weightSum
+          output[centerIdx + 2] = sumB / weightSum
+          output[centerIdx + 3] = 255
+          outLuminance[rowOffset + x] =
+            (output[centerIdx] * 0.2126 + output[centerIdx + 1] * 0.7152 + output[centerIdx + 2] * 0.0722) / 255
+        } else {
+          output[centerIdx] = input[centerIdx]
+          output[centerIdx + 1] = input[centerIdx + 1]
+          output[centerIdx + 2] = input[centerIdx + 2]
+          output[centerIdx + 3] = input[centerIdx + 3]
+          outLuminance[rowOffset + x] = luminance[rowOffset + x]
+        }
+      }
+    }
+  }
+}
+
 export function buildColumnPrefixMap(
   luminance: Float64Array,
   width: number,
@@ -340,27 +463,37 @@ export function glow(source: Buffer, width: number, height: number, userOptions:
 
   const size = width * height
   const sourceLuminance = buildLuminanceMap(source, size)
-  const glowLayers: Float32Array[] = []
 
+  const hBlurs: Float32Array[] = []
+  const hLums: Float64Array[] = []
+  const radii: number[] = []
+  const weightTables: Float64Array[] = []
   for (let i = 0; i < layers; i++) {
-    const currentRadius = Math.floor(radius * (i + 1))
-    const falloffFn = getFalloffFunction(falloff)
-    const weights = buildWeightTable(currentRadius, falloffFn)
-    const horizontalBlur = new Float32Array(size * 4)
-    const hBlurLuminance = new Float64Array(size)
+    radii.push(Math.floor(radius * (i + 1)))
+    weightTables.push(buildWeightTable(radii[i], getFalloffFunction(falloff)))
+    hBlurs.push(new Float32Array(size * 4))
+    hLums.push(new Float64Array(size))
+  }
+
+  horizontalPassFusedCore(
+    source,
+    sourceLuminance,
+    width,
+    height,
+    threshold,
+    layers,
+    hBlurs,
+    hLums,
+    radii,
+    weightTables,
+    0,
+    height
+  )
+
+  const glowLayers: Float32Array[] = []
+  for (let i = 0; i < layers; i++) {
     const layerOutput = new Float32Array(size * 4)
-    horizontalPassCore(
-      source,
-      horizontalBlur,
-      sourceLuminance,
-      hBlurLuminance,
-      width,
-      height,
-      threshold,
-      currentRadius,
-      weights
-    )
-    verticalPassCore(horizontalBlur, layerOutput, hBlurLuminance, width, height, threshold, currentRadius, weights)
+    verticalPassCore(hBlurs[i], layerOutput, hLums[i], width, height, threshold, radii[i], weightTables[i])
     glowLayers.push(layerOutput)
   }
 
